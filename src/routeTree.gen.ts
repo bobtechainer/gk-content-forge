@@ -21,6 +21,8 @@ import { Route as AppContentRouteImport } from './routes/_app.content'
 import { Route as AppChannelRouteImport } from './routes/_app.channel'
 import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
+import { Route as AppBuilderQuizIdRouteImport } from './routes/_app.builder.quiz.$id'
+import { Route as AppBuilderMaterialIdRouteImport } from './routes/_app.builder.material.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -81,6 +83,16 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBuilderQuizIdRoute = AppBuilderQuizIdRouteImport.update({
+  id: '/builder/quiz/$id',
+  path: '/builder/quiz/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBuilderMaterialIdRoute = AppBuilderMaterialIdRouteImport.update({
+  id: '/builder/material/$id',
+  path: '/builder/material/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -94,6 +106,8 @@ export interface FileRoutesByFullPath {
   '/quizzes': typeof AppQuizzesRoute
   '/settings': typeof AppSettingsRoute
   '/verification': typeof AppVerificationRoute
+  '/builder/material/$id': typeof AppBuilderMaterialIdRoute
+  '/builder/quiz/$id': typeof AppBuilderQuizIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -107,6 +121,8 @@ export interface FileRoutesByTo {
   '/quizzes': typeof AppQuizzesRoute
   '/settings': typeof AppSettingsRoute
   '/verification': typeof AppVerificationRoute
+  '/builder/material/$id': typeof AppBuilderMaterialIdRoute
+  '/builder/quiz/$id': typeof AppBuilderQuizIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,6 +138,8 @@ export interface FileRoutesById {
   '/_app/quizzes': typeof AppQuizzesRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/verification': typeof AppVerificationRoute
+  '/_app/builder/material/$id': typeof AppBuilderMaterialIdRoute
+  '/_app/builder/quiz/$id': typeof AppBuilderQuizIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +155,8 @@ export interface FileRouteTypes {
     | '/quizzes'
     | '/settings'
     | '/verification'
+    | '/builder/material/$id'
+    | '/builder/quiz/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,6 +170,8 @@ export interface FileRouteTypes {
     | '/quizzes'
     | '/settings'
     | '/verification'
+    | '/builder/material/$id'
+    | '/builder/quiz/$id'
   id:
     | '__root__'
     | '/'
@@ -164,6 +186,8 @@ export interface FileRouteTypes {
     | '/_app/quizzes'
     | '/_app/settings'
     | '/_app/verification'
+    | '/_app/builder/material/$id'
+    | '/_app/builder/quiz/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -258,6 +282,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/builder/quiz/$id': {
+      id: '/_app/builder/quiz/$id'
+      path: '/builder/quiz/$id'
+      fullPath: '/builder/quiz/$id'
+      preLoaderRoute: typeof AppBuilderQuizIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/builder/material/$id': {
+      id: '/_app/builder/material/$id'
+      path: '/builder/material/$id'
+      fullPath: '/builder/material/$id'
+      preLoaderRoute: typeof AppBuilderMaterialIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -271,6 +309,8 @@ interface AppRouteChildren {
   AppQuizzesRoute: typeof AppQuizzesRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppVerificationRoute: typeof AppVerificationRoute
+  AppBuilderMaterialIdRoute: typeof AppBuilderMaterialIdRoute
+  AppBuilderQuizIdRoute: typeof AppBuilderQuizIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -283,6 +323,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppQuizzesRoute: AppQuizzesRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppVerificationRoute: AppVerificationRoute,
+  AppBuilderMaterialIdRoute: AppBuilderMaterialIdRoute,
+  AppBuilderQuizIdRoute: AppBuilderQuizIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
