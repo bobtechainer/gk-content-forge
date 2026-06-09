@@ -10,12 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppVerificationRouteImport } from './routes/_app.verification'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppQuizzesRouteImport } from './routes/_app.quizzes'
+import { Route as AppMaterialsRouteImport } from './routes/_app.materials'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppContentRouteImport } from './routes/_app.content'
+import { Route as AppChannelRouteImport } from './routes/_app.channel'
+import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
+import { Route as AppAdminRouteImport } from './routes/_app.admin'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -23,40 +36,140 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppVerificationRoute = AppVerificationRouteImport.update({
+  id: '/verification',
+  path: '/verification',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/_app/settings',
+  id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuizzesRoute = AppQuizzesRouteImport.update({
+  id: '/quizzes',
+  path: '/quizzes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMaterialsRoute = AppMaterialsRouteImport.update({
+  id: '/materials',
+  path: '/materials',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContentRoute = AppContentRouteImport.update({
+  id: '/content',
+  path: '/content',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChannelRoute = AppChannelRouteImport.update({
+  id: '/channel',
+  path: '/channel',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AppAdminRoute
+  '/analytics': typeof AppAnalyticsRoute
+  '/channel': typeof AppChannelRoute
+  '/content': typeof AppContentRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/materials': typeof AppMaterialsRoute
+  '/quizzes': typeof AppQuizzesRoute
   '/settings': typeof AppSettingsRoute
+  '/verification': typeof AppVerificationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AppAdminRoute
+  '/analytics': typeof AppAnalyticsRoute
+  '/channel': typeof AppChannelRoute
+  '/content': typeof AppContentRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/materials': typeof AppMaterialsRoute
+  '/quizzes': typeof AppQuizzesRoute
   '/settings': typeof AppSettingsRoute
+  '/verification': typeof AppVerificationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/admin': typeof AppAdminRoute
+  '/_app/analytics': typeof AppAnalyticsRoute
+  '/_app/channel': typeof AppChannelRoute
+  '/_app/content': typeof AppContentRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/materials': typeof AppMaterialsRoute
+  '/_app/quizzes': typeof AppQuizzesRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/verification': typeof AppVerificationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/settings'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/admin'
+    | '/analytics'
+    | '/channel'
+    | '/content'
+    | '/dashboard'
+    | '/materials'
+    | '/quizzes'
+    | '/settings'
+    | '/verification'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/settings'
-  id: '__root__' | '/' | '/login' | '/_app/settings'
+  to:
+    | '/'
+    | '/login'
+    | '/admin'
+    | '/analytics'
+    | '/channel'
+    | '/content'
+    | '/dashboard'
+    | '/materials'
+    | '/quizzes'
+    | '/settings'
+    | '/verification'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/admin'
+    | '/_app/analytics'
+    | '/_app/channel'
+    | '/_app/content'
+    | '/_app/dashboard'
+    | '/_app/materials'
+    | '/_app/quizzes'
+    | '/_app/settings'
+    | '/_app/verification'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
-  AppSettingsRoute: typeof AppSettingsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,6 +181,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -75,20 +195,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/verification': {
+      id: '/_app/verification'
+      path: '/verification'
+      fullPath: '/verification'
+      preLoaderRoute: typeof AppVerificationRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/quizzes': {
+      id: '/_app/quizzes'
+      path: '/quizzes'
+      fullPath: '/quizzes'
+      preLoaderRoute: typeof AppQuizzesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/materials': {
+      id: '/_app/materials'
+      path: '/materials'
+      fullPath: '/materials'
+      preLoaderRoute: typeof AppMaterialsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/content': {
+      id: '/_app/content'
+      path: '/content'
+      fullPath: '/content'
+      preLoaderRoute: typeof AppContentRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/channel': {
+      id: '/_app/channel'
+      path: '/channel'
+      fullPath: '/channel'
+      preLoaderRoute: typeof AppChannelRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/analytics': {
+      id: '/_app/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppChannelRoute: typeof AppChannelRoute
+  AppContentRoute: typeof AppContentRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppMaterialsRoute: typeof AppMaterialsRoute
+  AppQuizzesRoute: typeof AppQuizzesRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppVerificationRoute: typeof AppVerificationRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppChannelRoute: AppChannelRoute,
+  AppContentRoute: AppContentRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppMaterialsRoute: AppMaterialsRoute,
+  AppQuizzesRoute: AppQuizzesRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppVerificationRoute: AppVerificationRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
-  AppSettingsRoute: AppSettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
