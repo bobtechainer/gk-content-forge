@@ -92,6 +92,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "GK Content Studio" },
+      { name: "description", content: "GK Content Studio Demo is an MVP platform for creating and managing educational content." },
+      { property: "og:description", content: "GK Content Studio Demo is an MVP platform for creating and managing educational content." },
+      { name: "twitter:description", content: "GK Content Studio Demo is an MVP platform for creating and managing educational content." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a64c6ebf-30b1-45c2-b0a5-ce0b2f771d54/id-preview-6d8f72d9--05c6e322-c91f-4fe9-b7e5-de33a72cf329.lovable.app-1781084223277.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a64c6ebf-30b1-45c2-b0a5-ce0b2f771d54/id-preview-6d8f72d9--05c6e322-c91f-4fe9-b7e5-de33a72cf329.lovable.app-1781084223277.png" },
     ],
     links: [
       {
