@@ -139,6 +139,15 @@ export type QuestionType =
   | "recognition"
   | "marker";
 
+/** A learning material attached to a question (dragged in from the kho học liệu panel). */
+export interface QuestionAttachment {
+  materialId: string;
+  title: string;
+  type: MaterialType;
+  thumbnailColor: string;
+  fileExtension?: string;
+}
+
 export interface Question {
   id: string;
   type: QuestionType;
@@ -150,4 +159,5 @@ export interface Question {
   duration: number;
   points: number;
   required: boolean;
+  attachments?: QuestionAttachment[];
 }

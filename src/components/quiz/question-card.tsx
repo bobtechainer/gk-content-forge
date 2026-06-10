@@ -1,13 +1,16 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, Image as ImageIcon } from "lucide-react";
+import { GripVertical, Trash2, X, Paperclip, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import type { Question } from "@/lib/types";
+import { MATERIAL_TYPE_ICONS } from "@/lib/taxonomy";
+import { MATERIAL_TYPE_ACCENT } from "@/components/shared/material-type-icon";
 import { useQuiz } from "@/stores/quiz";
+import { toast } from "sonner";
 
 const TYPE_LABEL: Record<Question["type"], string> = {
   multiple_choice: "Trắc nghiệm",
@@ -41,6 +44,13 @@ export function QuestionCard({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const atts = question.attachments ?? [];
+
+  const removeAttachment = (materialId: string) =>
+    update(quizId, question.id, {
+      attachments: atts.filter((a) => a.materialId !== materialId),
+    });
 
   return (
     <div
@@ -81,10 +91,55 @@ export function QuestionCard({
           onChange={(e) => update(quizId, question.id, { prompt: e.target.value })}
           className="text-base font-medium"
         />
-        <div className="flex h-20 items-center justify-center rounded-md border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
-          <ImageIcon className="mr-1.5 h-4 w-4" />
-          Kéo thả ảnh / video vào đây
-        </div>
+        {atts.length === 0 ? (
+          <div className="flex h-20 items-center justify-center rounded-md border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
+            <Paperclip className="mr-1.5 h-4 w-4" />
+            Kéo thả học liệu vào đây
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {atts.map((a) => {
+              const Icon = MATERIAL_TYPE_ICONS[a.type];
+              const accent = MATERIAL_TYPE_ACCENT[a.type];
+              return (
+                <div
+                  key={a.materialId}
+                  title={a.title}
+                  className="group relative flex h-[84px] w-[84px] flex-col items-center justify-center gap-1.5 rounded-md border border-border bg-card p-1.5"
+                >
+                  <button
+                    type="button"
+                    aria-label={`Gỡ học liệu ${a.title}`}
+                    onClick={() => removeAttachment(a.materialId)}
+                    className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-card/90 text-muted-foreground opacity-60 transition hover:bg-destructive hover:text-white group-hover:opacity-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-md"
+                    style={{ backgroundColor: `${accent}1A`, color: accent }}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="w-full truncate text-center text-[10px] font-medium text-foreground">
+                    {a.title}
+                  </span>
+                </div>
+              );
+            })}
+            <button
+              type="button"
+              aria-label="Thêm học liệu"
+              onClick={() =>
+                toast.info("Kéo hoặc bấm học liệu từ tab “Học liệu” bên trái để thêm")
+              }
+              className="flex h-[84px] w-[84px] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground transition hover:border-[#10B981] hover:text-[#10B981]"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="text-[10px] font-medium">Thêm</span>
+            </button>
+          </div>
+        )}
 
         {question.type === "multiple_choice" && question.options && (
           <div className="space-y-2">
