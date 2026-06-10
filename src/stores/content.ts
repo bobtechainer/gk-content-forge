@@ -1,13 +1,26 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ContentItem, ContentStatus, ContentType, Platform, RoleId } from "@/lib/types";
+import type {
+  ContentItem,
+  ContentStatus,
+  ContentType,
+  CreationCategory,
+  LearningMaterialSubtype,
+  Platform,
+  RoleId,
+} from "@/lib/types";
 import { SEED_CONTENT } from "@/lib/mock-data";
 
 interface ContentState {
   items: ContentItem[];
-  createDraft: (type: ContentType, ownerId: RoleId) => string;
+  createDraft: (
+    type: ContentType,
+    ownerId: RoleId,
+    options?: { category?: CreationCategory; materialSubtype?: LearningMaterialSubtype },
+  ) => string;
   updateItem: (id: string, patch: Partial<ContentItem>) => void;
   deleteItem: (id: string) => void;
+  duplicateItem: (id: string) => string | null;
   setStatus: (id: string, status: ContentStatus) => void;
   publish: (
     id: string,
@@ -26,12 +39,27 @@ export const useContent = create<ContentState>()(
   persist(
     (set, get) => ({
       items: SEED_CONTENT,
-      createDraft: (type, ownerId) => {
+      createDraft: (type, ownerId, options) => {
         const id = `c_${Date.now()}`;
+        const category =
+          options?.category ?? (type === "book" || type === "course" ? type : "learning_material");
+        const materialSubtype = options?.materialSubtype ?? (type === "quiz" ? "quiz" : undefined);
+        const titleByType: Record<CreationCategory, string> = {
+          book: "Book chưa đặt tên",
+          course: "Course chưa đặt tên",
+          learning_material: materialSubtype
+            ? `Learning Materials: ${materialSubtype} chưa đặt tên`
+            : "Learning Materials chưa đặt tên",
+        };
         const item: ContentItem = {
           id,
-          title: type === "quiz" ? "Bộ đề chưa đặt tên" : "Học liệu chưa đặt tên",
-          type,
+          title: titleByType[category],
+          type: category,
+          legacyType: type === "quiz" || type === "material" ? type : undefined,
+          category,
+          materialType:
+            materialSubtype ?? (category === "learning_material" ? undefined : category),
+          materialSubtype,
           status: "draft",
           ownerId,
           createdAt: new Date().toISOString().slice(0, 10),
@@ -51,6 +79,24 @@ export const useContent = create<ContentState>()(
       updateItem: (id, patch) =>
         set({ items: get().items.map((i) => (i.id === id ? { ...i, ...patch } : i)) }),
       deleteItem: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
+      duplicateItem: (id) => {
+        const source = get().items.find((i) => i.id === id);
+        if (!source) return null;
+        const newId = `c_${Date.now()}`;
+        const copy: ContentItem = {
+          ...source,
+          id: newId,
+          title: `${source.title} (bản sao)`,
+          status: "draft",
+          views: 0,
+          likes: 0,
+          shares: 0,
+          createdAt: new Date().toISOString().slice(0, 10),
+          platforms: [],
+        };
+        set({ items: [copy, ...get().items] });
+        return newId;
+      },
       setStatus: (id, status) =>
         set({ items: get().items.map((i) => (i.id === id ? { ...i, status } : i)) }),
       publish: (id, args) => {

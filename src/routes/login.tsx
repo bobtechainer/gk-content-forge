@@ -2,15 +2,19 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { ACCOUNTS } from "@/lib/mock-data";
+import { getDefaultAppPath } from "@/lib/taxonomy";
 import { useSession } from "@/stores/session";
-import { VerifiedBadge } from "@/components/verified-badge";
+import { VerifiedBadge } from "@/components/shared/verified-badge";
 import type { RoleId } from "@/lib/types";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Đăng nhập — GK Content Studio" },
-      { name: "description", content: "Chọn vai trò để bắt đầu trải nghiệm demo GK Content Studio." },
+      {
+        name: "description",
+        content: "Chọn vai trò để bắt đầu trải nghiệm demo GK Content Studio.",
+      },
     ],
   }),
   component: LoginPage,
@@ -22,7 +26,7 @@ function LoginPage() {
 
   const pick = (id: RoleId) => {
     setRole(id);
-    navigate({ to: "/dashboard" });
+    navigate({ to: getDefaultAppPath(ACCOUNTS[id].accountType) });
   };
 
   return (
@@ -30,9 +34,7 @@ function LoginPage() {
       <div className="mx-auto max-w-6xl px-6 py-16">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-              GK
-            </div>
+            <img src="/assets/logo/Logomark.svg" alt="Trường học số" className="h-9 w-9" />
             <span className="text-lg font-semibold text-foreground">GK Content Studio</span>
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-medium text-[#92400E]">
@@ -80,7 +82,8 @@ function LoginPage() {
                 <p className="mt-1 text-xs text-muted-foreground">{a.accountType}</p>
                 <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>
                 <div className="mt-4 flex items-center text-xs font-medium text-[#2563EB]">
-                  Vào dashboard <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-1" />
+                  Vào dashboard{" "}
+                  <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-1" />
                 </div>
               </motion.button>
             );

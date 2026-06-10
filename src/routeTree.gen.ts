@@ -9,28 +9,65 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OrgRouteImport } from './routes/org'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppRouteImport } from './routes/_app'
+import { Route as CreatorRouteImport } from './routes/creator'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppVerificationRouteImport } from './routes/_app.verification'
-import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppQuizzesRouteImport } from './routes/_app.quizzes'
-import { Route as AppMaterialsRouteImport } from './routes/_app.materials'
-import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
-import { Route as AppContentRouteImport } from './routes/_app.content'
-import { Route as AppChannelRouteImport } from './routes/_app.channel'
-import { Route as AppAnalyticsRouteImport } from './routes/_app.analytics'
-import { Route as AppAdminRouteImport } from './routes/_app.admin'
-import { Route as AppBuilderQuizIdRouteImport } from './routes/_app.builder.quiz.$id'
-import { Route as AppBuilderMaterialIdRouteImport } from './routes/_app.builder.material.$id'
+import { Route as OrgVerificationRouteImport } from './routes/org.verification'
+import { Route as OrgStudioRouteImport } from './routes/org.studio'
+import { Route as OrgSettingsRouteImport } from './routes/org.settings'
+import { Route as OrgMembersRouteImport } from './routes/org.members'
+import { Route as OrgLibraryRouteImport } from './routes/org.library'
+import { Route as OrgDashboardRouteImport } from './routes/org.dashboard'
+import { Route as OrgChannelRouteImport } from './routes/org.channel'
+import { Route as CreatorVerificationRouteImport } from './routes/creator.verification'
+import { Route as CreatorStudioRouteImport } from './routes/creator.studio'
+import { Route as CreatorSettingsRouteImport } from './routes/creator.settings'
+import { Route as CreatorLibraryRouteImport } from './routes/creator.library'
+import { Route as CreatorDashboardRouteImport } from './routes/creator.dashboard'
+import { Route as CreatorChannelRouteImport } from './routes/creator.channel'
+import { Route as AdminVerificationRequestsRouteImport } from './routes/admin.verification-requests'
+import { Route as AdminVerificationRouteImport } from './routes/admin.verification'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminStudioRouteImport } from './routes/admin.studio'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminLibraryRouteImport } from './routes/admin.library'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminContentReviewRouteImport } from './routes/admin.content-review'
+import { Route as AdminChannelRouteImport } from './routes/admin.channel'
+import { Route as OrgStudioNewRouteImport } from './routes/org.studio.new'
+import { Route as OrgChannelEditRouteImport } from './routes/org.channel.edit'
+import { Route as CreatorStudioNewRouteImport } from './routes/creator.studio.new'
+import { Route as CreatorChannelEditRouteImport } from './routes/creator.channel.edit'
+import { Route as OrgBuilderQuizIdRouteImport } from './routes/org.builder.quiz.$id'
+import { Route as OrgBuilderMaterialIdRouteImport } from './routes/org.builder.material.$id'
+import { Route as OrgBuilderCourseIdRouteImport } from './routes/org.builder.course.$id'
+import { Route as OrgBuilderBookIdRouteImport } from './routes/org.builder.book.$id'
+import { Route as CreatorBuilderQuizIdRouteImport } from './routes/creator.builder.quiz.$id'
+import { Route as CreatorBuilderMaterialIdRouteImport } from './routes/creator.builder.material.$id'
+import { Route as CreatorBuilderCourseIdRouteImport } from './routes/creator.builder.course.$id'
+import { Route as CreatorBuilderBookIdRouteImport } from './routes/creator.builder.book.$id'
 
+const OrgRoute = OrgRouteImport.update({
+  id: '/org',
+  path: '/org',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const CreatorRoute = CreatorRouteImport.update({
+  id: '/creator',
+  path: '/creator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -38,166 +75,457 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppVerificationRoute = AppVerificationRouteImport.update({
+const OrgVerificationRoute = OrgVerificationRouteImport.update({
   id: '/verification',
   path: '/verification',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
+const OrgStudioRoute = OrgStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => OrgRoute,
+} as any)
+const OrgSettingsRoute = OrgSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppQuizzesRoute = AppQuizzesRouteImport.update({
-  id: '/quizzes',
-  path: '/quizzes',
-  getParentRoute: () => AppRoute,
+const OrgMembersRoute = OrgMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppMaterialsRoute = AppMaterialsRouteImport.update({
-  id: '/materials',
-  path: '/materials',
-  getParentRoute: () => AppRoute,
+const OrgLibraryRoute = OrgLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppDashboardRoute = AppDashboardRouteImport.update({
+const OrgDashboardRoute = OrgDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppContentRoute = AppContentRouteImport.update({
-  id: '/content',
-  path: '/content',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppChannelRoute = AppChannelRouteImport.update({
+const OrgChannelRoute = OrgChannelRouteImport.update({
   id: '/channel',
   path: '/channel',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => AppRoute,
+const CreatorVerificationRoute = CreatorVerificationRouteImport.update({
+  id: '/verification',
+  path: '/verification',
+  getParentRoute: () => CreatorRoute,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AppRoute,
+const CreatorStudioRoute = CreatorStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => CreatorRoute,
 } as any)
-const AppBuilderQuizIdRoute = AppBuilderQuizIdRouteImport.update({
+const CreatorSettingsRoute = CreatorSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => CreatorRoute,
+} as any)
+const CreatorLibraryRoute = CreatorLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => CreatorRoute,
+} as any)
+const CreatorDashboardRoute = CreatorDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => CreatorRoute,
+} as any)
+const CreatorChannelRoute = CreatorChannelRouteImport.update({
+  id: '/channel',
+  path: '/channel',
+  getParentRoute: () => CreatorRoute,
+} as any)
+const AdminVerificationRequestsRoute =
+  AdminVerificationRequestsRouteImport.update({
+    id: '/verification-requests',
+    path: '/verification-requests',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminVerificationRoute = AdminVerificationRouteImport.update({
+  id: '/verification',
+  path: '/verification',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStudioRoute = AdminStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLibraryRoute = AdminLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminContentReviewRoute = AdminContentReviewRouteImport.update({
+  id: '/content-review',
+  path: '/content-review',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminChannelRoute = AdminChannelRouteImport.update({
+  id: '/channel',
+  path: '/channel',
+  getParentRoute: () => AdminRoute,
+} as any)
+const OrgStudioNewRoute = OrgStudioNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OrgStudioRoute,
+} as any)
+const OrgChannelEditRoute = OrgChannelEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => OrgChannelRoute,
+} as any)
+const CreatorStudioNewRoute = CreatorStudioNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => CreatorStudioRoute,
+} as any)
+const CreatorChannelEditRoute = CreatorChannelEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => CreatorChannelRoute,
+} as any)
+const OrgBuilderQuizIdRoute = OrgBuilderQuizIdRouteImport.update({
   id: '/builder/quiz/$id',
   path: '/builder/quiz/$id',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
 } as any)
-const AppBuilderMaterialIdRoute = AppBuilderMaterialIdRouteImport.update({
+const OrgBuilderMaterialIdRoute = OrgBuilderMaterialIdRouteImport.update({
   id: '/builder/material/$id',
   path: '/builder/material/$id',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => OrgRoute,
+} as any)
+const OrgBuilderCourseIdRoute = OrgBuilderCourseIdRouteImport.update({
+  id: '/builder/course/$id',
+  path: '/builder/course/$id',
+  getParentRoute: () => OrgRoute,
+} as any)
+const OrgBuilderBookIdRoute = OrgBuilderBookIdRouteImport.update({
+  id: '/builder/book/$id',
+  path: '/builder/book/$id',
+  getParentRoute: () => OrgRoute,
+} as any)
+const CreatorBuilderQuizIdRoute = CreatorBuilderQuizIdRouteImport.update({
+  id: '/builder/quiz/$id',
+  path: '/builder/quiz/$id',
+  getParentRoute: () => CreatorRoute,
+} as any)
+const CreatorBuilderMaterialIdRoute =
+  CreatorBuilderMaterialIdRouteImport.update({
+    id: '/builder/material/$id',
+    path: '/builder/material/$id',
+    getParentRoute: () => CreatorRoute,
+  } as any)
+const CreatorBuilderCourseIdRoute = CreatorBuilderCourseIdRouteImport.update({
+  id: '/builder/course/$id',
+  path: '/builder/course/$id',
+  getParentRoute: () => CreatorRoute,
+} as any)
+const CreatorBuilderBookIdRoute = CreatorBuilderBookIdRouteImport.update({
+  id: '/builder/book/$id',
+  path: '/builder/book/$id',
+  getParentRoute: () => CreatorRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
-  '/admin': typeof AppAdminRoute
-  '/analytics': typeof AppAnalyticsRoute
-  '/channel': typeof AppChannelRoute
-  '/content': typeof AppContentRoute
-  '/dashboard': typeof AppDashboardRoute
-  '/materials': typeof AppMaterialsRoute
-  '/quizzes': typeof AppQuizzesRoute
-  '/settings': typeof AppSettingsRoute
-  '/verification': typeof AppVerificationRoute
-  '/builder/material/$id': typeof AppBuilderMaterialIdRoute
-  '/builder/quiz/$id': typeof AppBuilderQuizIdRoute
+  '/org': typeof OrgRouteWithChildren
+  '/admin/channel': typeof AdminChannelRoute
+  '/admin/content-review': typeof AdminContentReviewRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/library': typeof AdminLibraryRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/studio': typeof AdminStudioRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/verification': typeof AdminVerificationRoute
+  '/admin/verification-requests': typeof AdminVerificationRequestsRoute
+  '/creator/channel': typeof CreatorChannelRouteWithChildren
+  '/creator/dashboard': typeof CreatorDashboardRoute
+  '/creator/library': typeof CreatorLibraryRoute
+  '/creator/settings': typeof CreatorSettingsRoute
+  '/creator/studio': typeof CreatorStudioRouteWithChildren
+  '/creator/verification': typeof CreatorVerificationRoute
+  '/org/channel': typeof OrgChannelRouteWithChildren
+  '/org/dashboard': typeof OrgDashboardRoute
+  '/org/library': typeof OrgLibraryRoute
+  '/org/members': typeof OrgMembersRoute
+  '/org/settings': typeof OrgSettingsRoute
+  '/org/studio': typeof OrgStudioRouteWithChildren
+  '/org/verification': typeof OrgVerificationRoute
+  '/creator/channel/edit': typeof CreatorChannelEditRoute
+  '/creator/studio/new': typeof CreatorStudioNewRoute
+  '/org/channel/edit': typeof OrgChannelEditRoute
+  '/org/studio/new': typeof OrgStudioNewRoute
+  '/creator/builder/book/$id': typeof CreatorBuilderBookIdRoute
+  '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
+  '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
+  '/creator/builder/quiz/$id': typeof CreatorBuilderQuizIdRoute
+  '/org/builder/book/$id': typeof OrgBuilderBookIdRoute
+  '/org/builder/course/$id': typeof OrgBuilderCourseIdRoute
+  '/org/builder/material/$id': typeof OrgBuilderMaterialIdRoute
+  '/org/builder/quiz/$id': typeof OrgBuilderQuizIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
-  '/admin': typeof AppAdminRoute
-  '/analytics': typeof AppAnalyticsRoute
-  '/channel': typeof AppChannelRoute
-  '/content': typeof AppContentRoute
-  '/dashboard': typeof AppDashboardRoute
-  '/materials': typeof AppMaterialsRoute
-  '/quizzes': typeof AppQuizzesRoute
-  '/settings': typeof AppSettingsRoute
-  '/verification': typeof AppVerificationRoute
-  '/builder/material/$id': typeof AppBuilderMaterialIdRoute
-  '/builder/quiz/$id': typeof AppBuilderQuizIdRoute
+  '/org': typeof OrgRouteWithChildren
+  '/admin/channel': typeof AdminChannelRoute
+  '/admin/content-review': typeof AdminContentReviewRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/library': typeof AdminLibraryRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/studio': typeof AdminStudioRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/verification': typeof AdminVerificationRoute
+  '/admin/verification-requests': typeof AdminVerificationRequestsRoute
+  '/creator/channel': typeof CreatorChannelRouteWithChildren
+  '/creator/dashboard': typeof CreatorDashboardRoute
+  '/creator/library': typeof CreatorLibraryRoute
+  '/creator/settings': typeof CreatorSettingsRoute
+  '/creator/studio': typeof CreatorStudioRouteWithChildren
+  '/creator/verification': typeof CreatorVerificationRoute
+  '/org/channel': typeof OrgChannelRouteWithChildren
+  '/org/dashboard': typeof OrgDashboardRoute
+  '/org/library': typeof OrgLibraryRoute
+  '/org/members': typeof OrgMembersRoute
+  '/org/settings': typeof OrgSettingsRoute
+  '/org/studio': typeof OrgStudioRouteWithChildren
+  '/org/verification': typeof OrgVerificationRoute
+  '/creator/channel/edit': typeof CreatorChannelEditRoute
+  '/creator/studio/new': typeof CreatorStudioNewRoute
+  '/org/channel/edit': typeof OrgChannelEditRoute
+  '/org/studio/new': typeof OrgStudioNewRoute
+  '/creator/builder/book/$id': typeof CreatorBuilderBookIdRoute
+  '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
+  '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
+  '/creator/builder/quiz/$id': typeof CreatorBuilderQuizIdRoute
+  '/org/builder/book/$id': typeof OrgBuilderBookIdRoute
+  '/org/builder/course/$id': typeof OrgBuilderCourseIdRoute
+  '/org/builder/material/$id': typeof OrgBuilderMaterialIdRoute
+  '/org/builder/quiz/$id': typeof OrgBuilderQuizIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_app': typeof AppRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
+  '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
-  '/_app/admin': typeof AppAdminRoute
-  '/_app/analytics': typeof AppAnalyticsRoute
-  '/_app/channel': typeof AppChannelRoute
-  '/_app/content': typeof AppContentRoute
-  '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/materials': typeof AppMaterialsRoute
-  '/_app/quizzes': typeof AppQuizzesRoute
-  '/_app/settings': typeof AppSettingsRoute
-  '/_app/verification': typeof AppVerificationRoute
-  '/_app/builder/material/$id': typeof AppBuilderMaterialIdRoute
-  '/_app/builder/quiz/$id': typeof AppBuilderQuizIdRoute
+  '/org': typeof OrgRouteWithChildren
+  '/admin/channel': typeof AdminChannelRoute
+  '/admin/content-review': typeof AdminContentReviewRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/library': typeof AdminLibraryRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/studio': typeof AdminStudioRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/verification': typeof AdminVerificationRoute
+  '/admin/verification-requests': typeof AdminVerificationRequestsRoute
+  '/creator/channel': typeof CreatorChannelRouteWithChildren
+  '/creator/dashboard': typeof CreatorDashboardRoute
+  '/creator/library': typeof CreatorLibraryRoute
+  '/creator/settings': typeof CreatorSettingsRoute
+  '/creator/studio': typeof CreatorStudioRouteWithChildren
+  '/creator/verification': typeof CreatorVerificationRoute
+  '/org/channel': typeof OrgChannelRouteWithChildren
+  '/org/dashboard': typeof OrgDashboardRoute
+  '/org/library': typeof OrgLibraryRoute
+  '/org/members': typeof OrgMembersRoute
+  '/org/settings': typeof OrgSettingsRoute
+  '/org/studio': typeof OrgStudioRouteWithChildren
+  '/org/verification': typeof OrgVerificationRoute
+  '/creator/channel/edit': typeof CreatorChannelEditRoute
+  '/creator/studio/new': typeof CreatorStudioNewRoute
+  '/org/channel/edit': typeof OrgChannelEditRoute
+  '/org/studio/new': typeof OrgStudioNewRoute
+  '/creator/builder/book/$id': typeof CreatorBuilderBookIdRoute
+  '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
+  '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
+  '/creator/builder/quiz/$id': typeof CreatorBuilderQuizIdRoute
+  '/org/builder/book/$id': typeof OrgBuilderBookIdRoute
+  '/org/builder/course/$id': typeof OrgBuilderCourseIdRoute
+  '/org/builder/material/$id': typeof OrgBuilderMaterialIdRoute
+  '/org/builder/quiz/$id': typeof OrgBuilderQuizIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
     | '/admin'
-    | '/analytics'
-    | '/channel'
-    | '/content'
-    | '/dashboard'
-    | '/materials'
-    | '/quizzes'
-    | '/settings'
-    | '/verification'
-    | '/builder/material/$id'
-    | '/builder/quiz/$id'
+    | '/creator'
+    | '/login'
+    | '/org'
+    | '/admin/channel'
+    | '/admin/content-review'
+    | '/admin/dashboard'
+    | '/admin/library'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/studio'
+    | '/admin/users'
+    | '/admin/verification'
+    | '/admin/verification-requests'
+    | '/creator/channel'
+    | '/creator/dashboard'
+    | '/creator/library'
+    | '/creator/settings'
+    | '/creator/studio'
+    | '/creator/verification'
+    | '/org/channel'
+    | '/org/dashboard'
+    | '/org/library'
+    | '/org/members'
+    | '/org/settings'
+    | '/org/studio'
+    | '/org/verification'
+    | '/creator/channel/edit'
+    | '/creator/studio/new'
+    | '/org/channel/edit'
+    | '/org/studio/new'
+    | '/creator/builder/book/$id'
+    | '/creator/builder/course/$id'
+    | '/creator/builder/material/$id'
+    | '/creator/builder/quiz/$id'
+    | '/org/builder/book/$id'
+    | '/org/builder/course/$id'
+    | '/org/builder/material/$id'
+    | '/org/builder/quiz/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
     | '/admin'
-    | '/analytics'
-    | '/channel'
-    | '/content'
-    | '/dashboard'
-    | '/materials'
-    | '/quizzes'
-    | '/settings'
-    | '/verification'
-    | '/builder/material/$id'
-    | '/builder/quiz/$id'
+    | '/creator'
+    | '/login'
+    | '/org'
+    | '/admin/channel'
+    | '/admin/content-review'
+    | '/admin/dashboard'
+    | '/admin/library'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/studio'
+    | '/admin/users'
+    | '/admin/verification'
+    | '/admin/verification-requests'
+    | '/creator/channel'
+    | '/creator/dashboard'
+    | '/creator/library'
+    | '/creator/settings'
+    | '/creator/studio'
+    | '/creator/verification'
+    | '/org/channel'
+    | '/org/dashboard'
+    | '/org/library'
+    | '/org/members'
+    | '/org/settings'
+    | '/org/studio'
+    | '/org/verification'
+    | '/creator/channel/edit'
+    | '/creator/studio/new'
+    | '/org/channel/edit'
+    | '/org/studio/new'
+    | '/creator/builder/book/$id'
+    | '/creator/builder/course/$id'
+    | '/creator/builder/material/$id'
+    | '/creator/builder/quiz/$id'
+    | '/org/builder/book/$id'
+    | '/org/builder/course/$id'
+    | '/org/builder/material/$id'
+    | '/org/builder/quiz/$id'
   id:
     | '__root__'
     | '/'
-    | '/_app'
+    | '/admin'
+    | '/creator'
     | '/login'
-    | '/_app/admin'
-    | '/_app/analytics'
-    | '/_app/channel'
-    | '/_app/content'
-    | '/_app/dashboard'
-    | '/_app/materials'
-    | '/_app/quizzes'
-    | '/_app/settings'
-    | '/_app/verification'
-    | '/_app/builder/material/$id'
-    | '/_app/builder/quiz/$id'
+    | '/org'
+    | '/admin/channel'
+    | '/admin/content-review'
+    | '/admin/dashboard'
+    | '/admin/library'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/studio'
+    | '/admin/users'
+    | '/admin/verification'
+    | '/admin/verification-requests'
+    | '/creator/channel'
+    | '/creator/dashboard'
+    | '/creator/library'
+    | '/creator/settings'
+    | '/creator/studio'
+    | '/creator/verification'
+    | '/org/channel'
+    | '/org/dashboard'
+    | '/org/library'
+    | '/org/members'
+    | '/org/settings'
+    | '/org/studio'
+    | '/org/verification'
+    | '/creator/channel/edit'
+    | '/creator/studio/new'
+    | '/org/channel/edit'
+    | '/org/studio/new'
+    | '/creator/builder/book/$id'
+    | '/creator/builder/course/$id'
+    | '/creator/builder/material/$id'
+    | '/creator/builder/quiz/$id'
+    | '/org/builder/book/$id'
+    | '/org/builder/course/$id'
+    | '/org/builder/material/$id'
+    | '/org/builder/quiz/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
+  CreatorRoute: typeof CreatorRouteWithChildren
   LoginRoute: typeof LoginRoute
+  OrgRoute: typeof OrgRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/org': {
+      id: '/org'
+      path: '/org'
+      fullPath: '/org'
+      preLoaderRoute: typeof OrgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -205,11 +533,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+    '/creator': {
+      id: '/creator'
+      path: '/creator'
+      fullPath: '/creator'
+      preLoaderRoute: typeof CreatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -219,121 +554,406 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/verification': {
-      id: '/_app/verification'
+    '/org/verification': {
+      id: '/org/verification'
       path: '/verification'
-      fullPath: '/verification'
-      preLoaderRoute: typeof AppVerificationRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/org/verification'
+      preLoaderRoute: typeof OrgVerificationRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/settings': {
-      id: '/_app/settings'
+    '/org/studio': {
+      id: '/org/studio'
+      path: '/studio'
+      fullPath: '/org/studio'
+      preLoaderRoute: typeof OrgStudioRouteImport
+      parentRoute: typeof OrgRoute
+    }
+    '/org/settings': {
+      id: '/org/settings'
       path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/org/settings'
+      preLoaderRoute: typeof OrgSettingsRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/quizzes': {
-      id: '/_app/quizzes'
-      path: '/quizzes'
-      fullPath: '/quizzes'
-      preLoaderRoute: typeof AppQuizzesRouteImport
-      parentRoute: typeof AppRoute
+    '/org/members': {
+      id: '/org/members'
+      path: '/members'
+      fullPath: '/org/members'
+      preLoaderRoute: typeof OrgMembersRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/materials': {
-      id: '/_app/materials'
-      path: '/materials'
-      fullPath: '/materials'
-      preLoaderRoute: typeof AppMaterialsRouteImport
-      parentRoute: typeof AppRoute
+    '/org/library': {
+      id: '/org/library'
+      path: '/library'
+      fullPath: '/org/library'
+      preLoaderRoute: typeof OrgLibraryRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/dashboard': {
-      id: '/_app/dashboard'
+    '/org/dashboard': {
+      id: '/org/dashboard'
       path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/org/dashboard'
+      preLoaderRoute: typeof OrgDashboardRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/content': {
-      id: '/_app/content'
-      path: '/content'
-      fullPath: '/content'
-      preLoaderRoute: typeof AppContentRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/channel': {
-      id: '/_app/channel'
+    '/org/channel': {
+      id: '/org/channel'
       path: '/channel'
-      fullPath: '/channel'
-      preLoaderRoute: typeof AppChannelRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/org/channel'
+      preLoaderRoute: typeof OrgChannelRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/analytics': {
-      id: '/_app/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AppAnalyticsRouteImport
-      parentRoute: typeof AppRoute
+    '/creator/verification': {
+      id: '/creator/verification'
+      path: '/verification'
+      fullPath: '/creator/verification'
+      preLoaderRoute: typeof CreatorVerificationRouteImport
+      parentRoute: typeof CreatorRoute
     }
-    '/_app/admin': {
-      id: '/_app/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
-      parentRoute: typeof AppRoute
+    '/creator/studio': {
+      id: '/creator/studio'
+      path: '/studio'
+      fullPath: '/creator/studio'
+      preLoaderRoute: typeof CreatorStudioRouteImport
+      parentRoute: typeof CreatorRoute
     }
-    '/_app/builder/quiz/$id': {
-      id: '/_app/builder/quiz/$id'
+    '/creator/settings': {
+      id: '/creator/settings'
+      path: '/settings'
+      fullPath: '/creator/settings'
+      preLoaderRoute: typeof CreatorSettingsRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/creator/library': {
+      id: '/creator/library'
+      path: '/library'
+      fullPath: '/creator/library'
+      preLoaderRoute: typeof CreatorLibraryRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/creator/dashboard': {
+      id: '/creator/dashboard'
+      path: '/dashboard'
+      fullPath: '/creator/dashboard'
+      preLoaderRoute: typeof CreatorDashboardRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/creator/channel': {
+      id: '/creator/channel'
+      path: '/channel'
+      fullPath: '/creator/channel'
+      preLoaderRoute: typeof CreatorChannelRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/admin/verification-requests': {
+      id: '/admin/verification-requests'
+      path: '/verification-requests'
+      fullPath: '/admin/verification-requests'
+      preLoaderRoute: typeof AdminVerificationRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/verification': {
+      id: '/admin/verification'
+      path: '/verification'
+      fullPath: '/admin/verification'
+      preLoaderRoute: typeof AdminVerificationRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/studio': {
+      id: '/admin/studio'
+      path: '/studio'
+      fullPath: '/admin/studio'
+      preLoaderRoute: typeof AdminStudioRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/library': {
+      id: '/admin/library'
+      path: '/library'
+      fullPath: '/admin/library'
+      preLoaderRoute: typeof AdminLibraryRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/content-review': {
+      id: '/admin/content-review'
+      path: '/content-review'
+      fullPath: '/admin/content-review'
+      preLoaderRoute: typeof AdminContentReviewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/channel': {
+      id: '/admin/channel'
+      path: '/channel'
+      fullPath: '/admin/channel'
+      preLoaderRoute: typeof AdminChannelRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/org/studio/new': {
+      id: '/org/studio/new'
+      path: '/new'
+      fullPath: '/org/studio/new'
+      preLoaderRoute: typeof OrgStudioNewRouteImport
+      parentRoute: typeof OrgStudioRoute
+    }
+    '/org/channel/edit': {
+      id: '/org/channel/edit'
+      path: '/edit'
+      fullPath: '/org/channel/edit'
+      preLoaderRoute: typeof OrgChannelEditRouteImport
+      parentRoute: typeof OrgChannelRoute
+    }
+    '/creator/studio/new': {
+      id: '/creator/studio/new'
+      path: '/new'
+      fullPath: '/creator/studio/new'
+      preLoaderRoute: typeof CreatorStudioNewRouteImport
+      parentRoute: typeof CreatorStudioRoute
+    }
+    '/creator/channel/edit': {
+      id: '/creator/channel/edit'
+      path: '/edit'
+      fullPath: '/creator/channel/edit'
+      preLoaderRoute: typeof CreatorChannelEditRouteImport
+      parentRoute: typeof CreatorChannelRoute
+    }
+    '/org/builder/quiz/$id': {
+      id: '/org/builder/quiz/$id'
       path: '/builder/quiz/$id'
-      fullPath: '/builder/quiz/$id'
-      preLoaderRoute: typeof AppBuilderQuizIdRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/org/builder/quiz/$id'
+      preLoaderRoute: typeof OrgBuilderQuizIdRouteImport
+      parentRoute: typeof OrgRoute
     }
-    '/_app/builder/material/$id': {
-      id: '/_app/builder/material/$id'
+    '/org/builder/material/$id': {
+      id: '/org/builder/material/$id'
       path: '/builder/material/$id'
-      fullPath: '/builder/material/$id'
-      preLoaderRoute: typeof AppBuilderMaterialIdRouteImport
-      parentRoute: typeof AppRoute
+      fullPath: '/org/builder/material/$id'
+      preLoaderRoute: typeof OrgBuilderMaterialIdRouteImport
+      parentRoute: typeof OrgRoute
+    }
+    '/org/builder/course/$id': {
+      id: '/org/builder/course/$id'
+      path: '/builder/course/$id'
+      fullPath: '/org/builder/course/$id'
+      preLoaderRoute: typeof OrgBuilderCourseIdRouteImport
+      parentRoute: typeof OrgRoute
+    }
+    '/org/builder/book/$id': {
+      id: '/org/builder/book/$id'
+      path: '/builder/book/$id'
+      fullPath: '/org/builder/book/$id'
+      preLoaderRoute: typeof OrgBuilderBookIdRouteImport
+      parentRoute: typeof OrgRoute
+    }
+    '/creator/builder/quiz/$id': {
+      id: '/creator/builder/quiz/$id'
+      path: '/builder/quiz/$id'
+      fullPath: '/creator/builder/quiz/$id'
+      preLoaderRoute: typeof CreatorBuilderQuizIdRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/creator/builder/material/$id': {
+      id: '/creator/builder/material/$id'
+      path: '/builder/material/$id'
+      fullPath: '/creator/builder/material/$id'
+      preLoaderRoute: typeof CreatorBuilderMaterialIdRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/creator/builder/course/$id': {
+      id: '/creator/builder/course/$id'
+      path: '/builder/course/$id'
+      fullPath: '/creator/builder/course/$id'
+      preLoaderRoute: typeof CreatorBuilderCourseIdRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/creator/builder/book/$id': {
+      id: '/creator/builder/book/$id'
+      path: '/builder/book/$id'
+      fullPath: '/creator/builder/book/$id'
+      preLoaderRoute: typeof CreatorBuilderBookIdRouteImport
+      parentRoute: typeof CreatorRoute
     }
   }
 }
 
-interface AppRouteChildren {
-  AppAdminRoute: typeof AppAdminRoute
-  AppAnalyticsRoute: typeof AppAnalyticsRoute
-  AppChannelRoute: typeof AppChannelRoute
-  AppContentRoute: typeof AppContentRoute
-  AppDashboardRoute: typeof AppDashboardRoute
-  AppMaterialsRoute: typeof AppMaterialsRoute
-  AppQuizzesRoute: typeof AppQuizzesRoute
-  AppSettingsRoute: typeof AppSettingsRoute
-  AppVerificationRoute: typeof AppVerificationRoute
-  AppBuilderMaterialIdRoute: typeof AppBuilderMaterialIdRoute
-  AppBuilderQuizIdRoute: typeof AppBuilderQuizIdRoute
+interface AdminRouteChildren {
+  AdminChannelRoute: typeof AdminChannelRoute
+  AdminContentReviewRoute: typeof AdminContentReviewRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminLibraryRoute: typeof AdminLibraryRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminStudioRoute: typeof AdminStudioRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminVerificationRoute: typeof AdminVerificationRoute
+  AdminVerificationRequestsRoute: typeof AdminVerificationRequestsRoute
 }
 
-const AppRouteChildren: AppRouteChildren = {
-  AppAdminRoute: AppAdminRoute,
-  AppAnalyticsRoute: AppAnalyticsRoute,
-  AppChannelRoute: AppChannelRoute,
-  AppContentRoute: AppContentRoute,
-  AppDashboardRoute: AppDashboardRoute,
-  AppMaterialsRoute: AppMaterialsRoute,
-  AppQuizzesRoute: AppQuizzesRoute,
-  AppSettingsRoute: AppSettingsRoute,
-  AppVerificationRoute: AppVerificationRoute,
-  AppBuilderMaterialIdRoute: AppBuilderMaterialIdRoute,
-  AppBuilderQuizIdRoute: AppBuilderQuizIdRoute,
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminChannelRoute: AdminChannelRoute,
+  AdminContentReviewRoute: AdminContentReviewRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminLibraryRoute: AdminLibraryRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminStudioRoute: AdminStudioRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminVerificationRoute: AdminVerificationRoute,
+  AdminVerificationRequestsRoute: AdminVerificationRequestsRoute,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface CreatorChannelRouteChildren {
+  CreatorChannelEditRoute: typeof CreatorChannelEditRoute
+}
+
+const CreatorChannelRouteChildren: CreatorChannelRouteChildren = {
+  CreatorChannelEditRoute: CreatorChannelEditRoute,
+}
+
+const CreatorChannelRouteWithChildren = CreatorChannelRoute._addFileChildren(
+  CreatorChannelRouteChildren,
+)
+
+interface CreatorStudioRouteChildren {
+  CreatorStudioNewRoute: typeof CreatorStudioNewRoute
+}
+
+const CreatorStudioRouteChildren: CreatorStudioRouteChildren = {
+  CreatorStudioNewRoute: CreatorStudioNewRoute,
+}
+
+const CreatorStudioRouteWithChildren = CreatorStudioRoute._addFileChildren(
+  CreatorStudioRouteChildren,
+)
+
+interface CreatorRouteChildren {
+  CreatorChannelRoute: typeof CreatorChannelRouteWithChildren
+  CreatorDashboardRoute: typeof CreatorDashboardRoute
+  CreatorLibraryRoute: typeof CreatorLibraryRoute
+  CreatorSettingsRoute: typeof CreatorSettingsRoute
+  CreatorStudioRoute: typeof CreatorStudioRouteWithChildren
+  CreatorVerificationRoute: typeof CreatorVerificationRoute
+  CreatorBuilderBookIdRoute: typeof CreatorBuilderBookIdRoute
+  CreatorBuilderCourseIdRoute: typeof CreatorBuilderCourseIdRoute
+  CreatorBuilderMaterialIdRoute: typeof CreatorBuilderMaterialIdRoute
+  CreatorBuilderQuizIdRoute: typeof CreatorBuilderQuizIdRoute
+}
+
+const CreatorRouteChildren: CreatorRouteChildren = {
+  CreatorChannelRoute: CreatorChannelRouteWithChildren,
+  CreatorDashboardRoute: CreatorDashboardRoute,
+  CreatorLibraryRoute: CreatorLibraryRoute,
+  CreatorSettingsRoute: CreatorSettingsRoute,
+  CreatorStudioRoute: CreatorStudioRouteWithChildren,
+  CreatorVerificationRoute: CreatorVerificationRoute,
+  CreatorBuilderBookIdRoute: CreatorBuilderBookIdRoute,
+  CreatorBuilderCourseIdRoute: CreatorBuilderCourseIdRoute,
+  CreatorBuilderMaterialIdRoute: CreatorBuilderMaterialIdRoute,
+  CreatorBuilderQuizIdRoute: CreatorBuilderQuizIdRoute,
+}
+
+const CreatorRouteWithChildren =
+  CreatorRoute._addFileChildren(CreatorRouteChildren)
+
+interface OrgChannelRouteChildren {
+  OrgChannelEditRoute: typeof OrgChannelEditRoute
+}
+
+const OrgChannelRouteChildren: OrgChannelRouteChildren = {
+  OrgChannelEditRoute: OrgChannelEditRoute,
+}
+
+const OrgChannelRouteWithChildren = OrgChannelRoute._addFileChildren(
+  OrgChannelRouteChildren,
+)
+
+interface OrgStudioRouteChildren {
+  OrgStudioNewRoute: typeof OrgStudioNewRoute
+}
+
+const OrgStudioRouteChildren: OrgStudioRouteChildren = {
+  OrgStudioNewRoute: OrgStudioNewRoute,
+}
+
+const OrgStudioRouteWithChildren = OrgStudioRoute._addFileChildren(
+  OrgStudioRouteChildren,
+)
+
+interface OrgRouteChildren {
+  OrgChannelRoute: typeof OrgChannelRouteWithChildren
+  OrgDashboardRoute: typeof OrgDashboardRoute
+  OrgLibraryRoute: typeof OrgLibraryRoute
+  OrgMembersRoute: typeof OrgMembersRoute
+  OrgSettingsRoute: typeof OrgSettingsRoute
+  OrgStudioRoute: typeof OrgStudioRouteWithChildren
+  OrgVerificationRoute: typeof OrgVerificationRoute
+  OrgBuilderBookIdRoute: typeof OrgBuilderBookIdRoute
+  OrgBuilderCourseIdRoute: typeof OrgBuilderCourseIdRoute
+  OrgBuilderMaterialIdRoute: typeof OrgBuilderMaterialIdRoute
+  OrgBuilderQuizIdRoute: typeof OrgBuilderQuizIdRoute
+}
+
+const OrgRouteChildren: OrgRouteChildren = {
+  OrgChannelRoute: OrgChannelRouteWithChildren,
+  OrgDashboardRoute: OrgDashboardRoute,
+  OrgLibraryRoute: OrgLibraryRoute,
+  OrgMembersRoute: OrgMembersRoute,
+  OrgSettingsRoute: OrgSettingsRoute,
+  OrgStudioRoute: OrgStudioRouteWithChildren,
+  OrgVerificationRoute: OrgVerificationRoute,
+  OrgBuilderBookIdRoute: OrgBuilderBookIdRoute,
+  OrgBuilderCourseIdRoute: OrgBuilderCourseIdRoute,
+  OrgBuilderMaterialIdRoute: OrgBuilderMaterialIdRoute,
+  OrgBuilderQuizIdRoute: OrgBuilderQuizIdRoute,
+}
+
+const OrgRouteWithChildren = OrgRoute._addFileChildren(OrgRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
+  CreatorRoute: CreatorRouteWithChildren,
   LoginRoute: LoginRoute,
+  OrgRoute: OrgRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

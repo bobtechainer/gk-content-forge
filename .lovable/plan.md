@@ -47,9 +47,11 @@ src/routes/
 ## 4. Pages
 
 ### Login (`/login`)
+
 4 large role cards (Giáo viên, Giảng viên uy tín ✅ L2, NXB Giáo dục ✅ L2, SuperAdmin 🛡️). Click → set role → navigate to `/dashboard`.
 
 ### Dashboard
+
 - 4 summary stat cards (FileText, Globe, Clock, Eye) with mock counts.
 - Tabs: Tất cả | Nháp | Đã xuất bản | Chờ duyệt | Bị từ chối.
 - Table: thumbnail, title, type badge, status badge (color-coded), date, views, actions (Preview/Edit/Delete).
@@ -57,6 +59,7 @@ src/routes/
 - "Tạo mới" dropdown in header → creates draft and routes to builder.
 
 ### Quiz Builder (`/builder/quiz/:id`) — flagship screen
+
 - Sticky header: back, inline-editable title (contentEditable), Preview / Settings / **Xuất bản** (primary).
 - **Left sidebar (220px)** — Question type palette, grouped (Trắc nghiệm / Tương tác / Đa phương tiện / Nâng cao), 2-col grid of draggable cards with Lucide icons. Highlights (ring + scale) while dragging.
 - **Center canvas** — drop zone with empty-state hint. Each question renders as a card by `type`:
@@ -77,9 +80,11 @@ src/routes/
 - Seed 2–3 sample questions on new draft (1 multiple choice + 1 drag-drop + 1 essay).
 
 ### Material Builder (`/builder/material/:id`)
+
 Same DnD shell, palette = content blocks (Text, Image, Video, PDF, Audio, Embed, Quiz block). Canvas renders blocks inline; right panel = AI writing assistant.
 
 ### Publish Flow (slide-over from right)
+
 - Triggered by "Xuất bản" button. Uses `Sheet` (right side).
 - Phase 1 (2s): shimmer skeleton + "AI đang phân tích…" with framer-motion pulse.
 - Phase 2:
@@ -91,24 +96,28 @@ Same DnD shell, palette = content blocks (Text, Image, Video, PDF, Audio, Embed,
 - Footer buttons: Lưu nháp | Xuất bản (loading spinner → success toast → close → status becomes "Chờ duyệt" or "Đã xuất bản" for L2/publisher).
 
 ### Channel Page
+
 - Cover image (larger for business accounts, edit button if owner+business), avatar + name + verified badge.
 - Bio, stats (materials / followers / views), Follow button.
 - Tabs: Học liệu | Bộ đề | Giới thiệu | (Thành viên — business only).
 - Grid of published content cards.
 
 ### Verification Roadmap
+
 - Vertical timeline with 2 level cards.
 - L1: checklist (Email, SĐT, CCCD/Giấy phép) — each row with progress bar + status icon (✅/⏳/❌).
 - L2: checklist (L1 done, ≥10 published, ≥1000 views, ≥4.0 rating, admin approval) — progress bars showing current vs required (mock current teacher = 7/10 criteria met for L1 partially, L2 not yet eligible).
 - "Nộp đơn xin tích xanh" button (disabled until eligible, with tooltip explaining why).
 
 ### Analytics
+
 - Time-range tabs (7/30/90 ngày).
 - Recharts: LineChart (views over time), BarChart (top 5 content).
 - Stat cards: total views, followers, publish success rate.
 - Detail table per content item.
 
 ### Admin Panel (admin role only)
+
 - Tabs:
   - **Chờ duyệt** — list with Preview / Duyệt / Từ chối actions (updates content store).
   - **Quản lý tài khoản** — providers list with verified state toggle.
@@ -125,6 +134,7 @@ Same DnD shell, palette = content blocks (Text, Image, Video, PDF, Audio, Embed,
 ## 6. Mock Data
 
 Seeded in `src/lib/mock-data.ts`:
+
 - 4 accounts (exactly as spec).
 - 8–10 content items across all statuses, mix of quiz/material, with view counts, dates, owners.
 - 2 items in pending-approval queue.
@@ -146,4 +156,5 @@ After build: walk through the 6-step demo flow (login → create quiz → drag M
 - No dark mode, Vietnamese copy throughout, desktop + tablet only.
 
 ## Out of scope (per request)
+
 Backend, real auth, real uploads, database, mobile responsive, dark mode, i18n.

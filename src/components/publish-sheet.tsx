@@ -68,7 +68,14 @@ export function PublishSheet({
     await new Promise((r) => setTimeout(r, 900));
     const verified =
       roleId && (ACCOUNTS[roleId].verified === "L2" || ACCOUNTS[roleId].verified === "admin");
-    publish(contentId, { tags, description: desc, platforms, subject, grade, ownerVerified: !!verified });
+    publish(contentId, {
+      tags,
+      description: desc,
+      platforms,
+      subject,
+      grade,
+      ownerVerified: !!verified,
+    });
     setPublishing(false);
     onOpenChange(false);
     toast.success(verified ? "Đã xuất bản thành công!" : "Đã gửi nội dung — chờ duyệt từ admin");
@@ -135,8 +142,10 @@ export function PublishSheet({
                       >
                         {t}
                         <button
+                          type="button"
+                          aria-label={`Xóa thẻ ${t}`}
                           onClick={() => setTags(tags.filter((x) => x !== t))}
-                          className="hover:text-destructive"
+                          className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-full hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -158,7 +167,8 @@ export function PublishSheet({
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7"
+                        className="min-h-8 min-w-8"
+                        aria-label="Thêm thẻ"
                         onClick={() => {
                           if (newTag.trim()) {
                             setTags([...tags, newTag.trim()]);
@@ -202,7 +212,7 @@ export function PublishSheet({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <div>
                     <Label className="mb-1.5 block text-xs">Môn học</Label>
                     <Select value={subject} onValueChange={setSubject}>
@@ -210,13 +220,20 @@ export function PublishSheet({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {["Toán", "Vật lý", "Hóa học", "Sinh học", "Ngữ văn", "Tiếng Anh", "Lịch sử", "Địa lý"].map(
-                          (s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ),
-                        )}
+                        {[
+                          "Toán",
+                          "Vật lý",
+                          "Hóa học",
+                          "Sinh học",
+                          "Ngữ văn",
+                          "Tiếng Anh",
+                          "Lịch sử",
+                          "Địa lý",
+                        ].map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -321,8 +338,10 @@ function PlatformCard({
   return (
     <button
       type="button"
+      aria-pressed={checked}
+      aria-label={`${checked ? "Bỏ chọn" : "Chọn"} nền tảng ${label}`}
       onClick={onToggle}
-      className={`flex items-center gap-2 rounded-lg border p-3 text-left transition ${checked ? "border-[#2563EB] bg-[#EFF6FF]" : "border-border bg-card hover:border-muted-foreground/40"}`}
+      className={`flex min-h-11 items-center gap-2 rounded-lg border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${checked ? "border-[#2563EB] bg-[#EFF6FF]" : "border-border bg-card hover:border-muted-foreground/40"}`}
     >
       <Checkbox checked={checked} className="pointer-events-none" />
       <div

@@ -3,8 +3,9 @@ import { Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ACCOUNTS } from "@/lib/mock-data";
+import { getDefaultAppPath } from "@/lib/taxonomy";
 import { useSession } from "@/stores/session";
-import { VerifiedBadge } from "./verified-badge";
+import { VerifiedBadge } from "./shared/verified-badge";
 import type { RoleId } from "@/lib/types";
 
 export function RoleSwitcher() {
@@ -27,7 +28,7 @@ export function RoleSwitcher() {
               key={id}
               onClick={() => {
                 setRole(id);
-                navigate({ to: "/dashboard" });
+                navigate({ to: getDefaultAppPath(a.accountType) });
               }}
               className={`flex w-full items-center gap-3 rounded-md p-2 text-left text-sm hover:bg-accent ${current === id ? "bg-accent" : ""}`}
             >

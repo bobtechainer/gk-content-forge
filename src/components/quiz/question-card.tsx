@@ -67,7 +67,8 @@ export function QuestionCard({
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-destructive"
+          className="min-h-8 min-w-8 text-destructive"
+          aria-label={`Xóa câu hỏi ${index + 1}`}
           onClick={() => del(quizId, question.id)}
         >
           <Trash2 className="h-4 w-4" />
@@ -96,10 +97,10 @@ export function QuestionCard({
                 >
                   <button
                     type="button"
-                    onClick={() =>
-                      update(quizId, question.id, { correctOptionId: opt.id })
-                    }
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${isCorrect ? "border-[#10B981] bg-[#10B981]" : "border-border"}`}
+                    onClick={() => update(quizId, question.id, { correctOptionId: opt.id })}
+                    aria-label={`Đánh dấu đáp án ${String.fromCharCode(65 + i)} là đúng`}
+                    aria-pressed={isCorrect}
+                    className={`flex min-h-6 min-w-6 shrink-0 items-center justify-center rounded-full border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isCorrect ? "border-[#10B981] bg-[#10B981]" : "border-border"}`}
                   >
                     {isCorrect && <span className="h-2 w-2 rounded-full bg-white" />}
                   </button>
@@ -155,9 +156,7 @@ export function QuestionCard({
               </div>
             </div>
             <div>
-              <div className="mb-1.5 text-xs font-semibold text-muted-foreground">
-                Vị trí (thả)
-              </div>
+              <div className="mb-1.5 text-xs font-semibold text-muted-foreground">Vị trí (thả)</div>
               <div className="space-y-1.5">
                 {question.pairs.map((p) => (
                   <Input
@@ -194,9 +193,7 @@ export function QuestionCard({
             <Input
               type="number"
               value={question.points}
-              onChange={(e) =>
-                update(quizId, question.id, { points: Number(e.target.value) || 0 })
-              }
+              onChange={(e) => update(quizId, question.id, { points: Number(e.target.value) || 0 })}
               className="h-7 w-16"
             />
           </div>

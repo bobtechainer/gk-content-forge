@@ -79,10 +79,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "GK Content Studio" },
-      { name: "description", content: "Nền tảng tạo và quản lý học liệu, bộ đề cho hệ sinh thái Trường học số." },
+      {
+        name: "description",
+        content: "Nền tảng tạo và quản lý học liệu, bộ đề cho hệ sinh thái Trường học số.",
+      },
       { name: "author", content: "GK Studio" },
       { property: "og:title", content: "GK Content Studio" },
-      { property: "og:description", content: "Nền tảng tạo và quản lý học liệu, bộ đề cho hệ sinh thái Trường học số." },
+      {
+        property: "og:description",
+        content: "Nền tảng tạo và quản lý học liệu, bộ đề cho hệ sinh thái Trường học số.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
