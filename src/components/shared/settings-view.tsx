@@ -15,10 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { ACCOUNTS } from "@/lib/mock-data";
 import type { StudioScope } from "@/lib/use-scoped-content";
+import { useActiveAccount } from "@/lib/use-active-account";
 import { usePageLoading } from "@/lib/use-page-loading";
-import { useSession } from "@/stores/session";
 import { PageFrame } from "./page-frame";
 import { PageSkeleton } from "./page-skeleton";
 
@@ -70,8 +69,7 @@ function ToggleRow({
 
 export function SettingsView({ scope }: { scope: StudioScope }) {
   const loading = usePageLoading();
-  const roleId = useSession((s) => s.roleId);
-  const account = roleId ? ACCOUNTS[roleId] : null;
+  const account = useActiveAccount(scope);
   const isOrg = scope === "org";
 
   const [name, setName] = useState(account?.name ?? "");

@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ACCOUNTS, CONTENT_REPORTS, VERIFICATION_REQUESTS } from "@/lib/mock-data";
 import type { CreationCategory, LearningMaterialSubtype, RoleId } from "@/lib/types";
+import { resolveActiveOrgId } from "@/lib/use-scoped-content";
 import { cn } from "@/lib/utils";
 import { useContent } from "@/stores/content";
 import { useSession, type Workspace } from "@/stores/session";
@@ -154,6 +155,8 @@ export function ContentStudioShell() {
   const footerNav = getFooterNav(roleId, workspace);
   const showCreate = canCreate(roleId);
   const scope = getScopeFromWorkspace(roleId, workspace);
+  // Content created inside the org workspace is owned by the org, not the person.
+  const createOwnerId = scope === "org" ? resolveActiveOrgId(roleId) : roleId;
 
   const badges: Record<BadgeKey, number> = {
     pending: pendingCount,
@@ -163,7 +166,7 @@ export function ContentStudioShell() {
 
   const handleCreateCategory = (category: CreationCategory) => {
     if (category === "learning_material") return;
-    const id = createDraft(category, roleId, { category });
+    const id = createDraft(category, createOwnerId, { category });
     const prefix = scope === "org" ? "/org" : "/creator";
     navigate({
       to:
@@ -175,7 +178,7 @@ export function ContentStudioShell() {
   };
 
   const handleCreateMaterial = (materialSubtype: LearningMaterialSubtype) => {
-    const id = createDraft("learning_material", roleId, {
+    const id = createDraft("learning_material", createOwnerId, {
       category: "learning_material",
       materialSubtype,
     });

@@ -14,11 +14,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ACCOUNTS } from "@/lib/mock-data";
 import { useScopedContent, type StudioScope } from "@/lib/use-scoped-content";
+import { useActiveAccount } from "@/lib/use-active-account";
 import { usePageLoading } from "@/lib/use-page-loading";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/stores/session";
 import { PageFrame } from "./page-frame";
 import { PageSkeleton } from "./page-skeleton";
 
@@ -34,8 +33,7 @@ interface Criterion {
 
 export function VerificationView({ scope }: { scope: StudioScope }) {
   const loading = usePageLoading();
-  const roleId = useSession((s) => s.roleId);
-  const account = roleId ? ACCOUNTS[roleId] : null;
+  const account = useActiveAccount(scope);
   const items = useScopedContent(scope);
 
   if (loading) return <PageSkeleton />;

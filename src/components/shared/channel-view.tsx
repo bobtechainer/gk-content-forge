@@ -7,13 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ACCOUNTS } from "@/lib/mock-data";
 import { MATERIAL_TYPE_LABELS } from "@/lib/taxonomy";
 import type { Account, ContentItem, MaterialType } from "@/lib/types";
 import { useScopedContent, type StudioScope } from "@/lib/use-scoped-content";
+import { useActiveAccount } from "@/lib/use-active-account";
 import { usePageLoading } from "@/lib/use-page-loading";
 import { cn } from "@/lib/utils";
-import { useSession } from "@/stores/session";
 import { ContentGrid } from "./content-card";
 import { PageFrame } from "./page-frame";
 import { PageSkeleton } from "./page-skeleton";
@@ -45,8 +44,7 @@ function resolveType(item: ContentItem): MaterialType {
 
 export function ChannelView({ scope }: { scope: StudioScope }) {
   const loading = usePageLoading();
-  const roleId = useSession((s) => s.roleId);
-  const account = roleId ? ACCOUNTS[roleId] : null;
+  const account = useActiveAccount(scope);
   const items = useScopedContent(scope);
   const published = items.filter((i) => i.status === "published");
 
@@ -230,8 +228,7 @@ function ChannelTabButton({
 
 export function ChannelEditView({ scope }: { scope: StudioScope }) {
   const loading = usePageLoading();
-  const roleId = useSession((s) => s.roleId);
-  const account = roleId ? ACCOUNTS[roleId] : null;
+  const account = useActiveAccount(scope);
   const items = useScopedContent(scope).filter((i) => i.status === "published");
 
   const [name, setName] = useState(account?.name ?? "");

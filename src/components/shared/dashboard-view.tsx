@@ -16,8 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ACCOUNTS } from "@/lib/mock-data";
 import type { ContentItem } from "@/lib/types";
 import { useScopedContent, type StudioScope } from "@/lib/use-scoped-content";
+import { useActiveAccount } from "@/lib/use-active-account";
 import { usePageLoading } from "@/lib/use-page-loading";
-import { useSession } from "@/stores/session";
 import { ActivityTimeline, type ActivityEntry } from "./activity-timeline";
 import { AiAssistantCard } from "./ai-assistant-card";
 import { AnalyticsLineChart } from "./analytics-line-chart";
@@ -62,8 +62,7 @@ function buildTips(scope: StudioScope, items: ContentItem[]): string[] {
 export function DashboardView({ scope }: { scope: StudioScope }) {
   const loading = usePageLoading();
   const items = useScopedContent(scope);
-  const roleId = useSession((s) => s.roleId);
-  const account = roleId ? ACCOUNTS[roleId] : null;
+  const account = useActiveAccount(scope);
 
   const totals = useMemo(
     () => ({
