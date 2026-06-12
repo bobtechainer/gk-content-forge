@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)",
+      "PowerShell(npx vitest run src/stores/course.test.ts 2>&1)",
+      "PowerShell(npx tsc -b 2>&1)",
+      "PowerShell(npx eslint src/components/course src/stores/course.ts 2>&1)"
+    ]
+  }
+}
