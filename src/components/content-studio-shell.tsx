@@ -136,6 +136,7 @@ function getScopeFromWorkspace(roleId: RoleId, workspace: Workspace): "creator" 
 
 export function ContentStudioShell() {
   const roleId = useSession((s) => s.roleId);
+  const hasHydrated = useSession((s) => s.hasHydrated);
   const workspace = useSession((s) => s.workspace);
   const createDraft = useContent((s) => s.createDraft);
   const pendingCount = useContent((s) => s.items.filter((i) => i.status === "pending").length);
@@ -144,11 +145,13 @@ export function ContentStudioShell() {
 
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  // Only redirect once we know the persisted session is empty — never during
+  // the rehydration window of a cold load (new tab / refresh / deep link).
   useEffect(() => {
-    if (!roleId) navigate({ to: "/login" });
-  }, [roleId, navigate]);
+    if (hasHydrated && !roleId) navigate({ to: "/login" });
+  }, [hasHydrated, roleId, navigate]);
 
-  if (!roleId) return null;
+  if (!hasHydrated || !roleId) return null;
 
   const account = ACCOUNTS[roleId];
   const isBuilder = pathname.includes("/builder/");
