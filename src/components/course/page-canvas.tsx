@@ -2,23 +2,15 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { Plus, Move, Lock, ArrowRight, CheckCircle2 } from "lucide-react";
-import type { CourseBlock, CourseBlockType, BlockLayout, BlockAnimation } from "@/stores/course";
-import { splitIntoSections, collectQuizIds } from "@/stores/course";
+import { Plus, Move, Lock, CheckCircle2, ArrowRight, RotateCcw } from "lucide-react";
+import type { CourseBlock, CourseBlockType, BlockLayout, LessonSection } from "@/stores/course";
+import { partitionSections } from "@/stores/course";
 import { BlockCard } from "./block-card";
-import { VideoEmbed, HtmlEmbed } from "./block-media";
+import { VideoEmbed } from "./block-media";
 import { CodeHighlight, MathPreview } from "./block-render";
+import { HtmlEmbed } from "./html-embed";
 import { BLOCK_TYPES } from "./course-palette";
 import { cn } from "@/lib/utils";
-
-/* ─── Shared scroll-reveal animation variants ──────────────────── */
-
-const ANIM_VARIANTS: Record<string, { hidden: Record<string, number>; visible: Record<string, number> }> = {
-  "fade-up": { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } },
-  parallax: { hidden: { opacity: 0, y: 40, scale: 0.97 }, visible: { opacity: 1, y: 0, scale: 1 } },
-  progressive: { hidden: { opacity: 0, x: -24 }, visible: { opacity: 1, x: 0 } },
-  none: { hidden: { opacity: 1 }, visible: { opacity: 1 } },
-};
 
 /* ─── Scroll-reveal wrapper ────────────────────────────────────── */
 
@@ -28,7 +20,14 @@ function ScrollReveal({ children, animation, disabled }: { children: React.React
 
   if (disabled) return <>{children}</>;
 
-  const v = ANIM_VARIANTS[animation ?? "fade-up"] ?? ANIM_VARIANTS["fade-up"];
+  const variants: Record<string, { hidden: Record<string, number>; visible: Record<string, number> }> = {
+    "fade-up": { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } },
+    parallax: { hidden: { opacity: 0, y: 40, scale: 0.97 }, visible: { opacity: 1, y: 0, scale: 1 } },
+    progressive: { hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } },
+    none: { hidden: { opacity: 1 }, visible: { opacity: 1 } },
+  };
+
+  const v = variants[animation ?? "fade-up"] ?? variants["fade-up"];
 
   return (
     <motion.div
@@ -63,14 +62,8 @@ function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (corr
   const [picked, setPicked] = useState<number | null>(null);
   const answered = picked !== null;
 
-  const pick = (i: number) => {
-    setPicked(i);
-    onResult?.(i === correct);
-  };
-  const retry = () => {
-    setPicked(null);
-    onResult?.(false);
-  };
+  const pick = (i: number) => { setPicked(i); onResult?.(i === correct); };
+  const retry = () => { setPicked(null); onResult?.(false); };
 
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-sm">
@@ -103,7 +96,10 @@ function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (corr
               picked === correct ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800")}>
             <p className="font-semibold">{picked === correct ? "🎉 Chính xác!" : "💡 Chưa đúng — cùng xem lại nhé"}</p>
             {block.quizExplanation && <p className="mt-1 text-[13px] leading-relaxed">{block.quizExplanation}</p>}
-            <button type="button" onClick={retry} className="mt-2 text-xs font-medium underline">Thử lại</button>
+            <button type="button" onClick={retry}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:bg-muted/40 hover:shadow active:scale-95">
+              <RotateCcw className="h-3.5 w-3.5" /> Thử lại
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -113,8 +109,11 @@ function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (corr
 
 /* ─── Preview Block Renderer ───────────────────────────────────── */
 
-function PreviewBlock({ block, onQuizResult }: { block: CourseBlock; onQuizResult?: (id: string, correct: boolean) => void }) {
+function PreviewBlock({ block, onQuizResult }: { block: CourseBlock; onQuizResult?: (correct: boolean) => void }) {
   const layout = block.layout ?? "centered";
+
+  // Section markers are consumed by the journey stepper, never rendered inline.
+  if (block.type === "section") return null;
 
   if (block.type === "divider") {
     return <hr className="my-6 border-border/30" />;
@@ -128,7 +127,7 @@ function PreviewBlock({ block, onQuizResult }: { block: CourseBlock; onQuizResul
         {Array.from({ length: count }).map((_, colIdx) => (
           <div key={colIdx} className="space-y-4">
             {(children[colIdx] ?? []).map((child) => (
-              <PreviewBlock key={child.id} block={child} onQuizResult={onQuizResult} />
+              <PreviewBlock key={child.id} block={child} />
             ))}
           </div>
         ))}
@@ -160,9 +159,7 @@ function PreviewBlock({ block, onQuizResult }: { block: CourseBlock; onQuizResul
         return <div className={cn("rounded-xl border p-4 text-sm", styles[variant])}>{block.content || "..."}</div>;
       }
       case "embed":
-        return block.embedHtml ? (
-          <HtmlEmbed html={block.embedHtml} height={block.embedHeight} title={block.embedTitle} />
-        ) : (
+        return (
           <div className="flex items-center gap-3 rounded-lg border bg-emerald-50/30 p-4">
             <span className="text-xl">📎</span>
             <div>
@@ -176,7 +173,9 @@ function PreviewBlock({ block, onQuizResult }: { block: CourseBlock; onQuizResul
       case "math":
         return <MathPreview content={block.content} />;
       case "quiz":
-        return <QuizPreview block={block} onResult={(correct) => onQuizResult?.(block.id, correct)} />;
+        return <QuizPreview block={block} onResult={onQuizResult} />;
+      case "html":
+        return <HtmlEmbed html={block.content} minHeight={360} />;
       default:
         return <div className="text-sm text-muted-foreground">{block.content}</div>;
     }
@@ -189,121 +188,134 @@ function PreviewBlock({ block, onQuizResult }: { block: CourseBlock; onQuizResul
   );
 }
 
-/* ─── Gated Preview Player ─────────────────────────────────────────
- * Splits a lesson into sections (a `divider` block = section break) and
- * reveals them one at a time. The current section's quizzes must all be
- * answered correctly before "Tiếp tục" unlocks — so Preview mirrors the
- * real, gated learning flow a student actually experiences. A wider
- * canvas (max-w-6xl) gives full-width blocks room to breathe.
+/* ─── Gated Journey Preview ─────────────────────────────────────────
+ * The learner's real experience: parts are revealed one at a time, and the
+ * next part stays locked until every quiz in the current part is answered
+ * correctly. With no section markers it falls back to a single open part.
  * ────────────────────────────────────────────────────────────────── */
 
-function AnimatedBlock({ block, onQuizResult, index }: { block: CourseBlock; index: number; onQuizResult: (id: string, correct: boolean) => void }) {
-  const v = ANIM_VARIANTS[(block.animation as BlockAnimation) ?? "fade-up"] ?? ANIM_VARIANTS["fade-up"];
-  return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={v}
-      transition={{ duration: 0.45, ease: [0.25, 0.1, 0.25, 1], delay: Math.min(index * 0.06, 0.3) }}
-    >
-      <PreviewBlock block={block} onQuizResult={onQuizResult} />
-    </motion.div>
-  );
+function sectionQuizIds(section: LessonSection): string[] {
+  return section.blocks.filter((b) => b.type === "quiz").map((b) => b.id);
 }
 
-function PreviewPlayer({ blocks, lessonTitle }: { blocks: CourseBlock[]; lessonTitle: string }) {
-  const sections = useMemo(() => splitIntoSections(blocks), [blocks]);
-  const [revealed, setRevealed] = useState(1);
-  const [quizState, setQuizState] = useState<Record<string, boolean>>({});
-  const lastSectionRef = useRef<HTMLDivElement>(null);
+function PreviewJourney({ blocks, lessonTitle }: { blocks: CourseBlock[]; lessonTitle: string }) {
+  const sections = useMemo(() => partitionSections(blocks), [blocks]);
+  const [unlockedUpTo, setUnlockedUpTo] = useState(0);
+  const [results, setResults] = useState<Record<string, boolean>>({});
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Reset progress whenever the lesson (its block set) changes.
-  useEffect(() => { setRevealed(1); setQuizState({}); }, [blocks]);
+  // Restart the journey whenever the lesson content changes.
+  useEffect(() => { setUnlockedUpTo(0); setResults({}); }, [blocks]);
 
-  // Bring each newly revealed section into view.
+  // Bring a freshly unlocked part into view so the new content animates in.
   useEffect(() => {
-    if (revealed > 1) lastSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [revealed]);
+    if (unlockedUpTo === 0) return;
+    sectionRefs.current[unlockedUpTo]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [unlockedUpTo]);
 
-  const handleQuizResult = useCallback((id: string, correct: boolean) => {
-    setQuizState((s) => ({ ...s, [id]: correct }));
-  }, []);
-
-  const currentSection = sections[revealed - 1] ?? [];
-  const currentQuizIds = collectQuizIds(currentSection);
-  const correctCount = currentQuizIds.filter((id) => quizState[id] === true).length;
-  const allCorrect = correctCount === currentQuizIds.length;
-  const hasMore = revealed < sections.length;
-  const multiSection = sections.length > 1;
-
-  const goNext = () => { if (allCorrect && hasMore) setRevealed((r) => r + 1); };
+  const isComplete = (i: number) => sectionQuizIds(sections[i]).every((id) => results[id]);
+  const hasGate = sections.length > 1;
 
   return (
     <div className="min-h-full bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
-        {/* Lesson header + section progress */}
-        <div className="mx-auto mb-8 max-w-3xl">
-          <h1 className="text-3xl font-bold text-foreground">{lessonTitle}</h1>
-          {multiSection && (
-            <>
-              <div className="mt-4 flex items-center gap-1.5">
-                {sections.map((_, i) => (
-                  <div key={i} className={cn("h-1.5 flex-1 rounded-full transition-colors", i < revealed ? "bg-[#2563EB]" : "bg-muted")} />
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-10">
+        <div className="mx-auto mb-8 max-w-2xl">
+          <h1 className="text-2xl font-bold text-foreground">{lessonTitle}</h1>
+          {hasGate && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Phần {Math.min(unlockedUpTo + 1, sections.length)} / {sections.length}
+            </p>
+          )}
+        </div>
+
+        {sections.map((section, i) => {
+          if (i > unlockedUpTo) return null;
+          const quizIds = sectionQuizIds(section);
+          const answered = quizIds.filter((id) => results[id]).length;
+          const complete = answered === quizIds.length;
+          const isCurrent = i === unlockedUpTo;
+          const isLast = i === sections.length - 1;
+          return (
+            <div key={i} ref={(el) => { sectionRefs.current[i] = el; }} className="mb-10 scroll-mt-6">
+              {section.title && (
+                <div className="mx-auto mb-5 max-w-2xl">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-bold text-white">
+                      {i + 1}
+                    </span>
+                    <h2 className="text-lg font-bold text-foreground">{section.title}</h2>
+                  </div>
+                </div>
+              )}
+              <div className="space-y-6">
+                {section.blocks.map((block) => (
+                  <ScrollReveal key={block.id} animation={block.animation}>
+                    <PreviewBlock
+                      block={block}
+                      onQuizResult={
+                        block.type === "quiz"
+                          ? (correct) => setResults((r) => ({ ...r, [block.id]: correct }))
+                          : undefined
+                      }
+                    />
+                  </ScrollReveal>
                 ))}
               </div>
-              <p className="mt-2 text-xs font-medium text-muted-foreground">Phần {Math.min(revealed, sections.length)} / {sections.length}</p>
-            </>
-          )}
-        </div>
 
-        {/* Revealed sections */}
-        {sections.slice(0, revealed).map((section, si) => (
-          <motion.section
-            key={si}
-            ref={si === revealed - 1 ? lastSectionRef : undefined}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-12 space-y-6 scroll-mt-6"
-          >
-            {section.map((block, bi) => (
-              <AnimatedBlock key={block.id} block={block} index={bi} onQuizResult={handleQuizResult} />
-            ))}
-          </motion.section>
-        ))}
-
-        {/* Section gate / completion */}
-        <div className="mx-auto max-w-2xl">
-          {hasMore ? (
-            <div className="flex flex-col items-center gap-3 border-t border-dashed pt-8">
-              {currentQuizIds.length > 0 && !allCorrect && (
-                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Lock className="h-4 w-4" /> Trả lời đúng {correctCount}/{currentQuizIds.length} câu để mở phần tiếp theo
-                </p>
+              {hasGate && !isCurrent && (
+                <div className="mx-auto mt-6 flex max-w-2xl items-center gap-1.5 text-xs font-medium text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" /> Đã hoàn thành phần này
+                </div>
               )}
-              <button
-                type="button"
-                onClick={goNext}
-                disabled={!allCorrect}
-                className={cn("flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition",
-                  allCorrect
-                    ? "bg-[#2563EB] text-white shadow-sm hover:bg-[#1d4ed8] active:scale-[0.98]"
-                    : "cursor-not-allowed bg-muted text-muted-foreground")}
-              >
-                {allCorrect ? <>Tiếp tục <ArrowRight className="h-4 w-4" /></> : <><Lock className="h-4 w-4" /> Hoàn thành phần này để tiếp tục</>}
-              </button>
+              {hasGate && isCurrent && !isLast && (
+                <div className="mx-auto mt-6 max-w-2xl">
+                  <SectionGate
+                    complete={complete}
+                    answered={answered}
+                    total={quizIds.length}
+                    onContinue={() => setUnlockedUpTo((u) => u + 1)}
+                  />
+                </div>
+              )}
+              {hasGate && isCurrent && isLast && complete && (
+                <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
+                  <p className="text-base font-bold text-emerald-800">Hoàn thành bài học</p>
+                  <p className="mt-1 text-sm text-emerald-700">
+                    Em đã đi hết hành trình và trả lời đúng các câu hỏi. Làm tốt lắm!
+                  </p>
+                </div>
+              )}
             </div>
-          ) : (
-            multiSection && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-8 text-center">
-                <CheckCircle2 className="h-9 w-9 text-emerald-500" />
-                <p className="text-lg font-bold text-emerald-800">🎉 Hoàn thành bài học!</p>
-                <p className="text-sm text-emerald-700">Bạn đã đi hết {sections.length} phần của bài này.</p>
-              </motion.div>
-            )
-          )}
-        </div>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+function SectionGate({
+  complete, answered, total, onContinue,
+}: { complete: boolean; answered: number; total: number; onContinue: () => void }) {
+  return (
+    <div className="rounded-2xl border bg-card p-4 shadow-sm">
+      {total > 0 && !complete && (
+        <p className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Lock className="h-4 w-4" /> Trả lời đúng hết câu hỏi để mở phần sau ({answered}/{total})
+        </p>
+      )}
+      <button
+        type="button"
+        disabled={!complete}
+        onClick={onContinue}
+        className={cn(
+          "flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition",
+          complete
+            ? "bg-[#2563EB] text-white hover:bg-[#1d4ed8] active:scale-[0.99]"
+            : "cursor-not-allowed bg-muted text-muted-foreground",
+        )}
+      >
+        Tiếp tục phần sau <ArrowRight className="h-4 w-4" />
+      </button>
     </div>
   );
 }
@@ -423,9 +435,9 @@ export function PageCanvas({
     return () => window.removeEventListener("keydown", onKey);
   }, [previewMode, activeBlockId, blocks]);
 
-  /* ─── Preview Mode ────────────── */
+  /* ─── Preview Mode (gated journey, exactly what a learner sees) ─── */
   if (previewMode) {
-    return <PreviewPlayer blocks={blocks} lessonTitle={lessonTitle} />;
+    return <PreviewJourney blocks={blocks} lessonTitle={lessonTitle} />;
   }
 
   /* ─── Edit Mode ──────────────── */
