@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { Plus, Move, Lock, CheckCircle2, ArrowRight } from "lucide-react";
+import { Plus, Move, Lock, CheckCircle2, ArrowRight, RotateCcw } from "lucide-react";
 import type { CourseBlock, CourseBlockType, BlockLayout, LessonSection } from "@/stores/course";
 import { partitionSections } from "@/stores/course";
 import { BlockCard } from "./block-card";
@@ -96,7 +96,10 @@ function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (corr
               picked === correct ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800")}>
             <p className="font-semibold">{picked === correct ? "🎉 Chính xác!" : "💡 Chưa đúng — cùng xem lại nhé"}</p>
             {block.quizExplanation && <p className="mt-1 text-[13px] leading-relaxed">{block.quizExplanation}</p>}
-            <button type="button" onClick={retry} className="mt-2 text-xs font-medium underline">Thử lại</button>
+            <button type="button" onClick={retry}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:bg-muted/40 hover:shadow active:scale-95">
+              <RotateCcw className="h-3.5 w-3.5" /> Thử lại
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
