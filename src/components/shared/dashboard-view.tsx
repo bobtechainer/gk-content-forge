@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { builderRoutePattern } from "@/lib/builder-url";
 import { ACCOUNTS } from "@/lib/mock-data";
 import type { ContentItem } from "@/lib/types";
 import { useScopedContent, type StudioScope } from "@/lib/use-scoped-content";
@@ -157,12 +158,7 @@ export function DashboardView({ scope }: { scope: StudioScope }) {
 function TopContent({ items, scope }: { items: ContentItem[]; scope: StudioScope }) {
   const base = scope === "org" ? "/org" : "/creator";
 
-  const builderTo = (item: ContentItem) => {
-    if (item.category === "book") return `${base}/builder/book/$id`;
-    if (item.category === "course") return `${base}/builder/course/$id`;
-    if (item.materialSubtype === "quiz") return `${base}/builder/quiz/$id`;
-    return `${base}/builder/material/$id`;
-  };
+  const builderTo = (item: ContentItem) => builderRoutePattern(base, item);
 
   return (
     <Card>
@@ -182,6 +178,8 @@ function TopContent({ items, scope }: { items: ContentItem[]; scope: StudioScope
                   <Link
                     to={builderTo(item)}
                     params={{ id: item.id }}
+                    target="_blank"
+                    rel="noopener"
                     className="flex items-center gap-3 rounded-lg border border-border p-3 transition hover:bg-muted/40 hover:border-muted-foreground/30"
                   >
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-foreground">

@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useCourse, splitIntoSections, collectQuizIds } from "./course";
+import { useCourse, partitionSections } from "./course";
 import type { CourseBlock } from "./course";
+import { builderHref } from "@/lib/builder-url";
 
 const CID = "test-course";
 
-function block(id: string, type: CourseBlock["type"], extra: Partial<CourseBlock> = {}): CourseBlock {
-  return { id, type, content: "", ...extra };
+function blk(id: string, type: CourseBlock["type"], content = ""): CourseBlock {
+  return { id, type, content };
 }
 
 function reset() {
@@ -92,61 +93,62 @@ describe("course store", () => {
     const moved = useCourse.getState().courseData[CID].lessons.find((l) => l.id === fromLesson.id)!;
     expect(moved.chapterId).toBe(ch2);
   });
-});
 
-describe("gated preview sections", () => {
-  it("splits blocks on dividers and drops the divider blocks", () => {
-    const blocks = [
-      block("a", "text"),
-      block("b", "quiz"),
-      block("d1", "divider"),
-      block("c", "text"),
-      block("d2", "divider"),
-      block("e", "embed"),
-    ];
-    const sections = splitIntoSections(blocks);
-    expect(sections).toHaveLength(3);
-    expect(sections[0].map((b) => b.id)).toEqual(["a", "b"]);
-    expect(sections[1].map((b) => b.id)).toEqual(["c"]);
-    expect(sections[2].map((b) => b.id)).toEqual(["e"]);
-    expect(sections.flat().some((b) => b.type === "divider")).toBe(false);
-  });
-
-  it("treats a divider-less lesson as a single section, and never returns empty", () => {
-    expect(splitIntoSections([block("a", "text")])).toHaveLength(1);
-    expect(splitIntoSections([])).toEqual([[]]);
-    // Leading/trailing dividers don't produce empty sections.
-    expect(splitIntoSections([block("d", "divider"), block("a", "text"), block("d2", "divider")])).toEqual([
-      [expect.objectContaining({ id: "a" })],
-    ]);
-  });
-
-  it("collects quiz ids, recursing into columns", () => {
-    const blocks = [
-      block("q1", "quiz"),
-      block("t", "text"),
-      block("col", "columns", {
-        columnChildren: [[block("q2", "quiz")], [block("t2", "text"), block("q3", "quiz")]],
-      }),
-    ];
-    expect(collectQuizIds(blocks)).toEqual(["q1", "q2", "q3"]);
-  });
-
-  it("seeds a multi-section demo lesson with no reveal/slider blocks and a live HTML embed", () => {
-    useCourse.setState({ courseData: {}, activeLessonId: null });
-    useCourse.getState().init("demo-seed-check");
-    const lesson = useCourse.getState().courseData["demo-seed-check"].lessons[0];
-
-    // Reveal/slider were removed entirely.
-    const types = new Set(lesson.blocks.map((b) => b.type));
+  it("seeds the Tốc độ phản ứng sample with gated sections (no reveal/slider)", () => {
+    useCourse.getState().init(CID);
+    const blocks = useCourse.getState().courseData[CID].lessons[0].blocks;
+    const types = new Set(blocks.map((b) => b.type));
+    expect(types.has("section")).toBe(true);
+    expect(types.has("html")).toBe(true);
     expect(types.has("reveal" as never)).toBe(false);
     expect(types.has("slider" as never)).toBe(false);
+    // The journey is split into several gated parts.
+    expect(partitionSections(blocks).length).toBeGreaterThan(1);
+  });
+});
 
-    // Dividers split the lesson into several gated sections.
-    expect(splitIntoSections(lesson.blocks).length).toBeGreaterThan(1);
+describe("partitionSections", () => {
+  it("returns one untitled part when there are no section markers", () => {
+    const blocks = [blk("a", "text"), blk("b", "quiz")];
+    const parts = partitionSections(blocks);
+    expect(parts).toHaveLength(1);
+    expect(parts[0].title).toBeNull();
+    expect(parts[0].blocks.map((b) => b.id)).toEqual(["a", "b"]);
+  });
 
-    // The advanced material is an embed block carrying real HTML.
-    const htmlEmbed = lesson.blocks.find((b) => b.type === "embed" && b.embedHtml);
-    expect(htmlEmbed?.embedHtml).toContain("<");
+  it("starts the first part at a leading marker and excludes markers from blocks", () => {
+    const blocks = [
+      blk("s1", "section", "Phần 1"),
+      blk("a", "text"),
+      blk("s2", "section", "Phần 2"),
+      blk("b", "quiz"),
+      blk("c", "text"),
+    ];
+    const parts = partitionSections(blocks);
+    expect(parts.map((p) => p.title)).toEqual(["Phần 1", "Phần 2"]);
+    expect(parts[0].blocks.map((b) => b.id)).toEqual(["a"]);
+    expect(parts[1].blocks.map((b) => b.id)).toEqual(["b", "c"]);
+    expect(parts.flatMap((p) => p.blocks).some((b) => b.type === "section")).toBe(false);
+  });
+
+  it("keeps a leading intro part before the first marker", () => {
+    const blocks = [blk("intro", "text"), blk("s1", "section", "Phần 1"), blk("a", "text")];
+    const parts = partitionSections(blocks);
+    expect(parts).toHaveLength(2);
+    expect(parts[0].title).toBeNull();
+    expect(parts[0].blocks.map((b) => b.id)).toEqual(["intro"]);
+  });
+});
+
+describe("builderHref", () => {
+  it("builds concrete builder URLs per content type and scope", () => {
+    expect(builderHref("creator", { id: "x1", category: "course" })).toBe("/creator/builder/course/x1");
+    expect(builderHref("creator", { id: "x2", category: "book" })).toBe("/creator/builder/book/x2");
+    expect(builderHref("creator", { id: "x3", category: "learning_material", materialSubtype: "quiz" })).toBe(
+      "/creator/builder/quiz/x3",
+    );
+    expect(builderHref("org", { id: "x4", category: "learning_material", materialSubtype: "document" })).toBe(
+      "/org/builder/material/x4",
+    );
   });
 });

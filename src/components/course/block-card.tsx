@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   GripVertical, Trash2, Copy,
   Type, ImageIcon, VideoIcon, MessageSquare, Minus, Link2, Code2, Sigma, Columns2,
-  ListChecks, Check, Code,
+  ListChecks, Boxes, SplitSquareVertical, Check,
   Info, Lightbulb, AlertTriangle, ShieldAlert,
   AlignCenter, Maximize2, LayoutGrid, Plus, MoveVertical,
 } from "lucide-react";
@@ -18,8 +18,10 @@ import type { ContentItem, MaterialType } from "@/lib/types";
 import { useContent } from "@/stores/content";
 import { useSession } from "@/stores/session";
 import { MATERIAL_TYPE_LABELS } from "@/lib/taxonomy";
-import { MediaUploadField, VideoEmbed, HtmlEmbed } from "./block-media";
+import { MediaUploadField, VideoEmbed } from "./block-media";
 import { CodeHighlight, MathPreview } from "./block-render";
+import { HtmlEmbed } from "./html-embed";
+import { WIDGET_TEMPLATES } from "@/lib/widgets";
 import { cn } from "@/lib/utils";
 
 /* ─── Block type metadata ──────────────────────────────────────── */
@@ -35,6 +37,8 @@ const BLOCK_META: Record<CourseBlockType, { icon: typeof Type; color: string; la
   math: { icon: Sigma, color: "#0891B2", label: "Công thức" },
   columns: { icon: Columns2, color: "#8B5CF6", label: "Nhiều cột" },
   quiz: { icon: ListChecks, color: "#F59E0B", label: "Câu hỏi" },
+  html: { icon: Boxes, color: "#EC4899", label: "HTML / Tương tác" },
+  section: { icon: SplitSquareVertical, color: "#0EA5E9", label: "Phần mới" },
 };
 
 const CALLOUT_STYLES: Record<CalloutVariant, { icon: typeof Info; bg: string; border: string; text: string; label: string }> = {
@@ -147,7 +151,7 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
           <GripVertical className="h-3.5 w-3.5" />
         </div>
         <div className="mx-0.5 h-3 w-px bg-border" />
-        {block.type !== "columns" && block.type !== "divider" && (
+        {block.type !== "columns" && block.type !== "divider" && block.type !== "section" && (
           <LayoutDropdown layout={layout} onChange={(l) => onUpdate({ layout: l })} />
         )}
         <select value={anim} onChange={(e) => { e.stopPropagation(); handleAnimChange(e.target.value as BlockAnimation); }}
@@ -167,7 +171,7 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
       <div className="flex items-center gap-2 px-3 py-1.5">
         <Icon className="h-3 w-3" style={{ color: meta.color }} />
         <span className="text-[10px] font-medium text-muted-foreground">{meta.label}</span>
-        {block.type !== "columns" && block.type !== "divider" && (
+        {block.type !== "columns" && block.type !== "divider" && block.type !== "section" && (
           <span className="ml-auto text-[9px] text-muted-foreground/50">{layout === "full" ? "Rộng" : "Giữa"}</span>
         )}
         {block.type === "columns" && (
@@ -189,6 +193,8 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
         {block.type === "math" && <MathBlockEditor block={block} onUpdate={onUpdate} />}
         {block.type === "columns" && <ColumnsBlockEditor block={block} onUpdate={onUpdate} />}
         {block.type === "quiz" && <QuizBlockEditor block={block} onUpdate={onUpdate} />}
+        {block.type === "html" && <HtmlBlockEditor block={block} onUpdate={onUpdate} />}
+        {block.type === "section" && <SectionBlockEditor block={block} onUpdate={onUpdate} />}
       </motion.div>
     </div>
   );
@@ -266,34 +272,18 @@ function CalloutBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
 }
 
 function DividerBlock() {
-  return (
-    <div className="px-4 py-3">
-      <div className="flex items-center gap-2">
-        <hr className="flex-1 border-border/50" />
-        <span className="flex items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-[#2563EB]/40 bg-[#2563EB]/5 px-2 py-0.5 text-[9px] font-medium text-[#2563EB]">
-          <Minus className="h-2.5 w-2.5" /> Ngắt phần
-        </span>
-        <hr className="flex-1 border-border/50" />
-      </div>
-      <p className="mt-1.5 text-center text-[9px] text-muted-foreground/70">
-        Ở Preview, học viên phải trả lời đúng các câu hỏi phía trên mới qua được phần tiếp theo.
-      </p>
-    </div>
-  );
+  return <div className="flex items-center px-4 py-3"><hr className="w-full border-border/50" /></div>;
 }
 
 function EmbedBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
   const [picking, setPicking] = useState(false);
-  const [showHtml, setShowHtml] = useState(Boolean(block.embedHtml));
   const hasMaterial = Boolean(block.embedMaterialId || block.embedTitle);
-  const hasHtml = Boolean(block.embedHtml);
 
   const attach = (mat: ContentItem) => {
     onUpdate({ embedMaterialId: mat.id, embedTitle: mat.title, embedType: mat.materialSubtype ?? "document" });
     setPicking(false);
   };
   const detach = () => { onUpdate({ embedMaterialId: "", embedTitle: "", embedType: "" }); setPicking(false); };
-  const clearHtml = () => { onUpdate({ embedHtml: "" }); setShowHtml(false); };
 
   const typeLabel = block.embedType
     ? (MATERIAL_TYPE_LABELS[block.embedType as MaterialType] ?? block.embedType)
@@ -301,8 +291,7 @@ function EmbedBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (
 
   return (
     <div className="space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
-      {/* Attached library material card (only when no HTML embed) */}
-      {hasMaterial && !hasHtml && (
+      {hasMaterial ? (
         <div className="flex items-center gap-2.5 rounded-lg border bg-emerald-50/30 p-2.5">
           <span className="text-xl">📎</span>
           <div className="min-w-0 flex-1">
@@ -318,53 +307,13 @@ function EmbedBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (
             Gỡ
           </button>
         </div>
+      ) : (
+        <button onClick={() => setPicking((v) => !v)}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#10B981]/40 py-3 text-xs font-medium text-[#10B981] transition hover:bg-emerald-50">
+          <Link2 className="h-3.5 w-3.5" /> Chọn học liệu từ kho
+        </button>
       )}
-
-      {/* Empty state: choose a source */}
-      {!hasMaterial && !hasHtml && !showHtml && (
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => setPicking((v) => !v)}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#10B981]/40 py-3 text-[11px] font-medium text-[#10B981] transition hover:bg-emerald-50">
-            <Link2 className="h-3.5 w-3.5" /> Chọn từ kho
-          </button>
-          <button onClick={() => setShowHtml(true)}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#10B981]/40 py-3 text-[11px] font-medium text-[#10B981] transition hover:bg-emerald-50">
-            <Code className="h-3.5 w-3.5" /> Nhúng HTML
-          </button>
-        </div>
-      )}
-
       {picking && <EmbedMaterialPicker onPick={attach} />}
-
-      {/* HTML embed (advanced material) */}
-      {(showHtml || hasHtml) && (
-        <div className="space-y-2 rounded-lg border border-[#10B981]/30 bg-emerald-50/20 p-2.5">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1 text-[10px] font-semibold text-[#10B981]">
-              <Code className="h-3 w-3" /> Học liệu nâng cao — nhúng HTML
-            </span>
-            <button onClick={clearHtml}
-              className="rounded-md border px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition hover:border-red-300 hover:text-red-500">
-              Gỡ
-            </button>
-          </div>
-          <input value={block.embedTitle || ""} onChange={(e) => onUpdate({ embedTitle: e.target.value })}
-            placeholder="Tiêu đề học liệu (vd: Bảng tuần hoàn 3D)"
-            className="w-full rounded-md border bg-card px-2.5 py-1.5 text-xs outline-none focus:border-[#10B981]" />
-          <textarea value={block.embedHtml || ""} onChange={(e) => onUpdate({ embedHtml: e.target.value })}
-            placeholder="Dán mã nhúng HTML / iframe (vd: mô phỏng PhET, bảng tuần hoàn 3D)…" rows={4}
-            className="w-full resize-none rounded-lg border bg-card px-3 py-2 font-mono text-[11px] outline-none focus:border-[#10B981]" />
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] text-muted-foreground">Chiều cao (px)</label>
-            <input type="number" min={120} value={block.embedHeight ?? 480}
-              onChange={(e) => onUpdate({ embedHeight: Number(e.target.value) })}
-              className="w-24 rounded-md border bg-card px-2 py-1 text-[11px] outline-none focus:border-[#10B981]" />
-          </div>
-          {block.embedHtml
-            ? <HtmlEmbed html={block.embedHtml} height={block.embedHeight} title={block.embedTitle} />
-            : <p className="text-[10px] text-muted-foreground">Bấm <strong>Preview</strong> để xem học liệu chạy thật trong khung an toàn (iframe).</p>}
-        </div>
-      )}
     </div>
   );
 }
@@ -494,6 +443,62 @@ function QuizBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
         placeholder="Giải thích đáp án (hiện sau khi trả lời)…" rows={2}
         className="w-full resize-none rounded-lg border bg-muted/30 px-3 py-2 text-[11px] outline-none focus:border-[#F59E0B]" />
       <p className="text-[10px] text-muted-foreground">✓ Bấm nút tròn để chọn đáp án đúng. Bấm <strong>Preview</strong> để thử tương tác.</p>
+    </div>
+  );
+}
+
+/* ─── HTML Block Editor (advanced interactive embed) ───────────── */
+
+function HtmlBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
+  const [showTemplates, setShowTemplates] = useState(false);
+  return (
+    <div className="space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between gap-2">
+        <label className="text-[10px] font-medium text-muted-foreground">Mã HTML (mô phỏng, bảng tuần hoàn 3D, nhúng tương tác…)</label>
+        <div className="relative">
+          <button type="button" onClick={() => setShowTemplates((v) => !v)}
+            className="rounded-md border border-[#EC4899]/40 px-2 py-1 text-[10px] font-medium text-[#EC4899] transition hover:bg-pink-50">
+            Chèn mẫu
+          </button>
+          {showTemplates && (
+            <div className="absolute right-0 top-full z-50 mt-1 w-[230px] rounded-xl border bg-card p-1.5 shadow-xl">
+              {WIDGET_TEMPLATES.map((t) => (
+                <button key={t.id} type="button"
+                  onClick={() => { onUpdate({ content: t.html, layout: "full" }); setShowTemplates(false); }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition hover:bg-muted">
+                  <Boxes className="h-3.5 w-3.5 shrink-0 text-[#EC4899]" />
+                  <span className="font-medium text-foreground">{t.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <textarea value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
+        placeholder="<div>Dán HTML tương tác…</div>" rows={5} spellCheck={false}
+        className="w-full resize-y rounded-lg bg-[#1e1e2e] p-3 font-mono text-[11px] leading-relaxed text-emerald-200 outline-none" />
+      <div>
+        <p className="mb-1 text-[10px] font-medium text-muted-foreground">Xem trước trực tiếp</p>
+        <HtmlEmbed html={block.content || ""} minHeight={160} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Section Block Editor (gated part marker) ─────────────────── */
+
+function SectionBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
+  return (
+    <div className="p-3" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#0EA5E9]/50 bg-[#0EA5E9]/5 px-3 py-2.5">
+        <SplitSquareVertical className="h-4 w-4 shrink-0 text-[#0EA5E9]" />
+        <input value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
+          placeholder="Tên phần (vd: Chặng 1 · Cảm nhận thời gian)"
+          className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground" />
+      </div>
+      <p className="mt-1.5 text-[10px] text-muted-foreground">
+        Mốc bắt đầu một phần mới. Khi <strong>Preview</strong>, người học phải trả lời đúng hết câu hỏi của phần trước mới sang được phần này.
+      </p>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { builderRoutePattern } from "@/lib/builder-url";
 import { MATERIAL_TYPE_LABELS } from "@/lib/taxonomy";
 import type { ContentItem, MaterialType } from "@/lib/types";
 import { useContent } from "@/stores/content";
@@ -25,12 +26,7 @@ function resolveType(item: ContentItem): MaterialType {
   return item.materialSubtype ?? "document";
 }
 
-function builderTo(base: string, item: ContentItem) {
-  if (item.category === "book") return `${base}/builder/book/$id`;
-  if (item.category === "course") return `${base}/builder/course/$id`;
-  if (item.materialSubtype === "quiz") return `${base}/builder/quiz/$id`;
-  return `${base}/builder/material/$id`;
-}
+const builderTo = builderRoutePattern;
 
 export function ContentCard({ item, scope }: { item: ContentItem; scope: Scope }) {
   const del = useContent((s) => s.deleteItem);
@@ -52,6 +48,8 @@ export function ContentCard({ item, scope }: { item: ContentItem; scope: Scope }
             <Link
               to={builderTo(base, item)}
               params={{ id: item.id }}
+              target="_blank"
+              rel="noopener"
               className="line-clamp-2 text-sm font-semibold text-foreground hover:text-[#2563EB]"
             >
               {item.title}
@@ -77,7 +75,7 @@ export function ContentCard({ item, scope }: { item: ContentItem; scope: Scope }
           <DropdownMenuContent align="end">
             {canEdit && (
               <DropdownMenuItem asChild>
-                <Link to={builderTo(base, item)} params={{ id: item.id }} className="gap-2">
+                <Link to={builderTo(base, item)} params={{ id: item.id }} target="_blank" rel="noopener" className="gap-2">
                   <Pencil className="h-4 w-4" /> Sửa
                 </Link>
               </DropdownMenuItem>

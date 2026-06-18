@@ -30,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { builderHref } from "@/lib/builder-url";
 import { ACCOUNTS, CONTENT_REPORTS, VERIFICATION_REQUESTS } from "@/lib/mock-data";
 import type { CreationCategory, LearningMaterialSubtype, RoleId } from "@/lib/types";
 import { resolveActiveOrgId } from "@/lib/use-scoped-content";
@@ -164,17 +165,13 @@ export function ContentStudioShell() {
     reports: CONTENT_REPORTS.filter((r) => r.status === "open").length,
   };
 
+  // Opening a builder always launches a fresh browser tab (URL = that builder).
+  // zustand's persist writes the new draft to localStorage synchronously, so the
+  // tab we open reads it back immediately.
   const handleCreateCategory = (category: CreationCategory) => {
     if (category === "learning_material") return;
     const id = createDraft(category, createOwnerId, { category });
-    const prefix = scope === "org" ? "/org" : "/creator";
-    navigate({
-      to:
-        category === "book"
-          ? `${prefix}/builder/book/$id`
-          : `${prefix}/builder/course/$id`,
-      params: { id },
-    });
+    window.open(builderHref(scope, { id, category, materialSubtype: undefined }), "_blank", "noopener");
   };
 
   const handleCreateMaterial = (materialSubtype: LearningMaterialSubtype) => {
@@ -182,14 +179,11 @@ export function ContentStudioShell() {
       category: "learning_material",
       materialSubtype,
     });
-    const prefix = scope === "org" ? "/org" : "/creator";
-    navigate({
-      to:
-        materialSubtype === "quiz"
-          ? `${prefix}/builder/quiz/$id`
-          : `${prefix}/builder/material/$id`,
-      params: { id },
-    });
+    window.open(
+      builderHref(scope, { id, category: "learning_material", materialSubtype }),
+      "_blank",
+      "noopener",
+    );
   };
 
   // Builder routes render full-screen.

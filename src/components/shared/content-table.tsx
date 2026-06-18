@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { BookOpen, Eye, FileText, GraduationCap, Library, Pencil, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { builderRoutePattern } from "@/lib/builder-url";
 import { MATERIAL_TYPE_LABELS } from "@/lib/taxonomy";
 import type { ContentItem, MaterialType } from "@/lib/types";
 import { StatusBadge } from "./status-badge";
@@ -31,12 +32,7 @@ const getContentIcon = (item: ContentItem) => {
   return Library;
 };
 
-function builderTo(base: string, item: ContentItem) {
-  if (item.category === "book") return `${base}/builder/book/$id`;
-  if (item.category === "course") return `${base}/builder/course/$id`;
-  if (item.materialSubtype === "quiz") return `${base}/builder/quiz/$id`;
-  return `${base}/builder/material/$id`;
-}
+const builderTo = builderRoutePattern;
 
 export function ContentTable({ items, scope = "creator" }: { items: ContentItem[]; scope?: Scope }) {
   const del = useContent((s) => s.deleteItem);
@@ -121,6 +117,8 @@ export function ContentTable({ items, scope = "creator" }: { items: ContentItem[
                             aria-label={`Sửa ${item.title}`}
                             to={builderTo(base, item)}
                             params={{ id: item.id }}
+                            target="_blank"
+                            rel="noopener"
                           >
                             <Pencil className="h-4 w-4" />
                           </Link>
@@ -244,7 +242,7 @@ function ContentPreviewDialog({
                 Đóng
               </Button>
               <Button asChild size="sm" className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]">
-                <Link to={builderTo(base, item)} params={{ id: item.id }}>
+                <Link to={builderTo(base, item)} params={{ id: item.id }} target="_blank" rel="noopener">
                   <Pencil className="mr-1.5 h-3.5 w-3.5" /> Chỉnh sửa
                 </Link>
               </Button>

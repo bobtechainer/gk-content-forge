@@ -59,50 +59,6 @@ export function VideoEmbed({ src, className }: { src: string; className?: string
   return <video src={src} controls className={cn(base, "bg-black")} />;
 }
 
-/* ─── HTML embed (advanced material) ───────────────────────────────
- * Renders teacher-pasted HTML — an interactive widget, simulation, 3D
- * periodic table, etc. — inside a sandboxed iframe. `sandbox="allow-scripts"`
- * lets the widget's own JS run while denying same-origin access, so embedded
- * markup can never reach the parent app (XSS isolation).
- * ────────────────────────────────────────────────────────────────── */
-
-export function HtmlEmbed({
-  html,
-  height,
-  title,
-  className,
-}: {
-  html: string;
-  height?: number;
-  title?: string;
-  className?: string;
-}) {
-  if (!html.trim()) {
-    return (
-      <div className={cn("rounded-xl border bg-muted/30 py-10 text-center text-sm text-muted-foreground", className)}>
-        🧩 Chưa có nội dung HTML nhúng
-      </div>
-    );
-  }
-  return (
-    <figure className={cn("overflow-hidden rounded-xl border bg-card", className)}>
-      <iframe
-        title={title || "Học liệu tương tác"}
-        srcDoc={html}
-        sandbox="allow-scripts"
-        loading="lazy"
-        className="block w-full border-0"
-        style={{ height: height ?? 480 }}
-      />
-      {title && (
-        <figcaption className="border-t bg-muted/20 px-3 py-1.5 text-center text-xs text-muted-foreground">
-          {title}
-        </figcaption>
-      )}
-    </figure>
-  );
-}
-
 /* ─── Upload + link field (editor only) ───────────────────────────── */
 
 interface MediaUploadFieldProps {
