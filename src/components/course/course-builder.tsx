@@ -63,7 +63,8 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [showBottomStrip, setShowBottomStrip] = useState(true);
-  const [previewMode, setPreviewMode] = useState(false);
+  // Mở builder mặc định ở chế độ Preview (tiện trình diễn demo); bấm "Soạn" để chỉnh sửa.
+  const [previewMode, setPreviewMode] = useState(true);
 
   useEffect(() => { init(id); }, [id, init]);
   useEffect(() => { if (item) setTitle(item.title); }, [item?.id]); // eslint-disable-line
