@@ -29,8 +29,8 @@ const BODY = `
     <div class="tag">thìa MnO₂</div>
   </div>
 
-  <div class="gk-hintbar">Kéo <b>đèn cồn</b> hơ dưới <b>ống A</b>, và thả <b>thìa MnO₂</b> vào <b>ống B</b> để so sánh.</div>
-</div>`;
+</div>
+<div class="gk-hint">Kéo <b>đèn cồn</b> hơ dưới <b>ống A</b>, và thả <b>thìa MnO₂</b> vào <b>ống B</b> để so sánh.</div>`;
 
 const CSS = `
   .tubelab{z-index:4}

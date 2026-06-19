@@ -26,8 +26,8 @@ const BODY = `
     <div class="knob gk-grab" id="h2-knob"></div>
     <div class="ticks"><span>0h</span><span>3h</span><span>6h</span><span>9h</span><span>12h</span></div>
   </div>
-  <div class="gk-hintbar">Kéo nút thời gian để xem H₂O₂ phân huỷ và độ dốc thoải dần.</div>
-</div>`;
+</div>
+<div class="gk-hint">Kéo nút thời gian để xem H₂O₂ phân huỷ và độ dốc thoải dần.</div>`;
 
 const CSS = `
   .note{z-index:4;background:rgba(8,14,28,.62);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px;backdrop-filter:blur(6px)}

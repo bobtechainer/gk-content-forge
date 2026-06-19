@@ -27,8 +27,8 @@ const BODY = `
     <div class="tag">H₂SO₄</div>
   </div>
   <button id="cb-reset" class="gk-pill" style="position:absolute;left:12px;bottom:16px;z-index:4;cursor:pointer">Làm lại</button>
-  <div class="gk-hintbar">Kéo nồng độ rồi <b>thả ống nhỏ giọt vào cốc</b>. Nồng độ càng cao, chữ X biến mất càng nhanh.</div>
-</div>`;
+</div>
+<div class="gk-hint">Kéo nồng độ rồi <b>thả ống nhỏ giọt vào cốc</b>. Nồng độ càng cao, chữ X biến mất càng nhanh.</div>`;
 
 const CSS = `
   .cb-range{width:100%;accent-color:#a78bfa;margin-top:4px}

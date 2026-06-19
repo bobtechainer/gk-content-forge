@@ -20,9 +20,9 @@ const BODY = `
     <div class="gk-ov flasklab" style="right:14px;top:10px;text-align:right">Bình B · đá vôi <b>bột</b><div class="bar"><i id="st-coB"></i></div></div>
     <div class="gk-ov rock gk-grab" id="st-rockA" style="left:30%;bottom:58px"><span class="lump"></span><span class="tag">đá viên</span></div>
     <div class="gk-ov rock gk-grab" id="st-rockB" style="left:62%;bottom:58px"><span class="lump"></span><span class="tag">đá viên</span></div>
-    <div class="gk-ov mortar" id="st-mortar"><span class="bowl"></span><span class="tag">cối — thả đá vào để đập thành bột</span></div>
-    <div class="gk-hintbar">Thả đá vào bình A. Kéo viên còn lại vào <b>cối</b> để đập thành bột rồi thả vào bình B, so sánh tốc độ sủi CO₂.</div>
+    <div class="gk-ov mortar" id="st-mortar"><span class="bowl"></span><span class="tag">cối đập</span></div>
   </div>
+  <div class="gk-hint">Thả đá vào bình A. Kéo viên còn lại vào <b>cối</b> để đập thành bột rồi thả vào bình B, so sánh tốc độ sủi CO₂.</div>
 </div>
 
 <div class="gk-pane" data-p="temp">
@@ -36,8 +36,8 @@ const BODY = `
     <div class="gk-ov" id="st-flame" style="left:46%;bottom:14px" title="Kéo đèn cồn hơ dưới ống nghiệm">
       <div class="lamp2"><span class="fl"></span><span class="body"></span></div><div class="tag">đèn cồn</div>
     </div>
-    <div class="gk-hintbar">Kéo <b>đèn cồn</b> hơ dưới ống nghiệm: phân tử chạy nhanh hơn, màu hồng lan nhanh hơn.</div>
   </div>
+  <div class="gk-hint">Kéo <b>đèn cồn</b> hơ dưới ống nghiệm: phân tử chạy nhanh hơn, màu hồng lan nhanh hơn.</div>
 </div>`;
 
 const CSS = `
