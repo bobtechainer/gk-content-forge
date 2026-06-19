@@ -1,6 +1,6 @@
-/* Chặng 1 — Cảm nhận thời gian. Băng chuyền phản ứng 2.5D: kéo-thả từng dụng cụ
- * (đốt Mg, viên sủi, hũ lên men, đinh sắt gỉ, thạch nhũ) vào đúng nấc thời gian.
- * Đặt đúng thì phản ứng "chạy". HTML/CSS/JS thuần. 100% tiếng Việt. */
+/* Chặng 1 — Khái niệm tốc độ phản ứng. Kéo-thả từng dụng cụ (đốt Mg, viên sủi,
+ * hũ lên men, đinh sắt gỉ, thạch nhũ) vào đúng nấc thời gian trên trục.
+ * Đặt đúng thì phản ứng "chạy". HTML/CSS/JS thuần. */
 export const TIMELINE_SORT_WIDGET = `
 <div id="tl-root">
   <style>
@@ -54,12 +54,12 @@ export const TIMELINE_SORT_WIDGET = `
     @keyframes drip{0%,70%{transform:translate(-50%,0);opacity:0}80%{opacity:1}100%{transform:translate(-50%,18px);opacity:0}}
   </style>
 
-  <h2>Sắp xếp phản ứng theo tốc độ</h2>
-  <p class="sub">Kéo mỗi dụng cụ vào đúng nấc thời gian. Đặt đúng thì phản ứng bắt đầu "chạy".</p>
+  <h2>Phản ứng nhanh hay chậm?</h2>
+  <p class="sub">Kéo từng dụng cụ vào đúng nấc thời gian trên trục. Đặt đúng vị trí thì phản ứng sẽ bắt đầu chạy.</p>
 
   <div class="tray" id="tl-tray"></div>
   <div class="scene"><div class="shelf" id="tl-shelf"></div></div>
-  <div class="done" id="tl-done">Cùng là phản ứng hoá học, nhưng thời gian diễn ra chênh nhau từ vài giây tới hàng thế kỉ. Đó chính là tốc độ phản ứng.</div>
+  <div class="done" id="tl-done">Cùng là phản ứng hoá học, nhưng thời gian diễn ra chênh nhau từ vài giây đến hàng nghìn năm. Sự nhanh chậm đó chính là tốc độ phản ứng.</div>
 
   <script>
     (function(){

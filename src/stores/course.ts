@@ -494,10 +494,10 @@ export const useCourse = create<CourseState>()(
     }),
     {
       name: "gk-course",
-      // v1 replaced the Hóa-10 demo with the "Tốc độ phản ứng" lesson and
-      // dropped the reveal/slider blocks. Wipe any older persisted course data so
-      // every course re-seeds from the new sample on next open.
-      version: 1,
+      // v2 rewrites demo content to match the textbook (Bài 19 — Tốc độ phản ứng,
+      // SGK Kết nối tri thức Hoá 10) with humanized Vietnamese text and updated
+      // quiz questions. Wipe older persisted data so courses re-seed on next open.
+      version: 2,
       // Only the data slice is returned; persist shallow-merges it over the
       // store's actions, so the cast is safe at runtime.
       migrate: () => ({ courseData: {}, activeLessonId: null }) as CourseState,

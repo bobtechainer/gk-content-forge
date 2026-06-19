@@ -1,9 +1,10 @@
 import { threeWidget } from "./three-kit";
 
-/* Chặng 3 — Nồng độ & thuyết va chạm. Thí nghiệm "vạch X":
- * cốc Na2S2O3 đặt trên tấm bìa có chữ X. Kéo ống nhỏ giọt rót H2SO4 -> S kết tủa
- * làm đục dung dịch, chữ X mờ dần rồi biến mất. Nồng độ cao -> nhiều hạt ->
- * va chạm nhiều -> đục nhanh hơn. Na2S2O3 + H2SO4 -> S↓ + SO2 + Na2SO4 + H2O. */
+/* Chặng 3 — Ảnh hưởng của nồng độ đến tốc độ phản ứng.
+ * Thí nghiệm "vạch X" (SGK Hình 19.3): cốc Na2S2O3 đặt trên tấm bìa có chữ X.
+ * Rót H2SO4 vào, S kết tủa làm đục dung dịch, chữ X mờ dần rồi biến mất.
+ * Nồng độ Na2S2O3 càng cao thì chữ X biến mất càng nhanh.
+ * Na2S2O3 + H2SO4 -> Na2SO4 + S↓ + SO2 + H2O. */
 
 const BODY = `
 <div class="gk-stage" style="height:440px">
@@ -28,7 +29,7 @@ const BODY = `
   </div>
   <button id="cb-reset" class="gk-pill" style="position:absolute;left:12px;bottom:16px;z-index:4;cursor:pointer">Làm lại</button>
 </div>
-<div class="gk-hint">Kéo nồng độ rồi <b>thả ống nhỏ giọt vào cốc</b>. Nồng độ càng cao, chữ X biến mất càng nhanh.</div>`;
+<div class="gk-hint">Điều chỉnh nồng độ Na₂S₂O₃ rồi <b>kéo ống nhỏ giọt H₂SO₄ thả vào cốc</b>. Nồng độ càng cao thì lưu huỳnh kết tủa nhanh hơn, chữ X biến mất sớm hơn.</div>`;
 
 const CSS = `
   .cb-range{width:100%;accent-color:#a78bfa;margin-top:4px}
@@ -118,8 +119,8 @@ const SCENE = `
 
 export const COLLISION_BOX_WIDGET = threeWidget({
   id: "cb-x",
-  title: "Nồng độ & thuyết va chạm — thí nghiệm vạch X",
-  subtitle: "Kéo nồng độ Na₂S₂O₃, rồi thả ống nhỏ giọt H₂SO₄ vào cốc: dung dịch đục dần, chữ X biến mất nhanh hơn khi nồng độ cao.",
+  title: "Ảnh hưởng của nồng độ đến tốc độ phản ứng",
+  subtitle: "Thí nghiệm vạch X (SGK Hình 19.3): thay đổi nồng độ Na₂S₂O₃ rồi rót H₂SO₄ vào. Nồng độ càng cao, S kết tủa càng nhanh, chữ X biến mất sớm hơn.",
   css: CSS,
   body: BODY,
   sceneJs: SCENE,

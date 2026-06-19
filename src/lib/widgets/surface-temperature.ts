@@ -1,11 +1,11 @@
 import { threeWidget } from "./three-kit";
 
-/* Chặng 4 — Diện tích bề mặt & nhiệt độ.
- * Tab 1: hai bình tam giác HCl; thả CaCO3 viên vào bình A, kéo viên kia qua cối
- *        đập thành bột rồi thả vào bình B -> bình bột sủi CO2 và phồng bóng nhanh
- *        hơn. CaCO3 + 2HCl -> CaCl2 + CO2 + H2O.
- * Tab 2: ống nghiệm Mg + nước + phenolphthalein; kéo đèn cồn hơ nóng -> màu hồng
- *        lan nhanh, hiện hệ số nhiệt độ γ (×2/×4/×8). */
+/* Chặng 4 — Ảnh hưởng của nhiệt độ và diện tích bề mặt.
+ * Tab 1 (SGK mục 4): hai bình tam giác chứa HCl 0,5 M. Thả CaCO3 dạng viên
+ *        vào bình A, đập nhỏ thành bột rồi thả vào bình B. Bình bột sủi CO2
+ *        nhanh hơn. CaCO3 + 2HCl -> CaCl2 + CO2 + H2O.
+ * Tab 2 (SGK mục 3): ống nghiệm Mg + nước + phenolphthalein; hơ đèn cồn thì
+ *        màu hồng lan nhanh, hiện hệ số nhiệt độ γ (Van't Hoff). */
 
 const BODY = `
 <div class="gk-tabs">
@@ -22,7 +22,7 @@ const BODY = `
     <div class="gk-ov rock gk-grab" id="st-rockB" style="left:62%;bottom:58px"><span class="lump"></span><span class="tag">đá viên</span></div>
     <div class="gk-ov mortar" id="st-mortar"><span class="bowl"></span><span class="tag">cối đập</span></div>
   </div>
-  <div class="gk-hint">Thả đá vào bình A. Kéo viên còn lại vào <b>cối</b> để đập thành bột rồi thả vào bình B, so sánh tốc độ sủi CO₂.</div>
+  <div class="gk-hint">Thả đá vôi dạng viên vào bình A. Kéo viên còn lại vào <b>cối đập nhỏ thành bột</b> rồi thả vào bình B để so sánh tốc độ sủi CO₂.</div>
 </div>
 
 <div class="gk-pane" data-p="temp">
@@ -37,7 +37,7 @@ const BODY = `
       <div class="lamp2"><span class="fl"></span><span class="body"></span></div><div class="tag">đèn cồn</div>
     </div>
   </div>
-  <div class="gk-hint">Kéo <b>đèn cồn</b> hơ dưới ống nghiệm: phân tử chạy nhanh hơn, màu hồng lan nhanh hơn.</div>
+  <div class="gk-hint">Kéo <b>đèn cồn</b> hơ dưới ống nghiệm: phân tử chuyển động nhanh hơn, màu hồng lan rộng hơn. Mỗi lần tăng 10°C, tốc độ nhân đôi.</div>
 </div>`;
 
 const CSS = `
@@ -161,8 +161,8 @@ const SCENE = `
 
 export const SURFACE_TEMP_WIDGET = threeWidget({
   id: "st-lab",
-  title: "Diện tích bề mặt & nhiệt độ",
-  subtitle: "Đá vôi dạng bột phản ứng nhanh hơn dạng viên; và mỗi khi tăng 10°C tốc độ lại nhân đôi.",
+  title: "Ảnh hưởng của nhiệt độ và diện tích bề mặt",
+  subtitle: "Đá vôi dạng bột phản ứng với HCl nhanh hơn dạng viên (do diện tích bề mặt lớn hơn). Mỗi khi tăng 10°C, tốc độ phản ứng lại tăng gấp γ lần.",
   css: CSS,
   body: BODY,
   sceneJs: SCENE,

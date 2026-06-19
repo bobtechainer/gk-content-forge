@@ -1,9 +1,9 @@
 import { threeWidget } from "./three-kit";
 
-/* Chặng 2 — Phân huỷ H2O2 (đồ thị tốc độ trung bình).
- * Cốc H2O2 3D, kéo tay cầm thời gian: H2O2 tách thành H2O + O2, bọt O2 nổi lên
- * (mạnh lúc đầu, yếu dần). Sổ tay vẽ đường cong [H2O2]-t và chạy v = -ΔC/Δt.
- * Số liệu Bảng 19.1. */
+/* Chặng 2 — Tốc độ trung bình của phản ứng phân huỷ H2O2.
+ * Kéo thanh thời gian: H2O2 phân huỷ thành H2O + O2, bọt khí nổi lên
+ * (mạnh lúc đầu, yếu dần). Đồ thị vẽ đường cong nồng độ theo thời gian
+ * và tính v = −ΔC/Δt. Số liệu lấy từ Bảng 19.1 SGK. */
 
 const BODY = `
 <div class="gk-stage" style="height:440px">
@@ -27,7 +27,7 @@ const BODY = `
     <div class="ticks"><span>0h</span><span>3h</span><span>6h</span><span>9h</span><span>12h</span></div>
   </div>
 </div>
-<div class="gk-hint">Kéo nút thời gian để xem H₂O₂ phân huỷ và độ dốc thoải dần.</div>`;
+<div class="gk-hint">Kéo thanh thời gian sang phải để quan sát H₂O₂ phân huỷ dần. Chú ý độ dốc của đồ thị thoải dần, cho thấy tốc độ giảm theo thời gian.</div>`;
 
 const CSS = `
   .note{z-index:4;background:rgba(8,14,28,.62);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px;backdrop-filter:blur(6px)}
@@ -123,8 +123,8 @@ const SCENE = `
 
 export const H2O2_GRAPH_WIDGET = threeWidget({
   id: "h2-beaker",
-  title: "Phân huỷ H₂O₂ — tốc độ giảm dần theo thời gian",
-  subtitle: "Kéo nút thời gian: H₂O₂ tách thành H₂O + O₂, bọt O₂ nổi lên, đồ thị cho thấy độ dốc thoải dần.",
+  title: "Tốc độ trung bình của phản ứng phân huỷ H₂O₂",
+  subtitle: "Kéo thanh thời gian để quan sát nồng độ H₂O₂ giảm dần. Đồ thị cho thấy tốc độ trung bình giảm theo thời gian (Bảng 19.1 SGK).",
   css: CSS,
   body: BODY,
   sceneJs: SCENE,

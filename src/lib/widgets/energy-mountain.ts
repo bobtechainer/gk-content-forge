@@ -1,9 +1,9 @@
 import { threeWidget } from "./three-kit";
 
-/* Chặng 5 — Năng lượng hoạt hoá & xúc tác.
- * Hai ống nghiệm H2O2. Kéo đèn cồn hơ dưới ống A để nạp năng lượng tới ngưỡng
- * Ea thì mới sủi O2. Kéo thìa MnO2 thả vào ống B -> sủi ngay mà không cần đun
- * (xúc tác hạ Ea). 2H2O2 -> 2H2O + O2. */
+/* Chặng 5 — Ảnh hưởng của chất xúc tác đến tốc độ phản ứng.
+ * Hai ống nghiệm chứa H2O2 10%. Đun nóng ống A để nạp năng lượng tới ngưỡng
+ * Ea thì mới sủi O2. Thả thìa MnO2 vào ống B thì phản ứng sủi ngay vì xúc tác
+ * hạ năng lượng hoạt hoá xuống thấp hơn. 2H2O2 -> 2H2O + O2. */
 
 const BODY = `
 <div class="gk-stage" style="height:460px">
@@ -30,7 +30,7 @@ const BODY = `
   </div>
 
 </div>
-<div class="gk-hint">Kéo <b>đèn cồn</b> hơ dưới <b>ống A</b>, và thả <b>thìa MnO₂</b> vào <b>ống B</b> để so sánh.</div>`;
+<div class="gk-hint">Kéo <b>đèn cồn</b> hơ dưới <b>ống A</b> cho đến khi đủ năng lượng hoạt hoá. Thả <b>thìa MnO₂</b> vào <b>ống B</b> để thấy phản ứng xảy ra ngay không cần đun.</div>`;
 
 const CSS = `
   .tubelab{z-index:4}
@@ -135,8 +135,8 @@ const SCENE = `
 
 export const ENERGY_MOUNTAIN_WIDGET = threeWidget({
   id: "em-energy",
-  title: "Năng lượng hoạt hoá & chất xúc tác",
-  subtitle: "Ống A cần đun tới ngưỡng Eₐ mới phản ứng. Ống B chỉ cần thả xúc tác MnO₂ là sủi O₂ ngay.",
+  title: "Ảnh hưởng của chất xúc tác đến tốc độ phản ứng",
+  subtitle: "Ống A cần đun nóng đến ngưỡng năng lượng hoạt hoá mới phản ứng. Ống B chỉ cần thêm xúc tác MnO₂ là phản ứng xảy ra ngay vì năng lượng hoạt hoá được hạ xuống.",
   css: CSS,
   body: BODY,
   sceneJs: SCENE,
