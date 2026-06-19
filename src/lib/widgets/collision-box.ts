@@ -1,124 +1,126 @@
-/* Chặng 3 — "Thuyết va chạm": hộp phân tử động. Tăng nồng độ (số hạt) hoặc giảm
- * thể tích (tăng áp suất) => tần suất va chạm hiệu quả tăng => tốc độ tăng.
- * Canvas + requestAnimationFrame. 100% tiếng Việt. */
-export const COLLISION_BOX_WIDGET = `
-<div id="cb-root">
-  <style>
-    #cb-root{--bg1:#0a0f1f;--bg2:#1a103a;color:#e2e8f0;padding:22px;border-radius:18px;
-      background:radial-gradient(800px 320px at 10% -20%,#6d28d9 0%,transparent 55%),linear-gradient(135deg,var(--bg1),var(--bg2))}
-    #cb-root h2{margin:0 0 2px;font-size:18px;font-weight:800}
-    #cb-root .sub{margin:0 0 14px;font-size:13px;color:#c4b5fd}
-    .cb-wrap{display:flex;gap:18px;flex-wrap:wrap}
-    .cb-stage{flex:1 1 340px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);
-      border-radius:16px;padding:10px;backdrop-filter:blur(8px)}
-    canvas{width:100%;height:auto;display:block;border-radius:12px;background:radial-gradient(circle at 50% 40%,#15193a,#0b0f24)}
-    .cb-side{flex:1 1 220px;display:flex;flex-direction:column;gap:14px;min-width:220px}
-    .ctrl label{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:6px;color:#ddd6fe}
-    .ctrl input[type=range]{width:100%;accent-color:#a78bfa}
-    .gauge{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px}
-    .gauge .k{font-size:12px;color:#c4b5fd}
-    .gbig{font-size:30px;font-weight:800;color:#f0abfc;margin-top:2px}
-    .bar{height:12px;border-radius:8px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:8px}
-    .bar>i{display:block;height:100%;width:10%;border-radius:8px;background:linear-gradient(90deg,#a78bfa,#f0abfc,#f472b6);transition:width .25s}
-    .hint{font-size:12px;color:#c4b5fd;margin-top:8px;line-height:1.5}
-  </style>
+import { threeWidget } from "./three-kit";
 
-  <h2>Hộp va chạm phân tử</h2>
-  <p class="sub">Mỗi lần hai hạt đập vào nhau là một va chạm. Hãy thử thay đổi nồng độ và thể tích.</p>
+/* Chặng 3 — Nồng độ & thuyết va chạm. Thí nghiệm "vạch X":
+ * cốc Na2S2O3 đặt trên tấm bìa có chữ X. Kéo ống nhỏ giọt rót H2SO4 -> S kết tủa
+ * làm đục dung dịch, chữ X mờ dần rồi biến mất. Nồng độ cao -> nhiều hạt ->
+ * va chạm nhiều -> đục nhanh hơn. Na2S2O3 + H2SO4 -> S↓ + SO2 + Na2SO4 + H2O. */
 
-  <div class="cb-wrap">
-    <div class="cb-stage"><canvas id="cb-canvas" width="560" height="320"></canvas></div>
-    <div class="cb-side">
-      <div class="ctrl">
-        <label>Nồng độ (số hạt) <span id="cb-n">26</span></label>
-        <input id="cb-count" type="range" min="6" max="64" value="26">
-      </div>
-      <div class="ctrl">
-        <label>Thể tích bình <span id="cb-vol">100%</span></label>
-        <input id="cb-volr" type="range" min="45" max="100" value="100">
-      </div>
-      <div class="gauge">
-        <div class="k">Tần suất va chạm hiệu quả</div>
-        <div class="gbig"><span id="cb-rate">0</span> <small style="font-size:13px;color:#94a3b8">va chạm/giây</small></div>
-        <div class="bar"><i id="cb-fill"></i></div>
-        <div class="hint" id="cb-hint">Nồng độ cao và thể tích nhỏ đều làm mật độ hạt tăng — va chạm dày hơn.</div>
-      </div>
-    </div>
+const BODY = `
+<div class="gk-stage" style="height:440px">
+  <canvas></canvas>
+
+  <div class="gk-ov read" style="left:12px;top:12px;width:172px">
+    <div class="k">Nồng độ Na₂S₂O₃</div>
+    <input id="cb-conc" type="range" min="30" max="100" value="65" class="cb-range">
+    <div class="k" style="margin-top:8px">Va chạm hiệu quả</div>
+    <div class="v" style="color:#f0abfc"><span id="cb-rate">0</span><small> /s</small></div>
   </div>
 
-  <script>
-    (function(){
-      var cv=document.getElementById('cb-canvas'),ctx=cv.getContext('2d');
-      var W=cv.width,H=cv.height,R=7;
-      var parts=[],vol=1,target=26,collisions=0,flashes=[];
-      function box(){var s=vol; var bw=W*s,bh=H*s; return {x:(W-bw)/2,y:(H-bh)/2,w:bw,h:bh};}
+  <div class="gk-ov read" style="right:12px;top:12px;width:160px;text-align:right">
+    <div class="k">Thời gian X biến mất</div>
+    <div class="v"><span id="cb-time">0,0</span> s</div>
+    <div class="st" id="cb-st">Chưa rót axit</div>
+  </div>
 
-      function rnd(a,b){return a+Math.random()*(b-a);}
-      function build(n){
-        var b=box();parts=[];
-        for(var i=0;i<n;i++){
-          var sp=rnd(1.1,2.0),ang=Math.random()*6.28;
-          parts.push({x:rnd(b.x+R,b.x+b.w-R),y:rnd(b.y+R,b.y+b.h-R),vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:rnd(255,320)});
-        }
-      }
-      build(target);
+  <div class="gk-ov" id="cb-drop" style="left:50%;bottom:14px;transform:translateX(-20px)" title="Kéo ống nhỏ giọt rót H₂SO₄ vào cốc">
+    <div class="dropper"><span class="bulb"></span><span class="tube"></span><span class="bead"></span></div>
+    <div class="tag">H₂SO₄</div>
+  </div>
+  <button id="cb-reset" class="gk-pill" style="position:absolute;left:12px;bottom:16px;z-index:4;cursor:pointer">Làm lại</button>
+</div>
+<div class="gk-hint">Kéo nồng độ rồi <b>thả ống nhỏ giọt vào cốc</b>. Nồng độ càng cao, chữ X biến mất càng nhanh.</div>`;
 
-      function step(){
-        var b=box();
-        // walls
-        for(var i=0;i<parts.length;i++){var p=parts[i];p.x+=p.vx;p.y+=p.vy;
-          if(p.x<b.x+R){p.x=b.x+R;p.vx*=-1;}if(p.x>b.x+b.w-R){p.x=b.x+b.w-R;p.vx*=-1;}
-          if(p.y<b.y+R){p.y=b.y+R;p.vy*=-1;}if(p.y>b.y+b.h-R){p.y=b.y+b.h-R;p.vy*=-1;}
-        }
-        // pair collisions
-        for(var a=0;a<parts.length;a++){for(var c=a+1;c<parts.length;c++){
-          var p=parts[a],q=parts[c],dx=q.x-p.x,dy=q.y-p.y,dist=Math.hypot(dx,dy);
-          if(dist<2*R&&dist>0){
-            var nx=dx/dist,ny=dy/dist;
-            var dvx=p.vx-q.vx,dvy=p.vy-q.vy,rel=dvx*nx+dvy*ny;
-            if(rel>0){
-              p.vx-=rel*nx;p.vy-=rel*ny;q.vx+=rel*nx;q.vy+=rel*ny;
-              var ov=2*R-dist;p.x-=nx*ov/2;p.y-=ny*ov/2;q.x+=nx*ov/2;q.y+=ny*ov/2;
-              collisions++;flashes.push({x:(p.x+q.x)/2,y:(p.y+q.y)/2,life:1});
-            }
-          }
-        }}
-      }
+const CSS = `
+  .cb-range{width:100%;accent-color:#a78bfa;margin-top:4px}
+  .read .st{font-size:12px;font-weight:600;color:#cbd5e1;margin-top:4px}
+  .read .st.go{color:#6ee7b7}
+  #cb-drop{text-align:center;cursor:grab;user-select:none;touch-action:none;z-index:4}
+  #cb-drop:active{cursor:grabbing}
+  .dropper{position:relative;width:22px;height:52px;margin:0 auto}
+  .dropper .bulb{position:absolute;top:0;left:3px;width:16px;height:18px;border-radius:50% 50% 45% 45%;background:linear-gradient(#fca5a5,#ef4444)}
+  .dropper .tube{position:absolute;top:16px;left:9px;width:4px;height:30px;background:linear-gradient(#e2e8f0,#94a3b8)}
+  .dropper .bead{position:absolute;top:44px;left:7px;width:8px;height:8px;border-radius:50%;background:#fde047;box-shadow:0 0 6px #fde047}
+  .tag{font-size:10px;color:#9db4e6;margin-top:2px}
+`;
 
-      function draw(){
-        var b=box();
-        ctx.clearRect(0,0,W,H);
-        // glass box
-        ctx.fillStyle='rgba(167,139,250,.06)';ctx.strokeStyle='rgba(167,139,250,.45)';ctx.lineWidth=2;
-        roundRect(b.x,b.y,b.w,b.h,12);ctx.fill();ctx.stroke();
-        // flashes
-        for(var f=flashes.length-1;f>=0;f--){var fl=flashes[f];fl.life-=0.08;if(fl.life<=0){flashes.splice(f,1);continue;}
-          ctx.beginPath();ctx.arc(fl.x,fl.y,R+10*(1-fl.life),0,6.28);ctx.fillStyle='rgba(244,114,182,'+(fl.life*0.4)+')';ctx.fill();}
-        // particles
-        for(var i=0;i<parts.length;i++){var p=parts[i];
-          var grd=ctx.createRadialGradient(p.x-2,p.y-2,1,p.x,p.y,R+2);
-          grd.addColorStop(0,'hsl('+p.hue+',90%,80%)');grd.addColorStop(1,'hsl('+p.hue+',85%,55%)');
-          ctx.beginPath();ctx.arc(p.x,p.y,R,0,6.28);ctx.fillStyle=grd;ctx.shadowColor='hsl('+p.hue+',90%,65%)';ctx.shadowBlur=10;ctx.fill();ctx.shadowBlur=0;}
-      }
-      function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+const SCENE = `
+  var stage=document.querySelector("#cb-x .gk-stage")||document.querySelector(".gk-stage");
+  var canvas=stage.querySelector("canvas");
+  var S=GK.makeScene(canvas,{camera:[0,1.8,7.4],target:[0,0.9,0]});
 
-      function loop(){step();draw();requestAnimationFrame(loop);}
-      loop();
+  // X card behind the beaker (CanvasTexture)
+  var cx=document.createElement("canvas"); cx.width=256; cx.height=256; var c2=cx.getContext("2d");
+  c2.fillStyle="#fdf6e3"; c2.fillRect(0,0,256,256);
+  c2.strokeStyle="#1f2937"; c2.lineWidth=26; c2.lineCap="round";
+  c2.beginPath(); c2.moveTo(54,54); c2.lineTo(202,202); c2.moveTo(202,54); c2.lineTo(54,202); c2.stroke();
+  var tex=new THREE.CanvasTexture(cx);
+  var card=new THREE.Mesh(new THREE.PlaneGeometry(2.0,2.0),new THREE.MeshBasicMaterial({map:tex}));
+  card.position.set(0,0.05,-0.05); card.rotation.x=-Math.PI/2; S.scene.add(card);
 
-      // rate sampling each second
-      setInterval(function(){
-        var rate=collisions;collisions=0;
-        document.getElementById('cb-rate').textContent=rate;
-        var pct=Math.min(100,Math.round(rate/3));
-        document.getElementById('cb-fill').style.width=Math.max(6,pct)+'%';
-      },1000);
+  // beaker + clouding liquid
+  var beaker=GK.glass(THREE,1.25,1.1,2.0); beaker.position.y=1.0; S.scene.add(beaker);
+  var liqMat=new THREE.MeshStandardMaterial({color:0x86d4ff,transparent:true,opacity:0.16,roughness:0.3});
+  var liq=new THREE.Mesh(new THREE.CylinderGeometry(1.06,1.0,1.5,40),liqMat); liq.position.y=0.78; S.scene.add(liq);
 
-      // controls
-      var cnt=document.getElementById('cb-count'),volr=document.getElementById('cb-volr');
-      cnt.addEventListener('input',function(){target=Number(cnt.value);document.getElementById('cb-n').textContent=target;reflow();});
-      volr.addEventListener('input',function(){vol=Number(volr.value)/100;document.getElementById('cb-vol').textContent=volr.value+'%';clampInside();});
-      function reflow(){var diff=target-parts.length;if(diff>0){var b=box();for(var i=0;i<diff;i++){var sp=rnd(1.1,2.0),ang=Math.random()*6.28;parts.push({x:rnd(b.x+R,b.x+b.w-R),y:rnd(b.y+R,b.y+b.h-R),vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:rnd(255,320)});}}else{parts.splice(target);}}
-      function clampInside(){var b=box();for(var i=0;i<parts.length;i++){var p=parts[i];p.x=Math.max(b.x+R,Math.min(b.x+b.w-R,p.x));p.y=Math.max(b.y+R,Math.min(b.y+b.h-R,p.y));}}
-    })();
-  </script>
-</div>`;
+  // particles (thiosulfate) inside the liquid
+  var pGroup=new THREE.Group(); pGroup.position.y=0.78; S.scene.add(pGroup);
+  var parts=[];
+  function buildParticles(n){
+    while(parts.length<n){ var m=GK.atom(THREE,0.07,0xfff0a6);
+      m.userData={vx:(Math.random()-0.5)*0.9,vy:(Math.random()-0.5)*0.9,vz:(Math.random()-0.5)*0.9};
+      m.position.set((Math.random()-0.5)*1.6,(Math.random()-0.5)*1.2,(Math.random()-0.5)*1.6); pGroup.add(m); parts.push(m); }
+    for(var i=0;i<parts.length;i++){ parts[i].visible=i<n; }
+  }
+
+  var conc=0.65, reacting=false, cloud=0, timer=0, doneT=null, collide=0, rateShown=0;
+  var elRate=document.getElementById("cb-rate"),elTime=document.getElementById("cb-time"),elSt=document.getElementById("cb-st");
+  var concEl=document.getElementById("cb-conc");
+  concEl.addEventListener("input",function(){ conc=Number(concEl.value)/100; });
+
+  // dropper drag -> pour acid when released over the beaker
+  var drop=document.getElementById("cb-drop");
+  (function(){ var ox=0,oy=0,sx=0,sy=0,d=false;
+    drop.addEventListener("pointerdown",function(e){d=true;drop.setPointerCapture(e.pointerId);
+      var r=drop.getBoundingClientRect(),sr=stage.getBoundingClientRect();ox=r.left-sr.left;oy=r.top-sr.top;sx=e.clientX;sy=e.clientY;drop.style.transform="none";});
+    drop.addEventListener("pointermove",function(e){ if(!d)return; drop.style.left=(ox+e.clientX-sx)+"px"; drop.style.top=(oy+e.clientY-sy)+"px"; drop.style.bottom="auto"; });
+    drop.addEventListener("pointerup",function(){ d=false; var r=drop.getBoundingClientRect(),sr=stage.getBoundingClientRect();
+      var px=(r.left-sr.left)+r.width/2, py=(r.top-sr.top)+r.height/2, w=stage.clientWidth,h=stage.clientHeight;
+      if(!reacting && Math.abs(px-w/2)<w*0.28 && py<h*0.6){ reacting=true; elSt.textContent="Đang phản ứng — S kết tủa…"; }
+    });
+  })();
+
+  document.getElementById("cb-reset").addEventListener("click",function(){ reacting=false;cloud=0;timer=0;doneT=null;elSt.textContent="Chưa rót axit";elSt.className="st";elTime.textContent="0,0"; });
+
+  buildParticles(Math.round(conc*36));
+  S.start(function(dt){
+    var n=Math.round(conc*36); buildParticles(n);
+    // move particles + count collisions
+    collide=0;
+    for(var i=0;i<n;i++){ var p=parts[i],u=p.userData; p.position.x+=u.vx*dt; p.position.y+=u.vy*dt; p.position.z+=u.vz*dt;
+      var rad=Math.sqrt(p.position.x*p.position.x+p.position.z*p.position.z);
+      if(rad>1.0){ u.vx*=-1; u.vz*=-1; } if(Math.abs(p.position.y)>0.7){ u.vy*=-1; }
+    }
+    for(var a=0;a<n;a++)for(var b=a+1;b<n;b++){ var pa=parts[a],pb=parts[b];
+      var dx=pa.position.x-pb.position.x,dy=pa.position.y-pb.position.y,dz=pa.position.z-pb.position.z;
+      if(dx*dx+dy*dy+dz*dz<0.05){ collide++; } }
+    var rate=Math.round(collide*conc*6);
+    rateShown+=(rate-rateShown)*0.2; elRate.textContent=Math.round(rateShown);
+
+    if(reacting && cloud<1){ cloud=Math.min(1,cloud+dt*(0.12+conc*0.5)); timer+=dt;
+      if(cloud>=0.85 && doneT==null){ doneT=timer; elSt.textContent="Chữ X đã biến mất!"; elSt.className="st go"; } }
+    if(doneT==null){ elTime.textContent=timer.toFixed(1).replace(".",","); }
+    // cloudiness: liquid opacity up, colour to milky sulfur-yellow
+    liqMat.opacity=0.16+cloud*0.8;
+    liqMat.color.setRGB(0.52+0.4*cloud, 0.83+0.05*cloud, 1.0-0.55*cloud);
+    pGroup.rotation.y+=dt*0.2;
+  });
+`;
+
+export const COLLISION_BOX_WIDGET = threeWidget({
+  id: "cb-x",
+  title: "Nồng độ & thuyết va chạm — thí nghiệm vạch X",
+  subtitle: "Kéo nồng độ Na₂S₂O₃, rồi thả ống nhỏ giọt H₂SO₄ vào cốc: dung dịch đục dần, chữ X biến mất nhanh hơn khi nồng độ cao.",
+  css: CSS,
+  body: BODY,
+  sceneJs: SCENE,
+});

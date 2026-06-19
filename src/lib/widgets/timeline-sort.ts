@@ -1,128 +1,103 @@
-/* Chặng 1 — "Cảm nhận thời gian": kéo-thả các hiện tượng vào đúng nấc thời gian.
- * HTML tự chứa, nhúng qua block "html". 100% tiếng Việt. */
+/* Chặng 1 — Cảm nhận thời gian. Băng chuyền phản ứng 2.5D: kéo-thả từng dụng cụ
+ * (đốt Mg, viên sủi, hũ lên men, đinh sắt gỉ, thạch nhũ) vào đúng nấc thời gian.
+ * Đặt đúng thì phản ứng "chạy". HTML/CSS/JS thuần. 100% tiếng Việt. */
 export const TIMELINE_SORT_WIDGET = `
 <div id="tl-root">
   <style>
-    #tl-root{--bg1:#0f172a;--bg2:#1e1b4b;--glass:rgba(255,255,255,.08);--line:rgba(255,255,255,.16);
-      background:radial-gradient(1200px 400px at 20% -10%,#3730a3 0%,transparent 60%),linear-gradient(135deg,var(--bg1),var(--bg2));
-      color:#e2e8f0;padding:22px;border-radius:18px;overflow:hidden}
-    #tl-root *{font-family:inherit}
-    #tl-root h2{margin:0 0 2px;font-size:18px;font-weight:800;letter-spacing:.2px}
-    #tl-root .sub{margin:0 0 16px;font-size:13px;color:#a5b4fc}
-    .tray{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;min-height:54px}
-    .chip{cursor:grab;user-select:none;padding:10px 14px;border-radius:14px;font-size:13px;font-weight:600;
-      background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
-      box-shadow:0 4px 16px rgba(0,0,0,.25);transition:transform .18s,box-shadow .18s,opacity .2s;display:flex;align-items:center;gap:8px}
-    .chip .ico{font-size:18px}
-    .chip:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 10px 24px rgba(99,102,241,.35)}
-    .chip.dragging{opacity:.35}
-    .chip.placed{cursor:default}
-    .chip.shake{animation:shake .45s}
-    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
-    .axis{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-    .axis::before{content:"";position:absolute;left:0;right:0;top:18px;height:3px;border-radius:3px;
-      background:linear-gradient(90deg,#22d3ee,#818cf8,#f472b6)}
-    .zone{position:relative;padding-top:34px}
-    .dot{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:14px;height:14px;border-radius:50%;
-      background:#0f172a;border:3px solid #818cf8;box-shadow:0 0 0 4px rgba(129,140,248,.18)}
-    .slot{min-height:96px;border-radius:14px;border:1.5px dashed var(--line);background:rgba(255,255,255,.04);
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;text-align:center;transition:.2s}
-    .slot .lab{font-size:12px;font-weight:700;color:#c7d2fe}
-    .slot.over{border-color:#22d3ee;background:rgba(34,211,238,.12);transform:scale(1.03)}
-    .slot.correct{border-style:solid;border-color:#34d399;background:rgba(52,211,153,.14);animation:pop .4s}
-    @keyframes pop{0%{transform:scale(.85)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+    #tl-root{--ink:#e6eefb;color:var(--ink);padding:20px;border-radius:18px;font-family:inherit;
+      background:radial-gradient(1000px 360px at 80% -15%,#3a2f6b 0%,transparent 60%),linear-gradient(150deg,#0c1126,#181433)}
+    #tl-root h2{margin:0 0 2px;font-size:18px;font-weight:800}
+    #tl-root .sub{margin:0 0 14px;font-size:13px;color:#b7a6ee}
+    .tray{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:18px;min-height:88px}
+    .vessel{width:84px;cursor:grab;user-select:none;transition:transform .18s,filter .18s;will-change:transform}
+    .vessel:hover{transform:translateY(-4px) scale(1.04);filter:drop-shadow(0 8px 18px rgba(124,99,230,.4))}
+    .vessel.dragging{opacity:.4}.vessel.placed{cursor:default}
+    .vessel.shake{animation:shk .45s}
+    @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+    .vessel .art{height:64px;display:flex;align-items:flex-end;justify-content:center}
+    .vessel .name{font-size:10.5px;text-align:center;color:#cbd5e1;margin-top:4px;line-height:1.2}
+    .scene{perspective:1000px}
+    .shelf{transform:rotateX(16deg);transform-style:preserve-3d;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;
+      padding:14px 10px 8px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.12)}
+    .slot{position:relative;min-height:120px;border-radius:12px;border:1.5px dashed rgba(255,255,255,.16);
+      background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:8px;transition:.2s}
+    .slot.over{border-color:#a78bfa;background:rgba(167,139,250,.14);transform:translateZ(14px)}
+    .slot.correct{border-style:solid;border-color:#34d399;background:rgba(52,211,153,.12)}
+    .slot .lab{font-size:11px;font-weight:700;color:#c7b8f5;margin-top:6px;text-align:center}
     .slot.correct .lab{color:#6ee7b7}
-    .done{margin-top:16px;padding:14px 16px;border-radius:14px;font-size:14px;font-weight:600;text-align:center;
-      background:linear-gradient(135deg,rgba(52,211,153,.2),rgba(34,211,238,.16));border:1px solid rgba(52,211,153,.4);
-      color:#d1fae5;opacity:0;transform:translateY(8px);transition:.4s}
-    .done.show{opacity:1;transform:none}
-    .spark{position:absolute;width:8px;height:8px;border-radius:2px;pointer-events:none}
+    .done{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:13px;font-weight:600;text-align:center;
+      background:linear-gradient(135deg,rgba(52,211,153,.18),rgba(124,99,230,.16));border:1px solid rgba(52,211,153,.4);color:#d1fae5;opacity:0;transition:.4s}
+    .done.show{opacity:1}
+    /* glassware + reactions */
+    .tube{width:24px;height:54px;border:2px solid rgba(226,232,240,.55);border-top:none;border-radius:0 0 12px 12px;position:relative;overflow:hidden;background:rgba(255,255,255,.05)}
+    .tube .liq{position:absolute;left:0;right:0;bottom:0;height:60%;background:linear-gradient(#9fd8ff,#5fb4ef)}
+    .beaker{width:40px;height:46px;border:2px solid rgba(226,232,240,.55);border-top:none;border-radius:0 0 9px 9px;position:relative;overflow:hidden;background:rgba(255,255,255,.05)}
+    .beaker .liq{position:absolute;left:0;right:0;bottom:0;height:62%}
+    .bub{position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.85);bottom:6px;opacity:0}
+    .mg{position:relative;width:34px;height:50px}
+    .mg .strip{position:absolute;left:14px;bottom:0;width:5px;height:46px;background:linear-gradient(#cfd6e0,#9aa3b0);border-radius:2px}
+    .nail{position:absolute;left:9px;bottom:4px;width:5px;height:42px;background:linear-gradient(#b9c0cc,#7c8492);border-radius:2px}
+    .rust{position:absolute;left:9px;bottom:4px;width:5px;height:0;background:linear-gradient(#b45309,#f59e0b);border-radius:2px;transition:height 2.6s ease}
+    .stal{position:relative;width:40px;height:54px}
+    .stal .rock{position:absolute;top:0;left:0;right:0;height:14px;background:linear-gradient(#6b7280,#4b5563);border-radius:6px 6px 40% 40%}
+    .stal .icicle{position:absolute;top:12px;left:50%;width:6px;height:26px;transform:translateX(-50%);background:linear-gradient(#9ca3af,#d1d5db);clip-path:polygon(0 0,100% 0,50% 100%)}
+    .stal .drop{position:absolute;top:36px;left:50%;width:5px;height:5px;border-radius:50%;background:#bfe9ff;transform:translateX(-50%);opacity:0}
+    .placed .flash{position:absolute;inset:-6px;border-radius:50%;background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%);opacity:0}
+    .run .flash{animation:flash 1.2s infinite}
+    @keyframes flash{0%,100%{opacity:0}45%{opacity:.95}}
+    .run.r-fast .bub{animation:rise .9s linear infinite}
+    .run.r-mid .bub{animation:rise 1.8s linear infinite}
+    .run.r-slow .bub{animation:rise 3.2s linear infinite}
+    @keyframes rise{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(-38px);opacity:0}}
+    .run .rust{height:38px}
+    .run .drop{animation:drip 3.4s linear infinite}
+    @keyframes drip{0%,70%{transform:translate(-50%,0);opacity:0}80%{opacity:1}100%{transform:translate(-50%,18px);opacity:0}}
   </style>
 
-  <h2>Sắp xếp theo tốc độ</h2>
-  <p class="sub">Kéo mỗi hiện tượng vào nấc thời gian mà phản ứng của nó thường diễn ra. Sai thì thẻ sẽ bật về chỗ cũ.</p>
+  <h2>Sắp xếp phản ứng theo tốc độ</h2>
+  <p class="sub">Kéo mỗi dụng cụ vào đúng nấc thời gian. Đặt đúng thì phản ứng bắt đầu "chạy".</p>
 
   <div class="tray" id="tl-tray"></div>
-
-  <div class="axis" id="tl-axis"></div>
-
-  <div class="done" id="tl-done">Tuyệt vời! Cùng một phản ứng hoá học nhưng thời gian diễn ra chênh nhau hàng tỉ lần — đó chính là tốc độ phản ứng.</div>
+  <div class="scene"><div class="shelf" id="tl-shelf"></div></div>
+  <div class="done" id="tl-done">Cùng là phản ứng hoá học, nhưng thời gian diễn ra chênh nhau từ vài giây tới hàng thế kỉ. Đó chính là tốc độ phản ứng.</div>
 
   <script>
     (function(){
-      var root=document.getElementById('tl-root');
-      var ZONES=[
-        {id:'giay',lab:'Vài giây'},
-        {id:'gio',lab:'Vài giờ'},
-        {id:'ngay',lab:'Vài ngày'},
-        {id:'nam',lab:'Vài tháng – năm'},
-        {id:'theky',lab:'Hàng thế kỉ'}
-      ];
+      var ZONES=[{id:"giay",lab:"Vài giây"},{id:"gio",lab:"Vài giờ"},{id:"ngay",lab:"Vài ngày"},{id:"nam",lab:"Vài tháng – năm"},{id:"ky",lab:"Hàng thế kỉ"}];
+      var ART={
+        mg:'<div class="mg"><span class="flash"></span><span class="strip"></span></div>',
+        sui:'<div class="beaker"><span class="liq" style="background:linear-gradient(#bbf7d0,#86efac)"></span><span class="bub" style="left:10px"></span><span class="bub" style="left:20px;animation-delay:.4s"></span><span class="bub" style="left:28px;animation-delay:.8s"></span></div>',
+        lenmen:'<div class="beaker"><span class="liq" style="background:linear-gradient(#fde68a,#fbbf24)"></span><span class="bub" style="left:12px"></span><span class="bub" style="left:24px;animation-delay:1s"></span></div>',
+        gi:'<div class="tube"><span class="liq" style="opacity:.5"></span><span class="nail"></span><span class="rust"></span></div>',
+        stal:'<div class="stal"><span class="rock"></span><span class="icicle"></span><span class="drop"></span></div>'
+      };
       var ITEMS=[
-        {id:'phaohoa',ico:'\\uD83C\\uDF86',name:'Đốt pháo hoa',zone:'giay'},
-        {id:'tieuhoa',ico:'\\uD83C\\uDF5C',name:'Tiêu hoá thức ăn',zone:'gio'},
-        {id:'muoidua',ico:'\\uD83E\\uDD52',name:'Muối dưa (lên men)',zone:'ngay'},
-        {id:'satgi',ico:'\\uD83D\\uDD29',name:'Sắt bị gỉ',zone:'nam'},
-        {id:'thachnhu',ico:'\\uD83D\\uDD7D',name:'Tạo thạch nhũ',zone:'theky'}
+        {id:"mg",name:"Đốt băng Mg",zone:"giay",art:ART.mg,run:"r-fast"},
+        {id:"sui",name:"Viên sủi tan",zone:"gio",art:ART.sui,run:"r-mid"},
+        {id:"lenmen",name:"Hũ lên men dưa",zone:"ngay",art:ART.lenmen,run:"r-slow"},
+        {id:"gi",name:"Đinh sắt bị gỉ",zone:"nam",art:ART.gi,run:""},
+        {id:"stal",name:"Thạch nhũ nhỏ giọt",zone:"ky",art:ART.stal,run:""}
       ];
-      var axis=document.getElementById('tl-axis');
-      var tray=document.getElementById('tl-tray');
-      var done=document.getElementById('tl-done');
-      var placed=0;
-      var dragId=null;
-
-      ZONES.forEach(function(z){
-        var col=document.createElement('div');col.className='zone';
-        col.innerHTML='<div class="dot"></div>';
-        var slot=document.createElement('div');slot.className='slot';slot.dataset.zone=z.id;
+      var tray=document.getElementById("tl-tray"),shelf=document.getElementById("tl-shelf"),done=document.getElementById("tl-done");
+      var dragId=null,placed=0;
+      ZONES.forEach(function(z){ var slot=document.createElement("div"); slot.className="slot"; slot.dataset.zone=z.id;
         slot.innerHTML='<div class="lab">'+z.lab+'</div>';
-        slot.addEventListener('dragover',function(e){e.preventDefault();slot.classList.add('over');});
-        slot.addEventListener('dragleave',function(){slot.classList.remove('over');});
-        slot.addEventListener('drop',function(e){e.preventDefault();slot.classList.remove('over');drop(z.id,slot);});
-        col.appendChild(slot);axis.appendChild(col);
-      });
-
-      function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-
-      shuffle(ITEMS.slice()).forEach(function(it){
-        var c=document.createElement('div');c.className='chip';c.draggable=true;c.dataset.id=it.id;
-        c.innerHTML='<span class="ico">'+it.ico+'</span>'+it.name;
-        c.addEventListener('dragstart',function(){dragId=it.id;c.classList.add('dragging');});
-        c.addEventListener('dragend',function(){c.classList.remove('dragging');});
-        tray.appendChild(c);
-      });
-
-      function drop(zoneId,slot){
-        if(!dragId)return;
-        var it=ITEMS.filter(function(x){return x.id===dragId;})[0];
-        var chip=tray.querySelector('[data-id="'+dragId+'"]');
-        if(!it||!chip)return;
-        if(it.zone===zoneId){
-          chip.classList.add('placed');chip.draggable=false;
-          slot.innerHTML='';slot.appendChild(chip);
-          var lab=document.createElement('div');lab.className='lab';lab.textContent=ZONES.filter(function(z){return z.id===zoneId;})[0].lab;
-          slot.appendChild(lab);slot.classList.add('correct');
-          burst(slot);placed++;
-          if(placed===ITEMS.length){done.classList.add('show');}
-        }else{
-          chip.classList.add('shake');setTimeout(function(){chip.classList.remove('shake');},480);
-        }
+        slot.addEventListener("dragover",function(e){e.preventDefault();slot.classList.add("over");});
+        slot.addEventListener("dragleave",function(){slot.classList.remove("over");});
+        slot.addEventListener("drop",function(e){e.preventDefault();slot.classList.remove("over");drop(z.id,slot);});
+        shelf.appendChild(slot); });
+      function shuffle(a){for(var i=a.length-1;i>0;i--){var j=(Math.random()*(i+1))|0;var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+      shuffle(ITEMS.slice()).forEach(function(it){ var v=document.createElement("div"); v.className="vessel"; v.draggable=true; v.dataset.id=it.id;
+        v.innerHTML='<div class="art">'+it.art+'</div><div class="name">'+it.name+'</div>';
+        v.addEventListener("dragstart",function(){dragId=it.id;v.classList.add("dragging");});
+        v.addEventListener("dragend",function(){v.classList.remove("dragging");});
+        tray.appendChild(v); });
+      function drop(zoneId,slot){ if(!dragId)return; var it=ITEMS.filter(function(x){return x.id===dragId;})[0];
+        var v=tray.querySelector('[data-id="'+dragId+'"]'); if(!it||!v)return;
+        if(it.zone===zoneId){ v.classList.add("placed","run"); if(it.run)v.classList.add(it.run); v.draggable=false;
+          slot.insertBefore(v,slot.firstChild); slot.classList.add("correct"); placed++; if(placed===ITEMS.length)done.classList.add("show"); }
+        else { v.classList.add("shake"); setTimeout(function(){v.classList.remove("shake");},470); }
         dragId=null;
-      }
-
-      function burst(el){
-        var r=el.getBoundingClientRect(),rr=root.getBoundingClientRect();
-        var cx=r.left-rr.left+r.width/2,cy=r.top-rr.top+r.height/2;
-        var cols=['#34d399','#22d3ee','#818cf8','#f472b6'];
-        for(var i=0;i<14;i++){(function(i){
-          var s=document.createElement('div');s.className='spark';
-          s.style.left=cx+'px';s.style.top=cy+'px';s.style.background=cols[i%cols.length];
-          root.appendChild(s);
-          var ang=Math.random()*6.28,dist=30+Math.random()*46;
-          var ex=cx+Math.cos(ang)*dist,ey=cy+Math.sin(ang)*dist;
-          s.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+(ex-cx)+'px,'+(ey-cy)+'px) scale(0)',opacity:0}],{duration:600+Math.random()*300,easing:'cubic-bezier(.2,.7,.3,1)'});
-          setTimeout(function(){s.remove();},900);
-        })(i);}
       }
     })();
   </script>
