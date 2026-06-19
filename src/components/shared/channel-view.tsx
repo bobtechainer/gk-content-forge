@@ -72,7 +72,7 @@ export function ChannelView({ scope }: { scope: StudioScope }) {
       <div
         className="h-32 w-full sm:h-40 md:h-56"
         style={{
-          background: `linear-gradient(120deg, ${account.avatarColor}, #2563EB)`,
+          background: `linear-gradient(120deg, ${account.avatarColor}, var(--primary))`,
         }}
       />
       <div className="px-4 sm:px-6 md:px-8">
@@ -85,7 +85,7 @@ export function ChannelView({ scope }: { scope: StudioScope }) {
             >
               {account.shortName}
             </div>
-            <div className="pb-1">
+            <div className="pb-1 pt-3 sm:pt-4">
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-foreground sm:text-xl md:text-2xl">
                   {account.name}
@@ -105,7 +105,7 @@ export function ChannelView({ scope }: { scope: StudioScope }) {
           <div className="flex gap-2 pb-1">
             <Button
               variant={following ? "outline" : "default"}
-              className={following ? "" : "bg-[#2563EB] text-white hover:bg-[#1d4ed8]"}
+              className={following ? "" : "bg-primary text-white hover:bg-primary-hover"}
               onClick={() => setFollowing((v) => !v)}
             >
               {following ? "Đang theo dõi" : "Theo dõi"}
@@ -123,7 +123,7 @@ export function ChannelView({ scope }: { scope: StudioScope }) {
             href={account.website}
             target="_blank"
             rel="noreferrer"
-            className="mt-1 inline-flex items-center gap-1 text-sm text-[#2563EB] hover:underline"
+            className="mt-1 inline-flex items-center gap-1 text-sm text-primary hover:underline"
           >
             <Globe className="h-3.5 w-3.5" /> {account.website.replace(/^https?:\/\//, "")}
           </a>
@@ -154,7 +154,7 @@ export function ChannelView({ scope }: { scope: StudioScope }) {
                         className={cn(
                           "whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
                           typeFilter === f.value
-                            ? "border-[#2563EB] bg-[#2563EB] text-white"
+                            ? "border-primary bg-primary text-white"
                             : "border-border bg-card text-muted-foreground hover:border-muted-foreground/40",
                         )}
                       >
@@ -217,7 +217,7 @@ function ChannelTabButton({
       className={cn(
         "-mb-px border-b-2 pb-2.5 text-sm font-medium transition",
         active
-          ? "border-[#2563EB] text-foreground"
+          ? "border-primary text-foreground"
           : "border-transparent text-muted-foreground hover:text-foreground",
       )}
     >
@@ -259,7 +259,7 @@ export function ChannelEditView({ scope }: { scope: StudioScope }) {
               <button
                 type="button"
                 onClick={() => toast.info("Mở hộp thoại tải & cắt ảnh bìa (demo)")}
-                className="flex h-28 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 text-sm text-muted-foreground hover:border-[#2563EB]"
+                className="flex h-28 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 text-sm text-muted-foreground hover:border-primary"
               >
                 <ImagePlus className="h-5 w-5" /> Tải ảnh bìa
               </button>
@@ -267,7 +267,7 @@ export function ChannelEditView({ scope }: { scope: StudioScope }) {
             <div className="flex items-center gap-4">
               <div
                 className="flex h-16 w-16 items-center justify-center rounded-full text-lg font-bold text-white"
-                style={{ backgroundColor: account?.avatarColor ?? "#2563EB" }}
+                style={{ backgroundColor: account?.avatarColor ?? "var(--primary)" }}
               >
                 {account?.shortName}
               </div>
@@ -305,7 +305,7 @@ export function ChannelEditView({ scope }: { scope: StudioScope }) {
                 <p className="mt-1 text-xs text-muted-foreground">
                   Mời, phân quyền Owner / Manager / Editor cho kênh tổ chức.
                 </p>
-                <Button variant="link" className="h-auto p-0 text-[#2563EB]" asChild>
+                <Button variant="link" className="h-auto p-0 text-primary" asChild>
                   <Link to="/org/members">Mở trang quản lý thành viên →</Link>
                 </Button>
               </div>
@@ -319,7 +319,7 @@ export function ChannelEditView({ scope }: { scope: StudioScope }) {
                 <Link to={viewTo}>Xem trước ↗</Link>
               </Button>
               <Button
-                className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+                className="bg-primary text-white hover:bg-primary-hover"
                 onClick={() => toast.success("Đã lưu thay đổi kênh")}
               >
                 Lưu thay đổi
@@ -370,10 +370,10 @@ function PinRow({
       onClick={onToggle}
       className={cn(
         "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition",
-        pinned ? "border-[#2563EB] bg-accent" : "border-border hover:bg-muted/40",
+        pinned ? "border-primary bg-accent" : "border-border hover:bg-muted/40",
       )}
     >
-      <Pin className={cn("h-4 w-4", pinned ? "text-[#2563EB]" : "text-muted-foreground")} />
+      <Pin className={cn("h-4 w-4", pinned ? "text-primary" : "text-muted-foreground")} />
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
         {item.title}
       </span>

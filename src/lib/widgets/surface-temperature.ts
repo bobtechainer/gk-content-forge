@@ -1,10 +1,10 @@
 import { threeWidget } from "./three-kit";
 
 /* Chặng 4 — Ảnh hưởng của nhiệt độ và diện tích bề mặt.
- * Tab 1 (SGK mục 4): hai bình tam giác chứa HCl 0,5 M. Thả CaCO3 dạng viên
+ * Tab 1: hai bình tam giác chứa HCl 0,5 M. Thả CaCO3 dạng viên
  *        vào bình A, đập nhỏ thành bột rồi thả vào bình B. Bình bột sủi CO2
  *        nhanh hơn. CaCO3 + 2HCl -> CaCl2 + CO2 + H2O.
- * Tab 2 (SGK mục 3): ống nghiệm Mg + nước + phenolphthalein; hơ đèn cồn thì
+ * Tab 2: ống nghiệm Mg + nước + phenolphthalein; hơ đèn cồn thì
  *        màu hồng lan nhanh, hiện hệ số nhiệt độ γ (Van't Hoff). */
 
 const BODY = `

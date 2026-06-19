@@ -1,7 +1,7 @@
 import { threeWidget } from "./three-kit";
 
 /* Chặng 3 — Ảnh hưởng của nồng độ đến tốc độ phản ứng.
- * Thí nghiệm "vạch X" (SGK Hình 19.3): cốc Na2S2O3 đặt trên tấm bìa có chữ X.
+ * Thí nghiệm "vạch X": cốc Na2S2O3 đặt trên tấm bìa có chữ X.
  * Rót H2SO4 vào, S kết tủa làm đục dung dịch, chữ X mờ dần rồi biến mất.
  * Nồng độ Na2S2O3 càng cao thì chữ X biến mất càng nhanh.
  * Na2S2O3 + H2SO4 -> Na2SO4 + S↓ + SO2 + H2O. */
@@ -120,7 +120,7 @@ const SCENE = `
 export const COLLISION_BOX_WIDGET = threeWidget({
   id: "cb-x",
   title: "Ảnh hưởng của nồng độ đến tốc độ phản ứng",
-  subtitle: "Thí nghiệm vạch X (SGK Hình 19.3): thay đổi nồng độ Na₂S₂O₃ rồi rót H₂SO₄ vào. Nồng độ càng cao, S kết tủa càng nhanh, chữ X biến mất sớm hơn.",
+  subtitle: "Thí nghiệm vạch X: thay đổi nồng độ Na₂S₂O₃ rồi rót H₂SO₄ vào. Nồng độ càng cao, S kết tủa càng nhanh, chữ X biến mất sớm hơn.",
   css: CSS,
   body: BODY,
   sceneJs: SCENE,

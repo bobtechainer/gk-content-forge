@@ -3,7 +3,7 @@ import { threeWidget } from "./three-kit";
 /* Chặng 2 — Tốc độ trung bình của phản ứng phân huỷ H2O2.
  * Kéo thanh thời gian: H2O2 phân huỷ thành H2O + O2, bọt khí nổi lên
  * (mạnh lúc đầu, yếu dần). Đồ thị vẽ đường cong nồng độ theo thời gian
- * và tính v = −ΔC/Δt. Số liệu lấy từ Bảng 19.1 SGK. */
+ * và tính v = −ΔC/Δt. */
 
 const BODY = `
 <div class="gk-stage" style="height:440px">
@@ -124,7 +124,7 @@ const SCENE = `
 export const H2O2_GRAPH_WIDGET = threeWidget({
   id: "h2-beaker",
   title: "Tốc độ trung bình của phản ứng phân huỷ H₂O₂",
-  subtitle: "Kéo thanh thời gian để quan sát nồng độ H₂O₂ giảm dần. Đồ thị cho thấy tốc độ trung bình giảm theo thời gian (Bảng 19.1 SGK).",
+  subtitle: "Kéo thanh thời gian để quan sát nồng độ H₂O₂ giảm dần. Đồ thị cho thấy tốc độ trung bình giảm theo thời gian.",
   css: CSS,
   body: BODY,
   sceneJs: SCENE,
