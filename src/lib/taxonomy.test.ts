@@ -10,6 +10,7 @@ import {
   getCreationLabel,
   getDefaultAppPath,
   getMaterialZone,
+  getRoleHomePath,
 } from "./taxonomy";
 
 describe("Content Studio v2 taxonomy", () => {
@@ -67,5 +68,17 @@ describe("Content Studio v2 taxonomy", () => {
     expect(getDefaultAppPath("personal")).toBe("/creator/dashboard");
     expect(getDefaultAppPath("organization")).toBe("/org/dashboard");
     expect(getDefaultAppPath("admin")).toBe("/admin/dashboard");
+  });
+
+  test("getRoleHomePath đưa từng vai trò về màn mặc định", () => {
+    expect(getRoleHomePath("admin")).toBe("/admin/dashboard");
+    expect(getRoleHomePath("teacher")).toBe("/creator/dashboard");
+    expect(getRoleHomePath("verified_teacher")).toBe("/creator/dashboard");
+    expect(getRoleHomePath("publisher")).toBe("/org/dashboard");
+    expect(getRoleHomePath("reviewer")).toBe("/reviewer/queue");
+    expect(getRoleHomePath("student")).toBe("/student/home");
+    expect(getRoleHomePath("school")).toBe("/school/dashboard");
+    // Tổ trưởng nay là tài khoản giáo viên (schoolRole "dept_head"); nhà trường chỉ còn vai trò quản lý.
+    expect(getRoleHomePath("teacher", "dept_head")).toBe("/creator/dashboard");
   });
 });

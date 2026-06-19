@@ -1,20 +1,25 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  Award,
   BadgeCheck,
   BarChart3,
   Bell,
   Building2,
   ChevronsUpDown,
+  ClipboardCheck,
   FileCheck2,
+  FolderTree,
   Home,
   Library,
+  LineChart,
   Menu,
   MoreHorizontal,
   Plus,
   Search,
   Settings,
   ShieldAlert,
+  Stamp,
   Tv,
   UserCircle,
   Users,
@@ -31,8 +36,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { builderHref } from "@/lib/builder-url";
-import { ACCOUNTS, CONTENT_REPORTS, VERIFICATION_REQUESTS } from "@/lib/mock-data";
-import type { CreationCategory, LearningMaterialSubtype, RoleId } from "@/lib/types";
+import { ACCOUNTS, CONTENT_REPORTS, VERIFICATION_REQUESTS, resolveDemoAccount } from "@/lib/mock-data";
+import type { CreationCategory, LearningMaterialSubtype, RoleId, SchoolRole } from "@/lib/types";
 import { resolveActiveOrgId } from "@/lib/use-scoped-content";
 import { cn } from "@/lib/utils";
 import { useContent } from "@/stores/content";
@@ -70,6 +75,7 @@ const TEACHER_NAV: NavSection[] = [
       { to: "/creator/dashboard", label: "Trang chủ", icon: Home },
       { to: "/creator/library", label: "Thư viện của tôi", icon: Library },
       { to: "/creator/channel", label: "Kênh của tôi", icon: Tv },
+      { to: "/creator/registry", label: "Hồ sơ chuyên môn", icon: Award },
       { to: "/creator/verification", label: "Xác minh tài khoản", icon: BadgeCheck },
     ],
   },
@@ -84,6 +90,8 @@ const ORG_NAV: NavSection[] = [
       { to: "/org/library", label: "Thư viện tổ chức", icon: Library },
       { to: "/org/channel", label: "Kênh tổ chức", icon: Tv },
       { to: "/org/members", label: "Quản lý thành viên", icon: Users },
+      { to: "/org/signing", label: "Đăng ký & ký số", icon: Stamp },
+      { to: "/org/analytics", label: "Phân tích hiệu quả", icon: LineChart },
       { to: "/org/verification", label: "Xác minh tổ chức", icon: BadgeCheck },
     ],
   },
@@ -96,35 +104,82 @@ const ADMIN_NAV: NavSection[] = [
     items: [
       { to: "/admin/dashboard", label: "Tổng quan", icon: BarChart3 },
       { to: "/admin/users", label: "Quản lý người dùng", icon: Users },
-      { to: "/admin/content-review", label: "Duyệt nội dung", icon: FileCheck2, badge: "pending" },
-      { to: "/admin/verification-requests", label: "Duyệt xác minh", icon: BadgeCheck, badge: "verifications" },
-      { to: "/admin/reports", label: "Báo cáo vi phạm", icon: ShieldAlert, badge: "reports" },
       { to: "/admin/settings", label: "Cấu hình hệ thống", icon: Settings },
     ],
   },
 ];
 
-function getNavSections(roleId: RoleId, workspace: Workspace): NavSection[] {
+const REVIEWER_NAV: NavSection[] = [
+  {
+    id: "reviewer",
+    label: "Thẩm định",
+    items: [
+      { to: "/reviewer/queue", label: "Hàng đợi thẩm định", icon: ClipboardCheck },
+      { to: "/reviewer/reports", label: "Rà soát & cảnh báo", icon: ShieldAlert, badge: "reports" },
+    ],
+  },
+];
+
+const STUDENT_NAV: NavSection[] = [
+  {
+    id: "student",
+    label: "Học tập",
+    items: [
+      { to: "/student/home", label: "Trang chủ", icon: Home },
+      { to: "/student/explore", label: "Khám phá", icon: FolderTree },
+      { to: "/student/progress", label: "Tiến độ của tôi", icon: LineChart },
+    ],
+  },
+];
+
+const SCHOOL_NAV_MANAGER: NavSection[] = [
+  {
+    id: "school",
+    label: "Nhà trường",
+    items: [
+      { to: "/school/dashboard", label: "Tổng quan trường", icon: BarChart3 },
+      { to: "/school/review", label: "Duyệt nội bộ", icon: ClipboardCheck },
+    ],
+  },
+];
+
+function getNavSections(roleId: RoleId, workspace: Workspace, schoolRole?: SchoolRole): NavSection[] {
   switch (roleId) {
-    case "admin":
-      return ADMIN_NAV;
-    case "publisher":
-      return ORG_NAV;
+    case "admin": return ADMIN_NAV;
+    case "publisher": return ORG_NAV;
+    case "reviewer": return REVIEWER_NAV;
+    case "student": return STUDENT_NAV;
+    case "school": return SCHOOL_NAV_MANAGER;
     case "teacher":
     case "verified_teacher":
-    default:
-      return workspace === "org" ? ORG_NAV : TEACHER_NAV;
+    default: {
+      if (workspace === "org") return ORG_NAV;
+      if (schoolRole === "dept_head") {
+        return TEACHER_NAV.map((section) =>
+          section.id === "personal"
+            ? {
+                ...section,
+                items: [
+                  ...section.items,
+                  { to: "/creator/dept-review", label: "Duyệt cấp tổ", icon: ClipboardCheck },
+                ],
+              }
+            : section,
+        );
+      }
+      return TEACHER_NAV;
+    }
   }
 }
 
 function getFooterNav(roleId: RoleId, workspace: Workspace): NavItem[] {
-  if (roleId === "admin") return [];
+  if (roleId === "admin" || roleId === "reviewer" || roleId === "student" || roleId === "school") return [];
   const settingsTo = (roleId === "publisher" || workspace === "org") ? "/org/settings" : "/creator/settings";
   return [{ to: settingsTo, label: "Cài đặt", icon: Settings }];
 }
 
 function canCreate(roleId: RoleId): boolean {
-  return roleId !== "admin";
+  return roleId === "teacher" || roleId === "verified_teacher" || roleId === "publisher";
 }
 
 function getScopeFromWorkspace(roleId: RoleId, workspace: Workspace): "creator" | "org" {
@@ -138,6 +193,7 @@ export function ContentStudioShell() {
   const roleId = useSession((s) => s.roleId);
   const hasHydrated = useSession((s) => s.hasHydrated);
   const workspace = useSession((s) => s.workspace);
+  const schoolRole = useSession((s) => s.schoolRole);
   const createDraft = useContent((s) => s.createDraft);
   const pendingCount = useContent((s) => s.items.filter((i) => i.status === "pending").length);
   const navigate = useNavigate();
@@ -153,9 +209,9 @@ export function ContentStudioShell() {
 
   if (!hasHydrated || !roleId) return null;
 
-  const account = ACCOUNTS[roleId];
+  const account = resolveDemoAccount(roleId, schoolRole);
   const isBuilder = pathname.includes("/builder/");
-  const sections = getNavSections(roleId, workspace);
+  const sections = getNavSections(roleId, workspace, schoolRole);
   const footerNav = getFooterNav(roleId, workspace);
   const showCreate = canCreate(roleId);
   const scope = getScopeFromWorkspace(roleId, workspace);
@@ -199,11 +255,11 @@ export function ContentStudioShell() {
   }
 
   const shellTitle =
-    roleId === "admin"
-      ? "Admin Console"
-      : workspace === "org"
-        ? "Org Studio"
-        : "Content Studio";
+    roleId === "admin" ? "Admin Console"
+    : roleId === "reviewer" ? "Hội đồng thẩm định"
+    : roleId === "student" ? "Không gian học tập"
+    : roleId === "school" ? "Quản lý nhà trường"
+    : workspace === "org" ? "Org Studio" : "Content Studio";
 
   return (
     <div className="min-h-screen bg-muted/20 pb-16 lg:pb-0">
@@ -255,7 +311,7 @@ export function ContentStudioShell() {
             </div>
           </div>
 
-          {roleId !== "admin" && <HeaderSearch scope={scope} />}
+          {(roleId === "teacher" || roleId === "verified_teacher" || roleId === "publisher") && <HeaderSearch scope={scope} />}
 
           <div className="flex shrink-0 items-center gap-2 md:gap-3">
             <RoleSwitcher />

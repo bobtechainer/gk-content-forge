@@ -1,11 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { ACCOUNTS } from "@/lib/mock-data";
-import { getDefaultAppPath } from "@/lib/taxonomy";
+import { DEMO_LOGINS } from "@/lib/mock-data";
+import { getRoleHomePath } from "@/lib/taxonomy";
 import { useSession } from "@/stores/session";
 import { VerifiedBadge } from "@/components/shared/verified-badge";
-import type { RoleId } from "@/lib/types";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -24,9 +23,9 @@ function LoginPage() {
   const setRole = useSession((s) => s.setRole);
   const navigate = useNavigate();
 
-  const pick = (id: RoleId) => {
-    setRole(id);
-    navigate({ to: getDefaultAppPath(ACCOUNTS[id].accountType) });
+  const pick = (login: (typeof DEMO_LOGINS)[number]) => {
+    setRole(login.roleId, login.schoolRole);
+    navigate({ to: getRoleHomePath(login.roleId, login.schoolRole) as string });
   };
 
   return (
@@ -53,16 +52,16 @@ function LoginPage() {
         </div>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {(Object.keys(ACCOUNTS) as RoleId[]).map((id, i) => {
-            const a = ACCOUNTS[id];
+          {DEMO_LOGINS.map((login, i) => {
+            const a = login.account;
             return (
               <motion.button
-                key={id}
+                key={login.key}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08 }}
                 whileHover={{ y: -4 }}
-                onClick={() => pick(id)}
+                onClick={() => pick(login)}
                 className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 text-left shadow-sm transition hover:border-primary hover:shadow-xl"
               >
                 <div
@@ -80,7 +79,8 @@ function LoginPage() {
                   <VerifiedBadge verified={a.verified} />
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{a.accountType}</p>
-                <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>
+                <p className="mt-1 text-xs font-medium text-muted-foreground">{login.tagline}</p>
+                <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>
                 <div className="mt-4 flex items-center text-xs font-medium text-primary">
                   Vào dashboard{" "}
                   <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-1" />

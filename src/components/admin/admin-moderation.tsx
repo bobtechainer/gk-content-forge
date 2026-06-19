@@ -216,7 +216,10 @@ export function AdminReportsPage() {
     setReports((cur) => cur.map((r) => (r.id === id ? { ...r, status } : r)));
 
   return (
-    <PageFrame title="Báo cáo vi phạm" description="Xử lý nội dung bị người dùng báo cáo.">
+    <PageFrame
+      title="Báo cáo vi phạm"
+      description="Xử lý nội dung bị báo cáo trên toàn nền tảng."
+    >
       <div className="space-y-3">
         {reports.map((r) => (
           <Card key={r.id}>

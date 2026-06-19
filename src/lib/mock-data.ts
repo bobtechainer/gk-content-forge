@@ -2,10 +2,13 @@ import type {
   Account,
   ContentItem,
   ContentReport,
+  ContentTier,
   Question,
   RoleId,
+  SchoolRole,
   VerificationRequest,
 } from "./types";
+import { generateRegistryId } from "./registry-id";
 
 export const ACCOUNTS: Record<RoleId, Account> = {
   teacher: {
@@ -94,7 +97,77 @@ export const ACCOUNTS: Record<RoleId, Account> = {
     bio: "Quản trị viên hệ thống GK Studio.",
     followers: 0,
   },
+  reviewer: {
+    id: "reviewer",
+    name: "Hội đồng thẩm định",
+    shortName: "HĐ",
+    accountType: "Admin",
+    verified: "admin",
+    avatarColor: "#20447E",
+    bio: "Thành viên Hội đồng chuyên môn thẩm định học liệu quốc gia.",
+    followers: 0,
+    council: "Hội đồng Toán THPT",
+  },
+  student: {
+    id: "student",
+    name: "Nguyễn An",
+    shortName: "NA",
+    accountType: "Cá nhân",
+    verified: "none",
+    avatarColor: "#10B981",
+    bio: "Học sinh lớp 10, đang học theo lộ trình cá nhân hoá.",
+    followers: 0,
+  },
+  school: {
+    id: "school",
+    name: "THPT Lê Lợi",
+    shortName: "LL",
+    accountType: "Doanh nghiệp",
+    verified: "L2",
+    avatarColor: "#2563EB",
+    bio: "Trường THPT Lê Lợi — quản lý dạy học số toàn trường.",
+    followers: 0,
+    schoolRole: "manager",
+  },
 };
+
+export const TEACHER_DEPT_ACCOUNT: Account = {
+  id: "teacher",
+  name: "Tổ trưởng Tổ Toán",
+  shortName: "TT",
+  accountType: "Cá nhân",
+  verified: "verified",
+  avatarColor: "#F59E0B",
+  bio: "Giáo viên kiêm tổ trưởng bộ môn Toán — duyệt học liệu cấp tổ.",
+  followers: 0,
+  schoolRole: "dept_head",
+  subjectScope: "Toán",
+};
+
+export interface DemoLogin {
+  key: string; // duy nhất cho tile login
+  roleId: RoleId;
+  schoolRole?: SchoolRole;
+  account: Account;
+  tagline: string; // mô tả ngắn vai trò trên tile
+}
+
+export const DEMO_LOGINS: DemoLogin[] = [
+  { key: "admin", roleId: "admin", account: ACCOUNTS.admin, tagline: "Quản trị viên Bộ GD&ĐT" },
+  { key: "reviewer", roleId: "reviewer", account: ACCOUNTS.reviewer, tagline: "Hội đồng thẩm định" },
+  { key: "teacher", roleId: "teacher", account: ACCOUNTS.teacher, tagline: "Giáo viên" },
+  { key: "teacher-dept", roleId: "teacher", schoolRole: "dept_head", account: TEACHER_DEPT_ACCOUNT, tagline: "Tổ trưởng bộ môn (Giáo viên)" },
+  { key: "school", roleId: "school", schoolRole: "manager", account: ACCOUNTS.school, tagline: "Quản lý nhà trường" },
+  { key: "publisher", roleId: "publisher", account: ACCOUNTS.publisher, tagline: "Đối tác nội dung (NXB/EdTech)" },
+];
+
+export const resolveDemoAccount = (roleId: RoleId, schoolRole?: SchoolRole): Account =>
+  roleId === "teacher" && schoolRole === "dept_head" ? TEACHER_DEPT_ACCOUNT : ACCOUNTS[roleId];
+
+// helper gán mã cho seed (chạy 1 lần khi định nghĩa SEED_CONTENT)
+let _seq = 0;
+const stamp = (tier: ContentTier, subject: string, year = 2026) =>
+  generateRegistryId(tier, subject, ++_seq, year);
 
 export const SEED_CONTENT: ContentItem[] = [
   {
@@ -117,6 +190,9 @@ export const SEED_CONTENT: ContentItem[] = [
     platforms: ["national", "ebooks"],
     tags: ["Đại số", "Ôn tập", "Lớp 8"],
     description: "Bộ đề ôn tập kiến thức Đại số chương 1.",
+    tier: "root",
+    registryId: stamp("root", "Toán"),
+    qualityLabel: "ministry_standard",
   },
   {
     id: "c2",
@@ -140,6 +216,9 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Bài giảng đầy đủ về dao động điều hòa.",
     fileName: "dao-dong-dieu-hoa.pptx",
     fileExtension: "pptx",
+    tier: "root",
+    registryId: stamp("root", "Vật lý"),
+    qualityLabel: "ministry_standard",
   },
   {
     id: "c3",
@@ -161,6 +240,9 @@ export const SEED_CONTENT: ContentItem[] = [
     platforms: ["national"],
     tags: ["Hóa", "Kiểm tra"],
     description: "Đề kiểm tra 45 phút giữa kỳ.",
+    tier: "community",
+    registryId: stamp("community", "Hóa học"),
+    qualityLabel: "documented",
   },
   {
     id: "c4",
@@ -182,6 +264,10 @@ export const SEED_CONTENT: ContentItem[] = [
     platforms: ["national", "ebooks"],
     tags: ["English", "Unit 3"],
     description: "Học liệu chính thống Unit 3 - Tiếng Anh 12.",
+    tier: "partner",
+    registryId: stamp("partner", "Tiếng Anh"),
+    qualityLabel: "trusted_partner",
+    license: { type: "commercial", scope: "national", rightsHolder: "NXB Giáo dục", validUntil: "2028-12-31", accessTerms: "paid" },
   },
   {
     id: "c5",
@@ -203,6 +289,9 @@ export const SEED_CONTENT: ContentItem[] = [
     platforms: [],
     tags: [],
     description: "",
+    tier: "community",
+    registryId: stamp("community", "Sinh học"),
+    qualityLabel: "submitted",
   },
   {
     id: "c6",
@@ -224,6 +313,9 @@ export const SEED_CONTENT: ContentItem[] = [
     platforms: ["national"],
     tags: ["Lịch sử", "Việt Nam"],
     description: "Lộ trình học tổng quan Lịch sử VN.",
+    tier: "community",
+    registryId: stamp("community", "Lịch sử"),
+    qualityLabel: "documented",
   },
   {
     id: "c7",
@@ -245,6 +337,9 @@ export const SEED_CONTENT: ContentItem[] = [
     platforms: ["national"],
     tags: ["THPT QG"],
     description: "Nội dung chưa đủ chuẩn — cần bổ sung lời giải.",
+    tier: "community",
+    registryId: stamp("community", "Toán"),
+    qualityLabel: "rejected",
   },
   {
     id: "c8",
@@ -268,6 +363,10 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Atlas tương tác bản đồ Việt Nam.",
     fileName: "atlas-vn.glb",
     fileExtension: "glb",
+    tier: "partner",
+    registryId: stamp("partner", "Địa lý"),
+    qualityLabel: "trusted_partner",
+    license: { type: "commercial", scope: "national", rightsHolder: "NXB Giáo dục", validUntil: "2028-12-31", accessTerms: "paid" },
   },
   {
     id: "c9",
@@ -312,6 +411,9 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Tổng hợp văn học dân gian Việt Nam.",
     fileName: "van-hoc-dan-gian.pdf",
     fileExtension: "pdf",
+    tier: "root",
+    registryId: stamp("root", "Ngữ văn"),
+    qualityLabel: "ministry_standard",
   },
   {
     id: "c11",
@@ -335,6 +437,9 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Video minh họa quá trình quang hợp.",
     fileName: "quang-hop.mp4",
     fileExtension: "mp4",
+    tier: "root",
+    registryId: stamp("root", "Sinh học"),
+    qualityLabel: "ministry_standard",
   },
   {
     id: "c12",
@@ -358,6 +463,10 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Bảng tuần hoàn các nguyên tố trực quan.",
     fileName: "bang-tuan-hoan.png",
     fileExtension: "png",
+    tier: "partner",
+    registryId: stamp("partner", "Hóa học"),
+    qualityLabel: "trusted_partner",
+    license: { type: "commercial", scope: "national", rightsHolder: "NXB Giáo dục", validUntil: "2028-12-31", accessTerms: "paid" },
   },
   {
     id: "c13",
@@ -381,6 +490,10 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Bộ audio luyện kỹ năng nghe.",
     fileName: "listening-unit5.mp3",
     fileExtension: "mp3",
+    tier: "partner",
+    registryId: stamp("partner", "Tiếng Anh"),
+    qualityLabel: "trusted_partner",
+    license: { type: "commercial", scope: "national", rightsHolder: "NXB Giáo dục", validUntil: "2028-12-31", accessTerms: "paid" },
   },
   {
     id: "c14",
@@ -469,6 +582,10 @@ export const SEED_CONTENT: ContentItem[] = [
     platforms: ["national", "ebooks"],
     tags: ["Ngữ văn", "Giáo trình"],
     description: "Giáo trình chính thức Ngữ văn 11 — Tập 1.",
+    tier: "partner",
+    registryId: stamp("partner", "Ngữ văn"),
+    qualityLabel: "trusted_partner",
+    license: { type: "commercial", scope: "national", rightsHolder: "NXB Giáo dục", validUntil: "2028-12-31", accessTerms: "paid" },
   },
   {
     id: "c18",
@@ -490,6 +607,10 @@ export const SEED_CONTENT: ContentItem[] = [
     platforms: ["national", "ebooks"],
     tags: ["Toán", "Cánh Diều"],
     description: "Sách giáo khoa Toán 10 bộ Cánh Diều.",
+    tier: "partner",
+    registryId: stamp("partner", "Toán"),
+    qualityLabel: "trusted_partner",
+    license: { type: "commercial", scope: "national", rightsHolder: "NXB Giáo dục", validUntil: "2028-12-31", accessTerms: "paid" },
   },
   {
     id: "c19",
@@ -576,6 +697,30 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Video thí nghiệm minh họa lực đàn hồi lò xo.",
     fileName: "luc-dan-hoi.mp4",
     fileExtension: "mp4",
+    tier: "community",
+    registryId: stamp("community", "Vật lý"),
+    qualityLabel: "reviewed",
+    coAuthors: ["Phạm Minh Tuấn"],
+    versionHistory: [
+      {
+        version: "v1.2",
+        date: "2026-05-22",
+        note: "Bổ sung phụ đề và lồng tiếng phần phân tích kết quả thí nghiệm.",
+        authorName: "Lê Trung Hiếu",
+      },
+      {
+        version: "v1.1",
+        date: "2026-05-10",
+        note: "Quay lại cảnh đo độ giãn lò xo cho rõ thông số.",
+        authorName: "Phạm Minh Tuấn",
+      },
+      {
+        version: "v1.0",
+        date: "2026-04-30",
+        note: "Phiên bản đầu tiên đăng lên thư viện.",
+        authorName: "Lê Trung Hiếu",
+      },
+    ],
   },
   {
     id: "c23",
@@ -599,6 +744,24 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Tổng hợp toàn bộ công thức Hóa THPT.",
     fileName: "cong-thuc-hoa.pdf",
     fileExtension: "pdf",
+    tier: "community",
+    registryId: stamp("community", "Hóa học"),
+    qualityLabel: "reviewed",
+    coAuthors: ["Nguyễn Thị Lan", "Trần Văn Đức"],
+    versionHistory: [
+      {
+        version: "v2.0",
+        date: "2026-04-28",
+        note: "Cập nhật theo chương trình GDPT 2018, thêm chuyên đề hóa hữu cơ.",
+        authorName: "Lê Trung Hiếu",
+      },
+      {
+        version: "v1.0",
+        date: "2026-02-15",
+        note: "Tổng hợp công thức Hóa học THPT lần đầu.",
+        authorName: "Nguyễn Thị Lan",
+      },
+    ],
   },
   {
     id: "c24",

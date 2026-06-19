@@ -1,4 +1,11 @@
-export type RoleId = "teacher" | "verified_teacher" | "publisher" | "admin";
+export type RoleId =
+  | "teacher"
+  | "verified_teacher"
+  | "publisher"
+  | "admin"
+  | "reviewer"
+  | "student"
+  | "school";
 export type AccountType =
   | "personal"
   | "organization"
@@ -17,6 +24,37 @@ export type VerificationStatus =
 export type ContentStatus = "draft" | "published" | "pending" | "rejected";
 export type Platform = "national" | "ebooks";
 export type OrgRole = "owner" | "manager" | "editor";
+
+export type ContentTier = "root" | "partner" | "community";
+export type LicenseType = "exclusive" | "cc" | "commercial";
+export type LicenseScope = "national" | "provincial" | "school";
+export type AccessTerms = "free" | "paid";
+
+export interface ContentLicense {
+  type: LicenseType;
+  scope: LicenseScope;
+  rightsHolder: string;
+  validUntil: string; // ISO date
+  accessTerms: AccessTerms;
+}
+
+export type QualityLabel =
+  | "submitted" // Mới nộp
+  | "documented" // Đủ hồ sơ
+  | "reviewed" // Đã thẩm định
+  | "ministry_standard" // Chuẩn Bộ
+  | "needs_revision" // Cần chỉnh sửa
+  | "rejected" // Từ chối
+  | "trusted_partner"; // Đối tác tin cậy
+
+export interface ContentVersion {
+  version: string; // "v1.2"
+  date: string; // ISO
+  note: string;
+  authorName: string;
+}
+
+export type SchoolRole = "principal" | "manager" | "dept_head";
 
 export type LearningMaterialSubtype =
   | "quiz"
@@ -64,6 +102,12 @@ export interface Account {
   email?: string;
   /** Organizations this personal account belongs to (with create permissions). */
   orgMemberships?: OrgMembership[];
+  /** Vai trò nội bộ trường (chỉ account nhóm school). */
+  schoolRole?: SchoolRole;
+  /** Môn tổ trưởng phụ trách — lọc màn duyệt nội bộ. */
+  subjectScope?: string;
+  /** Hội đồng thẩm định mà reviewer trực thuộc. */
+  council?: string;
 }
 
 export interface ContentItem {
@@ -89,6 +133,13 @@ export interface ContentItem {
   description: string;
   fileExtension?: string;
   fileName?: string;
+  /** Mã định danh nội dung duy nhất, vd "THS-DT-2026-TOAN-000123". */
+  registryId?: string;
+  tier?: ContentTier;
+  license?: ContentLicense;
+  qualityLabel?: QualityLabel;
+  coAuthors?: string[];
+  versionHistory?: ContentVersion[];
 }
 
 export interface VerificationChecklist {

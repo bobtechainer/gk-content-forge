@@ -13,7 +13,7 @@ import {
   Video,
   type LucideIcon,
 } from "lucide-react";
-import type { AccountType, CreationCategory, LearningMaterialSubtype, MaterialType } from "./types";
+import type { AccountType, CreationCategory, LearningMaterialSubtype, MaterialType, RoleId, SchoolRole } from "./types";
 
 export type ContentCategoryId = CreationCategory;
 export type LearningMaterialSubtypeId = LearningMaterialSubtype;
@@ -182,3 +182,22 @@ export const getBuilderPath = (materialType: MaterialType) => {
 };
 
 export const getCreationLabel = (materialType: MaterialType) => MATERIAL_TYPE_LABELS[materialType];
+
+export const getRoleHomePath = (roleId: RoleId, schoolRole?: SchoolRole): string => {
+  switch (roleId) {
+    case "admin":
+      return "/admin/dashboard";
+    case "publisher":
+      return "/org/dashboard";
+    case "reviewer":
+      return "/reviewer/queue";
+    case "student":
+      return "/student/home";
+    case "school":
+      return "/school/dashboard";
+    case "teacher":
+    case "verified_teacher":
+    default:
+      return "/creator/dashboard";
+  }
+};

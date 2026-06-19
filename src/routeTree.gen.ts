@@ -9,22 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StudentRouteImport } from './routes/student'
+import { Route as SchoolRouteImport } from './routes/school'
+import { Route as ReviewerRouteImport } from './routes/reviewer'
 import { Route as OrgRouteImport } from './routes/org'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CreatorRouteImport } from './routes/creator'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudentProgressRouteImport } from './routes/student.progress'
+import { Route as StudentHomeRouteImport } from './routes/student.home'
+import { Route as StudentExploreRouteImport } from './routes/student.explore'
+import { Route as SchoolReviewRouteImport } from './routes/school.review'
+import { Route as SchoolDashboardRouteImport } from './routes/school.dashboard'
+import { Route as ReviewerReportsRouteImport } from './routes/reviewer.reports'
+import { Route as ReviewerQueueRouteImport } from './routes/reviewer.queue'
 import { Route as OrgVerificationRouteImport } from './routes/org.verification'
 import { Route as OrgStudioRouteImport } from './routes/org.studio'
+import { Route as OrgSigningRouteImport } from './routes/org.signing'
 import { Route as OrgSettingsRouteImport } from './routes/org.settings'
 import { Route as OrgMembersRouteImport } from './routes/org.members'
 import { Route as OrgLibraryRouteImport } from './routes/org.library'
 import { Route as OrgDashboardRouteImport } from './routes/org.dashboard'
 import { Route as OrgChannelRouteImport } from './routes/org.channel'
+import { Route as OrgAnalyticsRouteImport } from './routes/org.analytics'
 import { Route as CreatorVerificationRouteImport } from './routes/creator.verification'
 import { Route as CreatorStudioRouteImport } from './routes/creator.studio'
 import { Route as CreatorSettingsRouteImport } from './routes/creator.settings'
+import { Route as CreatorRegistryRouteImport } from './routes/creator.registry'
 import { Route as CreatorLibraryRouteImport } from './routes/creator.library'
+import { Route as CreatorDeptReviewRouteImport } from './routes/creator.dept-review'
 import { Route as CreatorDashboardRouteImport } from './routes/creator.dashboard'
 import { Route as CreatorChannelRouteImport } from './routes/creator.channel'
 import { Route as AdminVerificationRequestsRouteImport } from './routes/admin.verification-requests'
@@ -37,6 +51,8 @@ import { Route as AdminLibraryRouteImport } from './routes/admin.library'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminContentReviewRouteImport } from './routes/admin.content-review'
 import { Route as AdminChannelRouteImport } from './routes/admin.channel'
+import { Route as StudentLearnIdRouteImport } from './routes/student.learn.$id'
+import { Route as ReviewerReviewIdRouteImport } from './routes/reviewer.review.$id'
 import { Route as OrgStudioNewRouteImport } from './routes/org.studio.new'
 import { Route as OrgChannelEditRouteImport } from './routes/org.channel.edit'
 import { Route as CreatorStudioNewRouteImport } from './routes/creator.studio.new'
@@ -50,6 +66,21 @@ import { Route as CreatorBuilderMaterialIdRouteImport } from './routes/creator.b
 import { Route as CreatorBuilderCourseIdRouteImport } from './routes/creator.builder.course.$id'
 import { Route as CreatorBuilderBookIdRouteImport } from './routes/creator.builder.book.$id'
 
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SchoolRoute = SchoolRouteImport.update({
+  id: '/school',
+  path: '/school',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewerRoute = ReviewerRouteImport.update({
+  id: '/reviewer',
+  path: '/reviewer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrgRoute = OrgRouteImport.update({
   id: '/org',
   path: '/org',
@@ -75,6 +106,41 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentProgressRoute = StudentProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentHomeRoute = StudentHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => StudentRoute,
+} as any)
+const StudentExploreRoute = StudentExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => StudentRoute,
+} as any)
+const SchoolReviewRoute = SchoolReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => SchoolRoute,
+} as any)
+const SchoolDashboardRoute = SchoolDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => SchoolRoute,
+} as any)
+const ReviewerReportsRoute = ReviewerReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => ReviewerRoute,
+} as any)
+const ReviewerQueueRoute = ReviewerQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => ReviewerRoute,
+} as any)
 const OrgVerificationRoute = OrgVerificationRouteImport.update({
   id: '/verification',
   path: '/verification',
@@ -83,6 +149,11 @@ const OrgVerificationRoute = OrgVerificationRouteImport.update({
 const OrgStudioRoute = OrgStudioRouteImport.update({
   id: '/studio',
   path: '/studio',
+  getParentRoute: () => OrgRoute,
+} as any)
+const OrgSigningRoute = OrgSigningRouteImport.update({
+  id: '/signing',
+  path: '/signing',
   getParentRoute: () => OrgRoute,
 } as any)
 const OrgSettingsRoute = OrgSettingsRouteImport.update({
@@ -110,6 +181,11 @@ const OrgChannelRoute = OrgChannelRouteImport.update({
   path: '/channel',
   getParentRoute: () => OrgRoute,
 } as any)
+const OrgAnalyticsRoute = OrgAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => OrgRoute,
+} as any)
 const CreatorVerificationRoute = CreatorVerificationRouteImport.update({
   id: '/verification',
   path: '/verification',
@@ -125,9 +201,19 @@ const CreatorSettingsRoute = CreatorSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => CreatorRoute,
 } as any)
+const CreatorRegistryRoute = CreatorRegistryRouteImport.update({
+  id: '/registry',
+  path: '/registry',
+  getParentRoute: () => CreatorRoute,
+} as any)
 const CreatorLibraryRoute = CreatorLibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => CreatorRoute,
+} as any)
+const CreatorDeptReviewRoute = CreatorDeptReviewRouteImport.update({
+  id: '/dept-review',
+  path: '/dept-review',
   getParentRoute: () => CreatorRoute,
 } as any)
 const CreatorDashboardRoute = CreatorDashboardRouteImport.update({
@@ -190,6 +276,16 @@ const AdminChannelRoute = AdminChannelRouteImport.update({
   id: '/channel',
   path: '/channel',
   getParentRoute: () => AdminRoute,
+} as any)
+const StudentLearnIdRoute = StudentLearnIdRouteImport.update({
+  id: '/learn/$id',
+  path: '/learn/$id',
+  getParentRoute: () => StudentRoute,
+} as any)
+const ReviewerReviewIdRoute = ReviewerReviewIdRouteImport.update({
+  id: '/review/$id',
+  path: '/review/$id',
+  getParentRoute: () => ReviewerRoute,
 } as any)
 const OrgStudioNewRoute = OrgStudioNewRouteImport.update({
   id: '/new',
@@ -259,6 +355,9 @@ export interface FileRoutesByFullPath {
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
+  '/reviewer': typeof ReviewerRouteWithChildren
+  '/school': typeof SchoolRouteWithChildren
+  '/student': typeof StudentRouteWithChildren
   '/admin/channel': typeof AdminChannelRoute
   '/admin/content-review': typeof AdminContentReviewRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -271,21 +370,34 @@ export interface FileRoutesByFullPath {
   '/admin/verification-requests': typeof AdminVerificationRequestsRoute
   '/creator/channel': typeof CreatorChannelRouteWithChildren
   '/creator/dashboard': typeof CreatorDashboardRoute
+  '/creator/dept-review': typeof CreatorDeptReviewRoute
   '/creator/library': typeof CreatorLibraryRoute
+  '/creator/registry': typeof CreatorRegistryRoute
   '/creator/settings': typeof CreatorSettingsRoute
   '/creator/studio': typeof CreatorStudioRouteWithChildren
   '/creator/verification': typeof CreatorVerificationRoute
+  '/org/analytics': typeof OrgAnalyticsRoute
   '/org/channel': typeof OrgChannelRouteWithChildren
   '/org/dashboard': typeof OrgDashboardRoute
   '/org/library': typeof OrgLibraryRoute
   '/org/members': typeof OrgMembersRoute
   '/org/settings': typeof OrgSettingsRoute
+  '/org/signing': typeof OrgSigningRoute
   '/org/studio': typeof OrgStudioRouteWithChildren
   '/org/verification': typeof OrgVerificationRoute
+  '/reviewer/queue': typeof ReviewerQueueRoute
+  '/reviewer/reports': typeof ReviewerReportsRoute
+  '/school/dashboard': typeof SchoolDashboardRoute
+  '/school/review': typeof SchoolReviewRoute
+  '/student/explore': typeof StudentExploreRoute
+  '/student/home': typeof StudentHomeRoute
+  '/student/progress': typeof StudentProgressRoute
   '/creator/channel/edit': typeof CreatorChannelEditRoute
   '/creator/studio/new': typeof CreatorStudioNewRoute
   '/org/channel/edit': typeof OrgChannelEditRoute
   '/org/studio/new': typeof OrgStudioNewRoute
+  '/reviewer/review/$id': typeof ReviewerReviewIdRoute
+  '/student/learn/$id': typeof StudentLearnIdRoute
   '/creator/builder/book/$id': typeof CreatorBuilderBookIdRoute
   '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
   '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
@@ -301,6 +413,9 @@ export interface FileRoutesByTo {
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
+  '/reviewer': typeof ReviewerRouteWithChildren
+  '/school': typeof SchoolRouteWithChildren
+  '/student': typeof StudentRouteWithChildren
   '/admin/channel': typeof AdminChannelRoute
   '/admin/content-review': typeof AdminContentReviewRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -313,21 +428,34 @@ export interface FileRoutesByTo {
   '/admin/verification-requests': typeof AdminVerificationRequestsRoute
   '/creator/channel': typeof CreatorChannelRouteWithChildren
   '/creator/dashboard': typeof CreatorDashboardRoute
+  '/creator/dept-review': typeof CreatorDeptReviewRoute
   '/creator/library': typeof CreatorLibraryRoute
+  '/creator/registry': typeof CreatorRegistryRoute
   '/creator/settings': typeof CreatorSettingsRoute
   '/creator/studio': typeof CreatorStudioRouteWithChildren
   '/creator/verification': typeof CreatorVerificationRoute
+  '/org/analytics': typeof OrgAnalyticsRoute
   '/org/channel': typeof OrgChannelRouteWithChildren
   '/org/dashboard': typeof OrgDashboardRoute
   '/org/library': typeof OrgLibraryRoute
   '/org/members': typeof OrgMembersRoute
   '/org/settings': typeof OrgSettingsRoute
+  '/org/signing': typeof OrgSigningRoute
   '/org/studio': typeof OrgStudioRouteWithChildren
   '/org/verification': typeof OrgVerificationRoute
+  '/reviewer/queue': typeof ReviewerQueueRoute
+  '/reviewer/reports': typeof ReviewerReportsRoute
+  '/school/dashboard': typeof SchoolDashboardRoute
+  '/school/review': typeof SchoolReviewRoute
+  '/student/explore': typeof StudentExploreRoute
+  '/student/home': typeof StudentHomeRoute
+  '/student/progress': typeof StudentProgressRoute
   '/creator/channel/edit': typeof CreatorChannelEditRoute
   '/creator/studio/new': typeof CreatorStudioNewRoute
   '/org/channel/edit': typeof OrgChannelEditRoute
   '/org/studio/new': typeof OrgStudioNewRoute
+  '/reviewer/review/$id': typeof ReviewerReviewIdRoute
+  '/student/learn/$id': typeof StudentLearnIdRoute
   '/creator/builder/book/$id': typeof CreatorBuilderBookIdRoute
   '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
   '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
@@ -344,6 +472,9 @@ export interface FileRoutesById {
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
+  '/reviewer': typeof ReviewerRouteWithChildren
+  '/school': typeof SchoolRouteWithChildren
+  '/student': typeof StudentRouteWithChildren
   '/admin/channel': typeof AdminChannelRoute
   '/admin/content-review': typeof AdminContentReviewRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -356,21 +487,34 @@ export interface FileRoutesById {
   '/admin/verification-requests': typeof AdminVerificationRequestsRoute
   '/creator/channel': typeof CreatorChannelRouteWithChildren
   '/creator/dashboard': typeof CreatorDashboardRoute
+  '/creator/dept-review': typeof CreatorDeptReviewRoute
   '/creator/library': typeof CreatorLibraryRoute
+  '/creator/registry': typeof CreatorRegistryRoute
   '/creator/settings': typeof CreatorSettingsRoute
   '/creator/studio': typeof CreatorStudioRouteWithChildren
   '/creator/verification': typeof CreatorVerificationRoute
+  '/org/analytics': typeof OrgAnalyticsRoute
   '/org/channel': typeof OrgChannelRouteWithChildren
   '/org/dashboard': typeof OrgDashboardRoute
   '/org/library': typeof OrgLibraryRoute
   '/org/members': typeof OrgMembersRoute
   '/org/settings': typeof OrgSettingsRoute
+  '/org/signing': typeof OrgSigningRoute
   '/org/studio': typeof OrgStudioRouteWithChildren
   '/org/verification': typeof OrgVerificationRoute
+  '/reviewer/queue': typeof ReviewerQueueRoute
+  '/reviewer/reports': typeof ReviewerReportsRoute
+  '/school/dashboard': typeof SchoolDashboardRoute
+  '/school/review': typeof SchoolReviewRoute
+  '/student/explore': typeof StudentExploreRoute
+  '/student/home': typeof StudentHomeRoute
+  '/student/progress': typeof StudentProgressRoute
   '/creator/channel/edit': typeof CreatorChannelEditRoute
   '/creator/studio/new': typeof CreatorStudioNewRoute
   '/org/channel/edit': typeof OrgChannelEditRoute
   '/org/studio/new': typeof OrgStudioNewRoute
+  '/reviewer/review/$id': typeof ReviewerReviewIdRoute
+  '/student/learn/$id': typeof StudentLearnIdRoute
   '/creator/builder/book/$id': typeof CreatorBuilderBookIdRoute
   '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
   '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
@@ -388,6 +532,9 @@ export interface FileRouteTypes {
     | '/creator'
     | '/login'
     | '/org'
+    | '/reviewer'
+    | '/school'
+    | '/student'
     | '/admin/channel'
     | '/admin/content-review'
     | '/admin/dashboard'
@@ -400,21 +547,34 @@ export interface FileRouteTypes {
     | '/admin/verification-requests'
     | '/creator/channel'
     | '/creator/dashboard'
+    | '/creator/dept-review'
     | '/creator/library'
+    | '/creator/registry'
     | '/creator/settings'
     | '/creator/studio'
     | '/creator/verification'
+    | '/org/analytics'
     | '/org/channel'
     | '/org/dashboard'
     | '/org/library'
     | '/org/members'
     | '/org/settings'
+    | '/org/signing'
     | '/org/studio'
     | '/org/verification'
+    | '/reviewer/queue'
+    | '/reviewer/reports'
+    | '/school/dashboard'
+    | '/school/review'
+    | '/student/explore'
+    | '/student/home'
+    | '/student/progress'
     | '/creator/channel/edit'
     | '/creator/studio/new'
     | '/org/channel/edit'
     | '/org/studio/new'
+    | '/reviewer/review/$id'
+    | '/student/learn/$id'
     | '/creator/builder/book/$id'
     | '/creator/builder/course/$id'
     | '/creator/builder/material/$id'
@@ -430,6 +590,9 @@ export interface FileRouteTypes {
     | '/creator'
     | '/login'
     | '/org'
+    | '/reviewer'
+    | '/school'
+    | '/student'
     | '/admin/channel'
     | '/admin/content-review'
     | '/admin/dashboard'
@@ -442,21 +605,34 @@ export interface FileRouteTypes {
     | '/admin/verification-requests'
     | '/creator/channel'
     | '/creator/dashboard'
+    | '/creator/dept-review'
     | '/creator/library'
+    | '/creator/registry'
     | '/creator/settings'
     | '/creator/studio'
     | '/creator/verification'
+    | '/org/analytics'
     | '/org/channel'
     | '/org/dashboard'
     | '/org/library'
     | '/org/members'
     | '/org/settings'
+    | '/org/signing'
     | '/org/studio'
     | '/org/verification'
+    | '/reviewer/queue'
+    | '/reviewer/reports'
+    | '/school/dashboard'
+    | '/school/review'
+    | '/student/explore'
+    | '/student/home'
+    | '/student/progress'
     | '/creator/channel/edit'
     | '/creator/studio/new'
     | '/org/channel/edit'
     | '/org/studio/new'
+    | '/reviewer/review/$id'
+    | '/student/learn/$id'
     | '/creator/builder/book/$id'
     | '/creator/builder/course/$id'
     | '/creator/builder/material/$id'
@@ -472,6 +648,9 @@ export interface FileRouteTypes {
     | '/creator'
     | '/login'
     | '/org'
+    | '/reviewer'
+    | '/school'
+    | '/student'
     | '/admin/channel'
     | '/admin/content-review'
     | '/admin/dashboard'
@@ -484,21 +663,34 @@ export interface FileRouteTypes {
     | '/admin/verification-requests'
     | '/creator/channel'
     | '/creator/dashboard'
+    | '/creator/dept-review'
     | '/creator/library'
+    | '/creator/registry'
     | '/creator/settings'
     | '/creator/studio'
     | '/creator/verification'
+    | '/org/analytics'
     | '/org/channel'
     | '/org/dashboard'
     | '/org/library'
     | '/org/members'
     | '/org/settings'
+    | '/org/signing'
     | '/org/studio'
     | '/org/verification'
+    | '/reviewer/queue'
+    | '/reviewer/reports'
+    | '/school/dashboard'
+    | '/school/review'
+    | '/student/explore'
+    | '/student/home'
+    | '/student/progress'
     | '/creator/channel/edit'
     | '/creator/studio/new'
     | '/org/channel/edit'
     | '/org/studio/new'
+    | '/reviewer/review/$id'
+    | '/student/learn/$id'
     | '/creator/builder/book/$id'
     | '/creator/builder/course/$id'
     | '/creator/builder/material/$id'
@@ -515,10 +707,34 @@ export interface RootRouteChildren {
   CreatorRoute: typeof CreatorRouteWithChildren
   LoginRoute: typeof LoginRoute
   OrgRoute: typeof OrgRouteWithChildren
+  ReviewerRoute: typeof ReviewerRouteWithChildren
+  SchoolRoute: typeof SchoolRouteWithChildren
+  StudentRoute: typeof StudentRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/school': {
+      id: '/school'
+      path: '/school'
+      fullPath: '/school'
+      preLoaderRoute: typeof SchoolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviewer': {
+      id: '/reviewer'
+      path: '/reviewer'
+      fullPath: '/reviewer'
+      preLoaderRoute: typeof ReviewerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/org': {
       id: '/org'
       path: '/org'
@@ -554,6 +770,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/student/progress': {
+      id: '/student/progress'
+      path: '/progress'
+      fullPath: '/student/progress'
+      preLoaderRoute: typeof StudentProgressRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/home': {
+      id: '/student/home'
+      path: '/home'
+      fullPath: '/student/home'
+      preLoaderRoute: typeof StudentHomeRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/student/explore': {
+      id: '/student/explore'
+      path: '/explore'
+      fullPath: '/student/explore'
+      preLoaderRoute: typeof StudentExploreRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/school/review': {
+      id: '/school/review'
+      path: '/review'
+      fullPath: '/school/review'
+      preLoaderRoute: typeof SchoolReviewRouteImport
+      parentRoute: typeof SchoolRoute
+    }
+    '/school/dashboard': {
+      id: '/school/dashboard'
+      path: '/dashboard'
+      fullPath: '/school/dashboard'
+      preLoaderRoute: typeof SchoolDashboardRouteImport
+      parentRoute: typeof SchoolRoute
+    }
+    '/reviewer/reports': {
+      id: '/reviewer/reports'
+      path: '/reports'
+      fullPath: '/reviewer/reports'
+      preLoaderRoute: typeof ReviewerReportsRouteImport
+      parentRoute: typeof ReviewerRoute
+    }
+    '/reviewer/queue': {
+      id: '/reviewer/queue'
+      path: '/queue'
+      fullPath: '/reviewer/queue'
+      preLoaderRoute: typeof ReviewerQueueRouteImport
+      parentRoute: typeof ReviewerRoute
+    }
     '/org/verification': {
       id: '/org/verification'
       path: '/verification'
@@ -566,6 +831,13 @@ declare module '@tanstack/react-router' {
       path: '/studio'
       fullPath: '/org/studio'
       preLoaderRoute: typeof OrgStudioRouteImport
+      parentRoute: typeof OrgRoute
+    }
+    '/org/signing': {
+      id: '/org/signing'
+      path: '/signing'
+      fullPath: '/org/signing'
+      preLoaderRoute: typeof OrgSigningRouteImport
       parentRoute: typeof OrgRoute
     }
     '/org/settings': {
@@ -603,6 +875,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgChannelRouteImport
       parentRoute: typeof OrgRoute
     }
+    '/org/analytics': {
+      id: '/org/analytics'
+      path: '/analytics'
+      fullPath: '/org/analytics'
+      preLoaderRoute: typeof OrgAnalyticsRouteImport
+      parentRoute: typeof OrgRoute
+    }
     '/creator/verification': {
       id: '/creator/verification'
       path: '/verification'
@@ -624,11 +903,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorSettingsRouteImport
       parentRoute: typeof CreatorRoute
     }
+    '/creator/registry': {
+      id: '/creator/registry'
+      path: '/registry'
+      fullPath: '/creator/registry'
+      preLoaderRoute: typeof CreatorRegistryRouteImport
+      parentRoute: typeof CreatorRoute
+    }
     '/creator/library': {
       id: '/creator/library'
       path: '/library'
       fullPath: '/creator/library'
       preLoaderRoute: typeof CreatorLibraryRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/creator/dept-review': {
+      id: '/creator/dept-review'
+      path: '/dept-review'
+      fullPath: '/creator/dept-review'
+      preLoaderRoute: typeof CreatorDeptReviewRouteImport
       parentRoute: typeof CreatorRoute
     }
     '/creator/dashboard': {
@@ -714,6 +1007,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/channel'
       preLoaderRoute: typeof AdminChannelRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/student/learn/$id': {
+      id: '/student/learn/$id'
+      path: '/learn/$id'
+      fullPath: '/student/learn/$id'
+      preLoaderRoute: typeof StudentLearnIdRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/reviewer/review/$id': {
+      id: '/reviewer/review/$id'
+      path: '/review/$id'
+      fullPath: '/reviewer/review/$id'
+      preLoaderRoute: typeof ReviewerReviewIdRouteImport
+      parentRoute: typeof ReviewerRoute
     }
     '/org/studio/new': {
       id: '/org/studio/new'
@@ -857,7 +1164,9 @@ const CreatorStudioRouteWithChildren = CreatorStudioRoute._addFileChildren(
 interface CreatorRouteChildren {
   CreatorChannelRoute: typeof CreatorChannelRouteWithChildren
   CreatorDashboardRoute: typeof CreatorDashboardRoute
+  CreatorDeptReviewRoute: typeof CreatorDeptReviewRoute
   CreatorLibraryRoute: typeof CreatorLibraryRoute
+  CreatorRegistryRoute: typeof CreatorRegistryRoute
   CreatorSettingsRoute: typeof CreatorSettingsRoute
   CreatorStudioRoute: typeof CreatorStudioRouteWithChildren
   CreatorVerificationRoute: typeof CreatorVerificationRoute
@@ -870,7 +1179,9 @@ interface CreatorRouteChildren {
 const CreatorRouteChildren: CreatorRouteChildren = {
   CreatorChannelRoute: CreatorChannelRouteWithChildren,
   CreatorDashboardRoute: CreatorDashboardRoute,
+  CreatorDeptReviewRoute: CreatorDeptReviewRoute,
   CreatorLibraryRoute: CreatorLibraryRoute,
+  CreatorRegistryRoute: CreatorRegistryRoute,
   CreatorSettingsRoute: CreatorSettingsRoute,
   CreatorStudioRoute: CreatorStudioRouteWithChildren,
   CreatorVerificationRoute: CreatorVerificationRoute,
@@ -908,11 +1219,13 @@ const OrgStudioRouteWithChildren = OrgStudioRoute._addFileChildren(
 )
 
 interface OrgRouteChildren {
+  OrgAnalyticsRoute: typeof OrgAnalyticsRoute
   OrgChannelRoute: typeof OrgChannelRouteWithChildren
   OrgDashboardRoute: typeof OrgDashboardRoute
   OrgLibraryRoute: typeof OrgLibraryRoute
   OrgMembersRoute: typeof OrgMembersRoute
   OrgSettingsRoute: typeof OrgSettingsRoute
+  OrgSigningRoute: typeof OrgSigningRoute
   OrgStudioRoute: typeof OrgStudioRouteWithChildren
   OrgVerificationRoute: typeof OrgVerificationRoute
   OrgBuilderBookIdRoute: typeof OrgBuilderBookIdRoute
@@ -922,11 +1235,13 @@ interface OrgRouteChildren {
 }
 
 const OrgRouteChildren: OrgRouteChildren = {
+  OrgAnalyticsRoute: OrgAnalyticsRoute,
   OrgChannelRoute: OrgChannelRouteWithChildren,
   OrgDashboardRoute: OrgDashboardRoute,
   OrgLibraryRoute: OrgLibraryRoute,
   OrgMembersRoute: OrgMembersRoute,
   OrgSettingsRoute: OrgSettingsRoute,
+  OrgSigningRoute: OrgSigningRoute,
   OrgStudioRoute: OrgStudioRouteWithChildren,
   OrgVerificationRoute: OrgVerificationRoute,
   OrgBuilderBookIdRoute: OrgBuilderBookIdRoute,
@@ -937,12 +1252,61 @@ const OrgRouteChildren: OrgRouteChildren = {
 
 const OrgRouteWithChildren = OrgRoute._addFileChildren(OrgRouteChildren)
 
+interface ReviewerRouteChildren {
+  ReviewerQueueRoute: typeof ReviewerQueueRoute
+  ReviewerReportsRoute: typeof ReviewerReportsRoute
+  ReviewerReviewIdRoute: typeof ReviewerReviewIdRoute
+}
+
+const ReviewerRouteChildren: ReviewerRouteChildren = {
+  ReviewerQueueRoute: ReviewerQueueRoute,
+  ReviewerReportsRoute: ReviewerReportsRoute,
+  ReviewerReviewIdRoute: ReviewerReviewIdRoute,
+}
+
+const ReviewerRouteWithChildren = ReviewerRoute._addFileChildren(
+  ReviewerRouteChildren,
+)
+
+interface SchoolRouteChildren {
+  SchoolDashboardRoute: typeof SchoolDashboardRoute
+  SchoolReviewRoute: typeof SchoolReviewRoute
+}
+
+const SchoolRouteChildren: SchoolRouteChildren = {
+  SchoolDashboardRoute: SchoolDashboardRoute,
+  SchoolReviewRoute: SchoolReviewRoute,
+}
+
+const SchoolRouteWithChildren =
+  SchoolRoute._addFileChildren(SchoolRouteChildren)
+
+interface StudentRouteChildren {
+  StudentExploreRoute: typeof StudentExploreRoute
+  StudentHomeRoute: typeof StudentHomeRoute
+  StudentProgressRoute: typeof StudentProgressRoute
+  StudentLearnIdRoute: typeof StudentLearnIdRoute
+}
+
+const StudentRouteChildren: StudentRouteChildren = {
+  StudentExploreRoute: StudentExploreRoute,
+  StudentHomeRoute: StudentHomeRoute,
+  StudentProgressRoute: StudentProgressRoute,
+  StudentLearnIdRoute: StudentLearnIdRoute,
+}
+
+const StudentRouteWithChildren =
+  StudentRoute._addFileChildren(StudentRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   CreatorRoute: CreatorRouteWithChildren,
   LoginRoute: LoginRoute,
   OrgRoute: OrgRouteWithChildren,
+  ReviewerRoute: ReviewerRouteWithChildren,
+  SchoolRoute: SchoolRouteWithChildren,
+  StudentRoute: StudentRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -34,7 +34,7 @@ export function StatCard({
               <p
                 className={cn(
                   "mt-1 text-xs font-medium",
-                  trendUp ? "text-green-600" : "text-red-500",
+                  trendUp ? "text-success" : "text-destructive",
                 )}
               >
                 {trend}
