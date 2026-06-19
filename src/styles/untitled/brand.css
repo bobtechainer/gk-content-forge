@@ -1,0 +1,96 @@
+/* ── Brand retune → MobiFone ────────────────────────────────────────────────
+   The system stays the neutral Untitled UI kit, but every brand value is mapped
+   to MobiFone's brand palette. Because every semantic token in fig-tokens.css
+   references --colors-brand-* / --colors-accent-* / --colors-warning-* / text /
+   background roles, overriding those values here cascades MobiFone's brand
+   through buttons, links, focus rings, surfaces, etc.
+   Loaded AFTER fig-tokens.css. Only VALUES change — variable names are unchanged.
+
+   MobiFone source values:
+     Primary Blue   #0060A6   → --colors-brand-600  (primary action)
+     Bright/Active  #237BD3   → --colors-brand-500
+     Primary Navy   #041F4A   → --colors-brand-900
+     Accent Red     #E30613   → --colors-accent-500 (brand accent)
+     Secondary Cam  #FFA23A   → --colors-warning-500 (warm secondary / warning)
+     Text Dark      #020202   → --colors-text-text-primary-900
+     Text Body      #666666   → --colors-text-text-secondary-700
+     Background     #F2F2F2   → --colors-background-bg-secondary
+     Footer         #3E4A56 / #353E48 → --bg-footer / --bg-footer-bottom        */
+:root {
+  /* ---- MobiFone blue primary ramp (replaces --colors-brand-*) ----
+     Re-anchored to the LIVE site: the primary button is #237BD3, so brand-600
+     (= --bg-brand-solid) is #237BD3 and the darker #0060A6 becomes brand-700
+     (hover/pressed). Navy #041F4A stays at brand-900 for dark sections. */
+  --colors-brand-25:  rgb(246,250,254);
+  --colors-brand-50:  rgb(238,245,252);
+  --colors-brand-100: rgb(221,235,250);
+  --colors-brand-200: rgb(190,217,246);
+  --colors-brand-300: rgb(150,198,240);
+  --colors-brand-400: rgb(112,176,234);
+  --colors-brand-500: rgb(74,151,224);    /* lighter tint for rings / secondary fg */
+  --colors-brand-600: rgb(35,123,211);    /* #237BD3 — primary button (bg-brand-solid) */
+  --colors-brand-700: rgb(0,96,166);      /* #0060A6 — hover / pressed */
+  --colors-brand-800: rgb(5,58,107);
+  --colors-brand-900: rgb(4,31,74);       /* #041F4A — navy (dark sections) */
+  --colors-brand-950: rgb(2,18,46);
+
+  /* ---- MobiFone red accent ramp (the brand red — CTAs, highlights) ---- */
+  --colors-accent-25:  rgb(255,245,245);
+  --colors-accent-50:  rgb(254,235,235);
+  --colors-accent-100: rgb(252,204,206);
+  --colors-accent-200: rgb(249,161,164);
+  --colors-accent-300: rgb(244,112,116);
+  --colors-accent-400: rgb(237,64,68);
+  --colors-accent-500: rgb(227,6,19);     /* #E30613 — brand red */
+  --colors-accent-600: rgb(196,5,16);
+  --colors-accent-700: rgb(160,8,15);
+  --colors-accent-800: rgb(128,12,16);
+  --colors-accent-900: rgb(104,14,17);
+  --colors-accent-950: rgb(58,6,8);
+
+  /* Ergonomic accent aliases */
+  --accent-25:  var(--colors-accent-25);
+  --accent-50:  var(--colors-accent-50);
+  --accent-100: var(--colors-accent-100);
+  --accent-200: var(--colors-accent-200);
+  --accent-300: var(--colors-accent-300);
+  --accent-400: var(--colors-accent-400);
+  --accent-500: var(--colors-accent-500);
+  --accent-600: var(--colors-accent-600);
+  --accent-700: var(--colors-accent-700);
+  --accent-800: var(--colors-accent-800);
+  --accent-900: var(--colors-accent-900);
+
+  --accent-solid: var(--colors-accent-500);
+  --accent-solid-hover: var(--colors-accent-600);
+  --text-accent: var(--colors-accent-700);
+  --bg-accent-primary: var(--colors-accent-50);
+
+  /* ---- MobiFone orange secondary (mapped onto the warning ramp) ---- */
+  --colors-warning-25:  rgb(255,251,244);
+  --colors-warning-50:  rgb(255,245,231);
+  --colors-warning-100: rgb(255,233,204);
+  --colors-warning-200: rgb(255,214,158);
+  --colors-warning-300: rgb(255,194,112);
+  --colors-warning-400: rgb(255,177,75);
+  --colors-warning-500: rgb(255,162,58);  /* #FFA23A — secondary accent */
+  --colors-warning-600: rgb(232,134,22);
+  --colors-warning-700: rgb(186,103,12);
+  --colors-warning-800: rgb(148,82,12);
+  --colors-warning-900: rgb(120,67,13);
+  --colors-warning-950: rgb(76,42,8);
+
+  /* ---- MobiFone text colors ---- */
+  --colors-text-text-primary-900:   rgb(2,2,2);       /* #020202 — text dark */
+  --colors-text-text-secondary-700: rgb(102,102,102); /* #666666 — body / main */
+
+  /* ---- MobiFone surfaces ---- */
+  --colors-background-bg-secondary: rgb(242,242,242);  /* #F2F2F2 — light bg */
+
+  /* ---- MobiFone footer surfaces (additive) ---- */
+  --bg-footer:        rgb(62,74,86);   /* #3E4A56 — footer */
+  --bg-footer-bottom: rgb(53,62,72);   /* #353E48 — bottom footer bar */
+
+  /* Refit focus ring shadow to the MobiFone primary blue */
+  --shadow-ring-brand: 0 0 0 4px rgba(35, 123, 211, 0.20);
+}

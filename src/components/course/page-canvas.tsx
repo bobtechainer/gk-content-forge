@@ -74,7 +74,7 @@ function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (corr
           return (
             <button key={i} type="button" disabled={answered} onClick={() => pick(i)}
               className={cn("flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition",
-                state === "idle" && "border-border hover:border-[#2563EB] hover:bg-[#EFF6FF]",
+                state === "idle" && "border-border hover:border-primary hover:bg-accent",
                 state === "correct" && "border-emerald-400 bg-emerald-50 text-emerald-800",
                 state === "wrong" && "border-red-400 bg-red-50 text-red-800",
                 state === "muted" && "border-border opacity-60")}>
@@ -240,7 +240,7 @@ function PreviewJourney({ blocks, lessonTitle }: { blocks: CourseBlock[]; lesson
               {section.title && (
                 <div className="mx-auto mb-5 max-w-2xl">
                   <div className="flex items-center gap-2.5">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-bold text-white">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
                       {i + 1}
                     </span>
                     <h2 className="text-lg font-bold text-foreground">{section.title}</h2>
@@ -310,7 +310,7 @@ function SectionGate({
         className={cn(
           "flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition",
           complete
-            ? "bg-[#2563EB] text-white hover:bg-[#1d4ed8] active:scale-[0.99]"
+            ? "bg-primary text-white hover:bg-primary-hover active:scale-[0.99]"
             : "cursor-not-allowed bg-muted text-muted-foreground",
         )}
       >
@@ -370,7 +370,7 @@ function InsertButton({ onClick }: { onClick: () => void }) {
     <div className="group flex items-center justify-center py-0.5">
       <div className="h-px flex-1 bg-transparent transition group-hover:bg-border/50" />
       <button type="button" onClick={onClick}
-        className="flex h-5 w-5 items-center justify-center rounded-full border border-transparent text-muted-foreground/0 transition group-hover:border-border group-hover:bg-card group-hover:text-muted-foreground group-hover:shadow-sm hover:!border-[#2563EB] hover:!text-[#2563EB]">
+        className="flex h-5 w-5 items-center justify-center rounded-full border border-transparent text-muted-foreground/0 transition group-hover:border-border group-hover:bg-card group-hover:text-muted-foreground group-hover:shadow-sm hover:!border-primary hover:!text-primary">
         <Plus className="h-3 w-3" />
       </button>
       <div className="h-px flex-1 bg-transparent transition group-hover:bg-border/50" />
@@ -383,9 +383,9 @@ function InsertButton({ onClick }: { onClick: () => void }) {
 function DropIndicator() {
   return (
     <div className="flex items-center gap-1.5 py-1" aria-hidden>
-      <div className="h-1.5 w-1.5 rounded-full bg-[#2563EB]" />
-      <div className="h-0.5 flex-1 rounded-full bg-[#2563EB]" />
-      <div className="h-1.5 w-1.5 rounded-full bg-[#2563EB]" />
+      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+      <div className="h-0.5 flex-1 rounded-full bg-primary" />
+      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
     </div>
   );
 }
@@ -446,7 +446,7 @@ export function PageCanvas({
       ref={setNodeRef}
       className={cn(
         "relative flex min-h-full flex-1 flex-col transition",
-        isOver && "bg-[#EFF6FF]/30 ring-2 ring-inset ring-dashed ring-[#2563EB]/20",
+        isOver && "bg-accent/30 ring-2 ring-inset ring-dashed ring-primary/20",
       )}
     >
       <div className="mx-auto w-full max-w-4xl flex-1 space-y-0.5 px-6 py-6">
@@ -509,14 +509,14 @@ function EmptyCanvasPlaceholder({ onAdd }: { onAdd: () => void }) {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className="mx-auto max-w-2xl flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/50 bg-card py-16 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
-        <Move className="h-7 w-7 text-[#2563EB]" />
+        <Move className="h-7 w-7 text-primary" />
       </div>
       <div className="mt-4 text-base font-semibold text-foreground">Bài học trống</div>
       <p className="mt-2 max-w-xs text-sm text-muted-foreground">
         Kéo block từ bên trái hoặc gõ <kbd className="rounded bg-muted px-1 font-mono text-[10px]">/</kbd>
       </p>
       <button onClick={onAdd}
-        className="mt-4 flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1d4ed8] active:scale-[0.98]">
+        className="mt-4 flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary-hover active:scale-[0.98]">
         <Plus className="h-4 w-4" /> Thêm block đầu tiên
       </button>
     </motion.div>

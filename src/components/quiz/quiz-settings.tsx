@@ -123,7 +123,7 @@ export function QuizSettingsDialog({
               Hủy
             </Button>
             <Button
-              className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+              className="bg-primary text-white hover:bg-primary-hover"
               onClick={() => {
                 toast.success("Đã lưu thiết lập bộ đề");
                 onOpenChange(false);

@@ -2,6 +2,24 @@
 @source "../src";
 @import "tw-animate-css";
 
+/*
+ * Untitled UI Design System (rebranded → MobiFone) — design tokens.
+ * These supply the raw color scale, semantic roles, type scale, spacing/radius,
+ * shadows and gradients. The shadcn semantic variables in :root below are
+ * re-pointed onto these tokens, so every existing component re-skins to
+ * Untitled UI automatically. Import order mirrors the source design system.
+ * (fonts.css and base.css are intentionally NOT imported — fonts are handled
+ *  in :root/__root, and the document base lives in @layer base below.)
+ */
+@import "./styles/untitled/fig-tokens.css";
+@import "./styles/untitled/brand.css";
+@import "./styles/untitled/fonts.css";
+@import "./styles/untitled/colors.css";
+@import "./styles/untitled/typography.css";
+@import "./styles/untitled/spacing.css";
+@import "./styles/untitled/shadows.css";
+@import "./styles/untitled/gradients.css";
+
 @custom-variant dark (&:is(.dark *));
 
 /*
@@ -10,22 +28,29 @@
  * The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * The :root and .dark blocks define the actual color values. :root re-points
+ * the shadcn semantic roles onto the Untitled UI tokens above; .dark keeps the
+ * existing dark overrides (the Untitled UI kit is light-first).
  */
-
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* ---- Radius scale (Untitled UI absolute values; control default = 8px) ---- */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
+
+  /* ---- Soft layered elevation (Untitled UI) → Tailwind shadow-* utilities ---- */
+  --shadow-xs: 0 1px 2px 0 rgba(10, 13, 18, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(10, 13, 18, 0.10), 0 1px 2px -1px rgba(10, 13, 18, 0.10);
+  --shadow-md: 0 4px 6px -1px rgba(10, 13, 18, 0.10), 0 2px 4px -2px rgba(10, 13, 18, 0.06);
+  --shadow-lg: 0 12px 16px -4px rgba(10, 13, 18, 0.08), 0 4px 6px -2px rgba(10, 13, 18, 0.03);
+  --shadow-xl: 0 20px 40px rgba(10, 13, 18, 0.06);
+  --shadow-2xl: 0 24px 48px -12px rgba(10, 13, 18, 0.18);
+
+  /* ---- shadcn semantic roles (re-pointed to Untitled UI in :root) ---- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -34,6 +59,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -42,6 +68,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -59,48 +87,116 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ---- Untitled UI raw scales exposed as Tailwind colors ----
+     Enables bg-brand-600 / text-brand-700 / bg-success-50 … used when
+     de-hardcoding components onto the design system palette. */
+  --color-brand-25: var(--colors-brand-25);
+  --color-brand-50: var(--colors-brand-50);
+  --color-brand-100: var(--colors-brand-100);
+  --color-brand-200: var(--colors-brand-200);
+  --color-brand-300: var(--colors-brand-300);
+  --color-brand-400: var(--colors-brand-400);
+  --color-brand-500: var(--colors-brand-500);
+  --color-brand-600: var(--colors-brand-600);
+  --color-brand-700: var(--colors-brand-700);
+  --color-brand-800: var(--colors-brand-800);
+  --color-brand-900: var(--colors-brand-900);
+  --color-success-50: var(--colors-success-50);
+  --color-success-500: var(--colors-success-500);
+  --color-success-600: var(--colors-success-600);
+  --color-success-700: var(--colors-success-700);
+  --color-warning-50: var(--colors-warning-50);
+  --color-warning-500: var(--colors-warning-500);
+  --color-warning-600: var(--colors-warning-600);
+  --color-warning-700: var(--colors-warning-700);
+  --color-error-50: var(--colors-error-50);
+  --color-error-500: var(--colors-error-500);
+  --color-error-600: var(--colors-error-600);
+  --color-error-700: var(--colors-error-700);
+
+  /* Extended status steps (callouts: bg-100 / border-200 / text-700) */
+  --color-success-100: var(--colors-success-100);
+  --color-success-200: var(--colors-success-200);
+  --color-warning-100: var(--colors-warning-100);
+  --color-warning-200: var(--colors-warning-200);
+  --color-error-100: var(--colors-error-100);
+  --color-error-200: var(--colors-error-200);
+
+  /* Categorical block-accent hues from the Untitled UI scale */
+  --color-violet-50: var(--colors-violet-50);
+  --color-violet-100: var(--colors-violet-100);
+  --color-violet-500: var(--colors-violet-500);
+  --color-violet-600: var(--colors-violet-600);
+  --color-pink-50: var(--colors-pink-50);
+  --color-pink-100: var(--colors-pink-100);
+  --color-pink-500: var(--colors-pink-500);
+  --color-pink-600: var(--colors-pink-600);
+  --color-cyan-50: var(--colors-cyan-50);
+  --color-cyan-100: var(--colors-cyan-100);
+  --color-cyan-500: var(--colors-cyan-500);
+  --color-cyan-600: var(--colors-cyan-600);
+  --color-blue-light-50: var(--colors-blue-light-50);
+  --color-blue-light-100: var(--colors-blue-light-100);
+  --color-blue-light-500: var(--colors-blue-light-500);
+  --color-blue-light-600: var(--colors-blue-light-600);
+  --color-indigo-50: var(--colors-indigo-50);
+  --color-indigo-100: var(--colors-indigo-100);
+  --color-indigo-500: var(--colors-indigo-500);
+  --color-indigo-600: var(--colors-indigo-600);
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: #f9fafb;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --popover: #ffffff;
-  --popover-foreground: #111827;
-  --primary: #20447e;
-  --primary-foreground: #ffffff;
-  --primary-hover: #1a3766;
-  --action: #2563eb;
-  --action-foreground: #ffffff;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #111827;
-  --muted: #f3f4f6;
-  --muted-foreground: #717680;
-  --accent: #eff6ff;
-  --accent-foreground: #20447e;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  --ring: #20447e;
-  --chart-1: #20447e;
-  --chart-2: #2563eb;
-  --chart-3: #10b981;
-  --chart-4: #f59e0b;
-  --chart-5: #ef4444;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #111827;
-  --sidebar-primary: #20447e;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eff6ff;
-  --sidebar-accent-foreground: #20447e;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: #20447e;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Default control radius — Untitled UI uses 8px. */
+  --radius: 8px;
+
+  /* ---- shadcn semantic roles → Untitled UI (MobiFone) tokens ---- */
+  --background: var(--bg-secondary);            /* #F2F2F2 canvas */
+  --foreground: var(--text-primary);            /* #020202 */
+  --card: var(--bg-primary);                    /* white */
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-primary);
+  --popover-foreground: var(--text-primary);
+
+  --primary: var(--bg-brand-solid);             /* #237BD3 */
+  --primary-foreground: var(--text-on-brand);   /* white */
+  --primary-hover: var(--bg-brand-solid-hover); /* #0060A6 */
+  --action: var(--bg-brand-solid);
+  --action-foreground: var(--text-on-brand);
+
+  --secondary: var(--bg-secondary);
+  --secondary-foreground: var(--text-secondary);
+  --muted: var(--bg-secondary);
+  --muted-foreground: var(--text-tertiary);
+  --accent: var(--bg-brand-primary);            /* brand-50 light blue */
+  --accent-foreground: var(--text-brand);
+
+  --destructive: var(--error-600);
+  --destructive-foreground: var(--text-white);
+  --success: var(--success-600);
+  --warning: var(--warning-500);
+
+  --border: var(--border-primary);
+  --input: var(--border-primary);
+  --ring: var(--brand-600);
+
+  /* Categorical chart palette drawn from the Untitled UI scale. */
+  --chart-1: var(--brand-600);
+  --chart-2: var(--success-500);
+  --chart-3: var(--warning-500);
+  --chart-4: var(--colors-violet-600);
+  --chart-5: var(--colors-pink-600);
+
+  /* Sidebar — white surface, brand accents. */
+  --sidebar: var(--bg-primary);
+  --sidebar-foreground: var(--text-secondary);
+  --sidebar-primary: var(--bg-brand-solid);
+  --sidebar-primary-foreground: var(--text-on-brand);
+  --sidebar-accent: var(--bg-brand-primary);
+  --sidebar-accent-foreground: var(--text-brand);
+  --sidebar-border: var(--border-primary);
+  --sidebar-ring: var(--brand-600);
+  /* --font-sans / --font-display / --font-mono are defined in styles/untitled/fonts.css */
 }
 
 .dark {

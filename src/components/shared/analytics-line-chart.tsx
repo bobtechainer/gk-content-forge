@@ -50,7 +50,7 @@ export function AnalyticsLineChart() {
               className={cn(
                 "rounded-md px-3 py-1 text-xs font-medium transition",
                 range === r.value
-                  ? "bg-[#2563EB] text-white"
+                  ? "bg-primary text-white"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -66,32 +66,32 @@ export function AnalyticsLineChart() {
               <LineChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                 <defs>
                   <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "#717680" }}
+                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                   minTickGap={24}
                 />
-                <YAxis tick={{ fontSize: 11, fill: "#717680" }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{
                     borderRadius: 8,
-                    border: "1px solid #E5E7EB",
+                    border: "1px solid var(--border)",
                     fontSize: 12,
                   }}
-                  labelStyle={{ color: "#111827", fontWeight: 600 }}
+                  labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="views"
-                  stroke="#2563EB"
+                  stroke="var(--primary)"
                   strokeWidth={2.5}
                   dot={false}
                   activeDot={{ r: 4 }}

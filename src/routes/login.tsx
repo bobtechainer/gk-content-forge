@@ -30,21 +30,21 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] via-[#EFF6FF] to-[#F9FAFB]">
+    <div className="min-h-screen bg-gradient-to-br from-muted via-accent to-muted">
       <div className="mx-auto max-w-6xl px-6 py-16">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="/assets/logo/Logomark.svg" alt="Trường học số" className="h-9 w-9" />
             <span className="text-lg font-semibold text-foreground">GK Content Studio</span>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-medium text-[#92400E]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-warning-100 px-3 py-1 text-xs font-medium text-warning-700">
             <Sparkles className="h-3 w-3" /> Demo Mode
           </span>
         </header>
 
         <div className="mt-12 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Chào mừng đến với <span className="text-[#20447E]">GK Studio</span>
+            Chào mừng đến với <span className="text-primary">GK Studio</span>
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
             Đây là bản demo. Chọn vai trò bên dưới để vào thẳng dashboard và trải nghiệm luồng tạo —
@@ -63,7 +63,7 @@ function LoginPage() {
                 transition={{ delay: i * 0.08 }}
                 whileHover={{ y: -4 }}
                 onClick={() => pick(id)}
-                className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 text-left shadow-sm transition hover:border-[#2563EB] hover:shadow-xl"
+                className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 text-left shadow-sm transition hover:border-primary hover:shadow-xl"
               >
                 <div
                   className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-10 transition group-hover:scale-150"
@@ -81,7 +81,7 @@ function LoginPage() {
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{a.accountType}</p>
                 <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>
-                <div className="mt-4 flex items-center text-xs font-medium text-[#2563EB]">
+                <div className="mt-4 flex items-center text-xs font-medium text-primary">
                   Vào dashboard{" "}
                   <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-1" />
                 </div>

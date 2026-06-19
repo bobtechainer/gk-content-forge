@@ -65,7 +65,7 @@ export function MaterialTabs({
           >
             {t.label}
             {i === tabIndex && (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#2563EB]" />
+              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
             )}
           </button>
         ))}
@@ -112,7 +112,7 @@ function SubtypeChip({
       className={cn(
         "whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
         active
-          ? "border-[#2563EB] bg-[#2563EB] text-white"
+          ? "border-primary bg-primary text-white"
           : "border-border bg-card text-muted-foreground hover:border-muted-foreground/40",
       )}
     >

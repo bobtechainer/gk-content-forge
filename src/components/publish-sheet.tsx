@@ -89,7 +89,7 @@ export function PublishSheet({
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-[480px]">
         <SheetHeader className="border-b border-border p-5">
           <SheetTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-[#2563EB]" /> Xuất bản nội dung
+            <Sparkles className="h-5 w-5 text-primary" /> Xuất bản nội dung
           </SheetTitle>
           <p className="text-sm text-muted-foreground">{title}</p>
         </SheetHeader>
@@ -104,7 +104,7 @@ export function PublishSheet({
                 exit={{ opacity: 0 }}
                 className="space-y-4"
               >
-                <div className="flex items-center gap-2 text-sm font-medium text-[#2563EB]">
+                <div className="flex items-center gap-2 text-sm font-medium text-primary">
                   <Loader2 className="h-4 w-4 animate-spin" /> AI đang phân tích nội dung…
                 </div>
                 {[80, 100, 60, 90, 70].map((w, i) => (
@@ -138,7 +138,7 @@ export function PublishSheet({
                     {tags.map((t) => (
                       <span
                         key={t}
-                        className="inline-flex items-center gap-1 rounded-full bg-[#EFF6FF] px-2.5 py-1 text-xs font-medium text-[#2563EB]"
+                        className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-primary"
                       >
                         {t}
                         <button
@@ -197,14 +197,14 @@ export function PublishSheet({
                   <div className="grid grid-cols-2 gap-2">
                     <PlatformCard
                       label="Trường học số quốc gia"
-                      color="#20447E"
+                      color="var(--primary)"
                       letter="TH"
                       checked={platforms.includes("national")}
                       onToggle={() => togglePlatform("national")}
                     />
                     <PlatformCard
                       label="GK Ebooks"
-                      color="#2563EB"
+                      color="var(--primary)"
                       letter="GK"
                       checked={platforms.includes("ebooks")}
                       onToggle={() => togglePlatform("ebooks")}
@@ -275,7 +275,7 @@ export function PublishSheet({
             Lưu nháp
           </Button>
           <Button
-            className="gap-1.5 bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+            className="gap-1.5 bg-primary text-white hover:bg-primary-hover"
             disabled={analyzing || publishing}
             onClick={submit}
           >
@@ -302,12 +302,12 @@ function QualityRing({ score }: { score: number }) {
   return (
     <div className="relative h-20 w-20 shrink-0">
       <svg className="h-full w-full -rotate-90" viewBox="0 0 72 72">
-        <circle cx="36" cy="36" r={r} stroke="#E5E7EB" strokeWidth="6" fill="none" />
+        <circle cx="36" cy="36" r={r} stroke="var(--border)" strokeWidth="6" fill="none" />
         <circle
           cx="36"
           cy="36"
           r={r}
-          stroke="#10B981"
+          stroke="var(--success)"
           strokeWidth="6"
           fill="none"
           strokeDasharray={`${dash} ${c}`}
@@ -341,7 +341,7 @@ function PlatformCard({
       aria-pressed={checked}
       aria-label={`${checked ? "Bỏ chọn" : "Chọn"} nền tảng ${label}`}
       onClick={onToggle}
-      className={`flex min-h-11 items-center gap-2 rounded-lg border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${checked ? "border-[#2563EB] bg-[#EFF6FF]" : "border-border bg-card hover:border-muted-foreground/40"}`}
+      className={`flex min-h-11 items-center gap-2 rounded-lg border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${checked ? "border-primary bg-accent" : "border-border bg-card hover:border-muted-foreground/40"}`}
     >
       <Checkbox checked={checked} className="pointer-events-none" />
       <div

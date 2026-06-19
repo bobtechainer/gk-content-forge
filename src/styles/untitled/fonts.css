@@ -1,0 +1,30 @@
+/* MobiFone typography.
+   SFUIText (UI/body) + UTM-Mobifone-KT (display/headings) are MobiFone's proprietary
+   faces. The @font-face rules below resolve to the REAL brand font via local() if it is
+   installed on the machine; otherwise the font-family stacks fall through to
+   **Be Vietnam Pro** — an open, Vietnamese-designed substitute with full diacritics,
+   loaded (with Roboto Mono for code) from Google Fonts in src/routes/__root.tsx.
+   The family NAMES stay 'SFUIText' / 'UTM-Mobifone-KT' so tokens never change.
+   → To make EXACT: install the licensed faces named 'SF UI Text' / 'UTM Mobifone KT'
+     on the host (or add @font-face url() to bundled .woff2). Nothing else needs editing. */
+
+@font-face { font-family: 'SFUIText'; font-style: normal; font-weight: 400; font-display: swap;
+  src: local('SF UI Text'), local('SFUIText'); }
+@font-face { font-family: 'SFUIText'; font-style: normal; font-weight: 500; font-display: swap;
+  src: local('SF UI Text Medium'), local('SFUIText-Medium'); }
+@font-face { font-family: 'UTM-Mobifone-KT'; font-style: normal; font-weight: 600; font-display: swap;
+  src: local('UTM Mobifone KT'), local('UTM-Mobifone-KT'); }
+@font-face { font-family: 'UTM-Mobifone-KT'; font-style: normal; font-weight: 700; font-display: swap;
+  src: local('UTM Mobifone KT'), local('UTM-Mobifone-KT'); }
+
+:root {
+  --font-sans: 'SFUIText', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'UTM-Mobifone-KT', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+
+  /* MobiFone uses Regular (400) and Medium (500); 600/700 retained for emphasis. */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}

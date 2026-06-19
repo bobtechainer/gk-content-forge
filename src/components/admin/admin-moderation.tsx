@@ -45,7 +45,7 @@ export function AdminContentReviewPage() {
                     setReason("");
                   }}
                 >
-                  <FileText className="h-5 w-5 shrink-0 text-[#2563EB]" />
+                  <FileText className="h-5 w-5 shrink-0 text-primary" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium text-foreground">{item.title}</div>
                     <div className="text-xs text-muted-foreground">
@@ -135,7 +135,7 @@ export function AdminVerificationRequestsPage() {
               >
                 <div
                   className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
-                  style={{ backgroundColor: applicant?.avatarColor ?? "#2563EB" }}
+                  style={{ backgroundColor: applicant?.avatarColor ?? "var(--primary)" }}
                 >
                   {applicant?.shortName ?? "?"}
                 </div>
@@ -221,7 +221,7 @@ export function AdminReportsPage() {
         {reports.map((r) => (
           <Card key={r.id}>
             <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-              <AlertTriangle className="h-5 w-5 shrink-0 text-[#F59E0B]" />
+              <AlertTriangle className="h-5 w-5 shrink-0 text-warning" />
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium text-foreground">{r.contentTitle}</div>
                 <div className="text-xs text-muted-foreground">
@@ -307,7 +307,7 @@ export function AdminSettingsPage() {
       description="Ngưỡng xác minh, danh mục môn học và quy tắc kiểm duyệt."
       actions={
         <Button
-          className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+          className="bg-primary text-white hover:bg-primary-hover"
           onClick={() => toast.success("Đã lưu cấu hình")}
         >
           Lưu cấu hình

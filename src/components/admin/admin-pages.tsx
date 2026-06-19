@@ -60,17 +60,17 @@ export function AdminDashboardPage() {
     {
       name: "Cá nhân",
       value: accounts.filter((a) => a.accountType === "Cá nhân").length,
-      color: "#2563EB",
+      color: "var(--primary)",
     },
     {
       name: "Doanh nghiệp",
       value: accounts.filter((a) => a.accountType === "Doanh nghiệp").length,
-      color: "#20447E",
+      color: "var(--colors-brand-900)",
     },
     {
       name: "Đã xác minh",
       value: accounts.filter((a) => a.verified === "L2" || a.verified === "verified").length,
-      color: "#10B981",
+      color: "var(--success)",
     },
   ];
 
@@ -79,10 +79,10 @@ export function AdminDashboardPage() {
   return (
     <PageFrame title="Tổng quan hệ thống" description="Thống kê toàn nền tảng và hàng đợi xử lý.">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Tổng người dùng" value={accounts.length} icon={Users} accent="#2563EB" />
-        <StatCard label="Nội dung chờ duyệt" value={pending} icon={FileCheck2} accent="#F59E0B" />
-        <StatCard label="Đơn xác minh" value={verifs} icon={BadgeCheck} accent="#10B981" />
-        <StatCard label="Báo cáo vi phạm" value={reports} icon={ShieldAlert} accent="#EF4444" />
+        <StatCard label="Tổng người dùng" value={accounts.length} icon={Users} accent="var(--primary)" />
+        <StatCard label="Nội dung chờ duyệt" value={pending} icon={FileCheck2} accent="var(--warning)" />
+        <StatCard label="Đơn xác minh" value={verifs} icon={BadgeCheck} accent="var(--success)" />
+        <StatCard label="Báo cáo vi phạm" value={reports} icon={ShieldAlert} accent="var(--destructive)" />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
@@ -96,25 +96,25 @@ export function AdminDashboardPage() {
               {mounted ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={GROWTH} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis
                       dataKey="m"
-                      tick={{ fontSize: 11, fill: "#717680" }}
+                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: "#717680" }}
+                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <Tooltip
-                      contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12 }}
+                      contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
                     />
                     <Line
                       type="monotone"
                       dataKey="users"
-                      stroke="#2563EB"
+                      stroke="var(--primary)"
                       strokeWidth={2.5}
                       dot={false}
                       name="Người dùng"
@@ -122,7 +122,7 @@ export function AdminDashboardPage() {
                     <Line
                       type="monotone"
                       dataKey="content"
-                      stroke="#10B981"
+                      stroke="var(--success)"
                       strokeWidth={2.5}
                       dot={false}
                       name="Nội dung"
@@ -161,7 +161,7 @@ export function AdminDashboardPage() {
                       <Tooltip
                         contentStyle={{
                           borderRadius: 8,
-                          border: "1px solid #E5E7EB",
+                          border: "1px solid var(--border)",
                           fontSize: 12,
                         }}
                       />

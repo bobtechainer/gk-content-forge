@@ -1,0 +1,91 @@
+/* Untitled UI semantic colors — ergonomic aliases over the canonical fig-tokens.css.
+   Authoring components against these short names keeps markup readable; the raw
+   --colors-* scale and full semantic set remain available from fig-tokens.css. */
+:root {
+  /* ---- Brand (primary blue) ---- */
+  --brand-25: var(--colors-brand-25);
+  --brand-50: var(--colors-brand-50);
+  --brand-100: var(--colors-brand-100);
+  --brand-200: var(--colors-brand-200);
+  --brand-300: var(--colors-brand-300);
+  --brand-400: var(--colors-brand-400);
+  --brand-500: var(--colors-brand-500);
+  --brand-600: var(--colors-brand-600);
+  --brand-700: var(--colors-brand-700);
+  --brand-800: var(--colors-brand-800);
+  --brand-900: var(--colors-brand-900);
+
+  /* ---- Text ---- */
+  --text-primary: var(--colors-text-text-primary-900);
+  --text-secondary: var(--colors-text-text-secondary-700);
+  --text-tertiary: var(--colors-text-text-tertiary-600);
+  --text-quaternary: var(--colors-text-text-quaternary-500);
+  --text-placeholder: var(--colors-text-text-placeholder);
+  --text-disabled: var(--colors-text-text-disabled);
+  --text-white: var(--colors-base-white);
+  --text-brand: var(--colors-text-text-brand-secondary-700);
+  --text-brand-tertiary: var(--colors-text-text-brand-tertiary-600);
+  --text-error: var(--colors-text-text-error-primary-600);
+  --text-on-brand: var(--colors-text-text-primary-on-brand);
+  --text-on-brand-secondary: var(--colors-text-text-secondary-on-brand);
+
+  /* ---- Backgrounds ---- */
+  --bg-primary: var(--colors-background-bg-primary);
+  --bg-primary-hover: var(--colors-background-bg-primary-hover);
+  --bg-secondary: var(--colors-background-bg-secondary);
+  --bg-secondary-hover: var(--colors-background-bg-secondary-hover);
+  --bg-tertiary: var(--colors-background-bg-tertiary);
+  --bg-quaternary: var(--colors-background-bg-quaternary);
+  --bg-active: var(--colors-background-bg-active);
+  --bg-disabled: var(--colors-background-bg-disabled);
+  --bg-brand-primary: var(--colors-background-bg-brand-primary);
+  --bg-brand-secondary: var(--colors-background-bg-brand-secondary);
+  --bg-brand-solid: var(--colors-background-bg-brand-solid);
+  --bg-brand-solid-hover: var(--colors-background-bg-brand-solid-hover);
+  --bg-brand-section: var(--colors-background-bg-brand-section);
+  --bg-error-primary: var(--colors-background-bg-error-primary);
+  --bg-error-solid: var(--colors-background-bg-error-solid);
+  --bg-success-primary: var(--colors-background-bg-success-primary);
+  --bg-success-solid: var(--colors-background-bg-success-solid);
+  --bg-warning-primary: var(--colors-background-bg-warning-primary);
+  --bg-overlay: var(--colors-background-bg-overlay);
+
+  /* ---- Borders ---- */
+  --border-primary: var(--colors-border-border-primary);
+  --border-secondary: var(--colors-border-border-secondary);
+  --border-tertiary: var(--colors-border-border-tertiary);
+  --border-disabled: var(--colors-border-border-disabled);
+  --border-brand: var(--colors-border-border-brand);
+  --border-error: var(--colors-border-border-error);
+
+  /* ---- Foreground (icons & accents) ---- */
+  --fg-primary: var(--colors-foreground-fg-primary-900);
+  --fg-secondary: var(--colors-foreground-fg-secondary-700);
+  --fg-tertiary: var(--colors-foreground-fg-tertiary-600);
+  --fg-quaternary: var(--colors-foreground-fg-quaternary-500);
+  --fg-quinary: var(--colors-foreground-fg-quinary-400);
+  --fg-white: var(--colors-foreground-fg-white);
+  --fg-brand: var(--colors-foreground-fg-brand-primary-600);
+  --fg-error: var(--colors-foreground-fg-error-primary);
+  --fg-success: var(--colors-foreground-fg-success-primary);
+  --fg-warning: var(--colors-foreground-fg-warning-primary);
+  --fg-disabled: var(--colors-foreground-fg-disabled);
+
+  /* ---- Utility / status (commonly used scales) ---- */
+  --success-50: var(--colors-success-50);
+  --success-500: var(--colors-success-500);
+  --success-600: var(--colors-success-600);
+  --success-700: var(--colors-success-700);
+  --warning-50: var(--colors-warning-50);
+  --warning-500: var(--colors-warning-500);
+  --warning-600: var(--colors-warning-600);
+  --warning-700: var(--colors-warning-700);
+  --error-50: var(--colors-error-50);
+  --error-500: var(--colors-error-500);
+  --error-600: var(--colors-error-600);
+  --error-700: var(--colors-error-700);
+
+  /* ---- Focus rings ---- */
+  --focus-ring: var(--colors-effects-focus-rings-focus-ring);
+  --focus-ring-error: var(--colors-effects-focus-rings-focus-ring-error);
+}

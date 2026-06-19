@@ -113,7 +113,7 @@ function VerifiedSuccessView({
       <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
         {/* Success card */}
         <Card className="overflow-hidden">
-          <div className="relative bg-gradient-to-br from-[#2563EB] to-[#1d4ed8] px-6 py-8 text-white">
+          <div className="relative bg-gradient-to-br from-primary to-primary-hover px-6 py-8 text-white">
             <div className="absolute -right-4 -top-4 h-32 w-32 rounded-full bg-white/10" />
             <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/5" />
             <div className="relative flex items-center gap-4">
@@ -146,7 +146,7 @@ function VerifiedSuccessView({
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-1 text-[#2563EB]"
+                className="gap-1 text-primary"
                 onClick={() =>
                   toast.info("Mở trang chính sách duy trì xác minh (demo)")
                 }
@@ -162,7 +162,7 @@ function VerifiedSuccessView({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[#2563EB]" />
+              <Sparkles className="h-4 w-4 text-primary" />
               Quyền lợi đang hưởng
             </CardTitle>
           </CardHeader>
@@ -172,7 +172,7 @@ function VerifiedSuccessView({
                 const Icon = b.icon;
                 return (
                   <li key={b.title} className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2563EB]/10 text-[#2563EB]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <Icon className="h-4 w-4" />
                     </div>
                     <div>
@@ -341,7 +341,7 @@ function UnverifiedChecklistView({
                       Yêu cầu: {c.threshold}
                     </div>
                     {c.aiHint && (
-                      <div className="mt-1 flex items-start gap-1 text-xs text-[#2563EB]">
+                      <div className="mt-1 flex items-start gap-1 text-xs text-primary">
                         <Sparkles className="mt-0.5 h-3 w-3 shrink-0" /> {c.aiHint}
                       </div>
                     )}
@@ -361,7 +361,7 @@ function UnverifiedChecklistView({
             </ul>
 
             <Button
-              className={cn("w-full gap-2", allMet && "bg-[#2563EB] text-white hover:bg-[#1d4ed8]")}
+              className={cn("w-full gap-2", allMet && "bg-primary text-white hover:bg-primary-hover")}
               disabled={!allMet}
               onClick={() => toast.success("Đã gửi đơn xin xác minh — chờ admin duyệt")}
             >

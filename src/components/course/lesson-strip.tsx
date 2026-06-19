@@ -90,7 +90,7 @@ export function LessonStrip({
                 return (
                   <button key={`add-${item.chapterId}`} type="button"
                     onClick={() => onAddLesson(item.chapterId!)}
-                    className="flex h-[48px] w-[40px] shrink-0 flex-col items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground transition hover:border-[#2563EB] hover:bg-[#EFF6FF] hover:text-[#2563EB]"
+                    className="flex h-[48px] w-[40px] shrink-0 flex-col items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground transition hover:border-primary hover:bg-accent hover:text-primary"
                     title="Thêm bài học">
                     <Plus className="h-3.5 w-3.5" />
                   </button>
@@ -185,7 +185,7 @@ function SortableLessonItem({
       className={cn(
         "group relative flex h-[48px] shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-lg border bg-card px-2.5 transition",
         isActive
-          ? "border-[#2563EB] bg-[#EFF6FF] shadow-sm shadow-[#2563EB]/15"
+          ? "border-primary bg-accent shadow-sm shadow-primary/15"
           : "border-border hover:border-muted-foreground/40 hover:bg-muted/30",
         isDragging && "z-50 opacity-50",
       )}
@@ -198,7 +198,7 @@ function SortableLessonItem({
         <GripVertical className="h-2.5 w-2.5" />
       </div>
 
-      <BookOpen className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-[#2563EB]" : "text-muted-foreground")} />
+      <BookOpen className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
 
       {editing ? (
         <input value={val} onChange={(e) => setVal(e.target.value)} onBlur={save}
@@ -206,12 +206,12 @@ function SortableLessonItem({
           onClick={(e) => e.stopPropagation()}
           className="w-[70px] bg-transparent text-[10px] font-medium outline-none" autoFocus />
       ) : (
-        <span className={cn("max-w-[70px] truncate text-[10px] font-medium", isActive ? "text-[#2563EB]" : "text-foreground")}>
+        <span className={cn("max-w-[70px] truncate text-[10px] font-medium", isActive ? "text-primary" : "text-foreground")}>
           {lesson.title}
         </span>
       )}
 
-      {isActive && <span className="absolute -bottom-1 left-1/2 h-1 w-4 -translate-x-1/2 rounded-full bg-[#2563EB]" />}
+      {isActive && <span className="absolute -bottom-1 left-1/2 h-1 w-4 -translate-x-1/2 rounded-full bg-primary" />}
     </div>
   );
 }

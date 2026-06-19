@@ -122,7 +122,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
       if (meta) setActiveDragLabel({ kind: "block", label: meta.label, color: meta.color });
     } else if (data?.source === "strip") {
       const ls = lessons.find((l) => l.id === String(e.active.id));
-      if (ls) setActiveDragLabel({ kind: "lesson", label: ls.title, color: "#2563EB" });
+      if (ls) setActiveDragLabel({ kind: "lesson", label: ls.title, color: "var(--primary)" });
     }
   };
 
@@ -225,7 +225,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
     >
-      <div className="flex h-screen flex-col bg-[#f8f9fb]">
+      <div className="flex h-screen flex-col bg-muted">
         {/* ─── Header (clean — no panel toggles) ────── */}
         <div className="z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-card px-3">
           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Quay lại" onClick={() => navigate({ to: backTo })}>
@@ -243,19 +243,19 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
               <button
                 onClick={() => setPreviewMode(true)}
                 className={cn("flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
-                  previewMode ? "bg-[#2563EB] text-white shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                  previewMode ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground")}
               >
                 <Eye className="h-3 w-3" /> Preview
               </button>
               <button
                 onClick={() => setPreviewMode(false)}
                 className={cn("flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
-                  !previewMode ? "bg-[#2563EB] text-white shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                  !previewMode ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground")}
               >
                 <Edit3 className="h-3 w-3" /> Soạn
               </button>
             </div>
-            <Button size="sm" className="h-8 bg-[#2563EB] text-xs text-white hover:bg-[#1d4ed8]" onClick={() => setPublishOpen(true)}>
+            <Button size="sm" className="h-8 bg-primary text-xs text-white hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>
               Xuất bản
             </Button>
           </div>
@@ -370,7 +370,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
         {activeDragId && activeDragMaterial && (
           <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 350, damping: 22 }}
-            className="max-w-[220px] truncate rounded-md border border-[#10B981] bg-card px-3 py-2 text-xs font-medium text-[#10B981] shadow-lg">
+            className="max-w-[220px] truncate rounded-md border border-success bg-card px-3 py-2 text-xs font-medium text-success shadow-lg">
             📎 {activeDragMaterial.title}
           </motion.div>
         )}

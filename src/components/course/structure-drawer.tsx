@@ -136,8 +136,8 @@ function ChapterNode({
           <div className="flex min-w-0 flex-1 items-center gap-1">
             <input value={editVal} onChange={(e) => setEditVal(e.target.value)} onBlur={handleSave}
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
-              className="min-w-0 flex-1 rounded bg-white px-1.5 py-0.5 text-xs outline-none ring-1 ring-[#2563EB]" autoFocus />
-            <button onClick={handleSave} className="text-[#2563EB]"><Check className="h-3 w-3" /></button>
+              className="min-w-0 flex-1 rounded bg-white px-1.5 py-0.5 text-xs outline-none ring-1 ring-primary" autoFocus />
+            <button onClick={handleSave} className="text-primary"><Check className="h-3 w-3" /></button>
           </div>
         ) : (
           <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">{chapter.title}</span>
@@ -202,18 +202,18 @@ function LessonNode({
       onClick={!editing ? onSelect : undefined}
       className={cn(
         "group flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 transition",
-        isActive ? "bg-[#2563EB]/10 text-[#2563EB]" : "hover:bg-muted",
+        isActive ? "bg-primary/10 text-primary" : "hover:bg-muted",
       )}
     >
-      <BookOpen className={cn("h-3 w-3 shrink-0", isActive ? "text-[#2563EB]" : "text-muted-foreground")} />
+      <BookOpen className={cn("h-3 w-3 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
       {editing ? (
         <div className="flex min-w-0 flex-1 items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <input value={editVal} onChange={(e) => setEditVal(e.target.value)} onBlur={handleSave}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
-            className="min-w-0 flex-1 rounded bg-white px-1 py-0.5 text-[11px] outline-none ring-1 ring-[#2563EB]" autoFocus />
+            className="min-w-0 flex-1 rounded bg-white px-1 py-0.5 text-[11px] outline-none ring-1 ring-primary" autoFocus />
         </div>
       ) : (
-        <span className={cn("min-w-0 flex-1 truncate text-[11px] font-medium", isActive ? "text-[#2563EB]" : "text-foreground")}>
+        <span className={cn("min-w-0 flex-1 truncate text-[11px] font-medium", isActive ? "text-primary" : "text-foreground")}>
           {lesson.title}
         </span>
       )}

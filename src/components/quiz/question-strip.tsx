@@ -19,16 +19,16 @@ const TYPE_SHORT: Record<Question["type"], string> = {
 };
 
 const TYPE_COLOR: Record<Question["type"], string> = {
-  multiple_choice: "#2563EB",
-  essay: "#7C3AED",
-  matching: "#0891B2",
-  dropbox: "#D97706",
-  drag_drop: "#059669",
-  ordering: "#DC2626",
-  video: "#DB2777",
-  audio: "#9333EA",
-  recognition: "#0D9488",
-  marker: "#EA580C",
+  multiple_choice: "var(--primary)",
+  essay: "var(--colors-purple-600)",
+  matching: "var(--colors-cyan-600)",
+  dropbox: "var(--warning)",
+  drag_drop: "var(--success)",
+  ordering: "var(--destructive)",
+  video: "var(--colors-pink-600)",
+  audio: "var(--colors-fuchsia-600)",
+  recognition: "var(--colors-teal-600)",
+  marker: "var(--colors-orange-600)",
 };
 
 export function QuestionStrip({
@@ -63,7 +63,7 @@ export function QuestionStrip({
       <button
         type="button"
         onClick={onAdd}
-        className="flex h-[56px] w-[84px] shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border bg-muted/30 text-muted-foreground transition hover:border-[#2563EB] hover:bg-[#EFF6FF] hover:text-[#2563EB]"
+        className="flex h-[56px] w-[84px] shrink-0 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border bg-muted/30 text-muted-foreground transition hover:border-primary hover:bg-accent hover:text-primary"
       >
         <Plus className="h-5 w-5" />
         <span className="text-[10px] font-medium">Thêm</span>
@@ -104,7 +104,7 @@ function SortableStripItem({
       className={cn(
         "group relative flex h-[56px] w-[84px] shrink-0 cursor-pointer select-none flex-col items-center justify-center rounded-lg border-2 bg-card transition",
         isActive
-          ? "border-[#2563EB] shadow-md shadow-[#2563EB]/20"
+          ? "border-primary shadow-md shadow-primary/20"
           : "border-border hover:border-muted-foreground/50",
         isDragging && "z-50 opacity-60",
       )}
@@ -143,7 +143,7 @@ function SortableStripItem({
 
       {/* Active dot */}
       {isActive && (
-        <span className="absolute -bottom-1.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#2563EB]" />
+        <span className="absolute -bottom-1.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-primary" />
       )}
     </div>
   );

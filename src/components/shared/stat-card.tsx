@@ -43,7 +43,7 @@ export function StatCard({
           </div>
           <div
             className="flex h-10 w-10 items-center justify-center rounded-lg"
-            style={{ backgroundColor: accent ? `${accent}1A` : undefined }}
+            style={{ backgroundColor: accent ? `color-mix(in srgb, ${accent} 10%, transparent)` : undefined }}
           >
             <Icon className="h-5 w-5" style={{ color: accent }} />
           </div>

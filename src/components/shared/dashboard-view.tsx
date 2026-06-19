@@ -96,7 +96,7 @@ export function DashboardView({ scope }: { scope: StudioScope }) {
       .map((item) => ({
         id: item.id,
         icon: item.status === "published" ? Upload : Sparkles,
-        color: item.status === "published" ? "#10B981" : "#2563EB",
+        color: item.status === "published" ? "var(--success)" : "var(--primary)",
         text:
           item.status === "published" ? `Đã xuất bản "${item.title}"` : `Đang soạn "${item.title}"`,
         time: new Date(item.createdAt).toLocaleDateString("vi-VN"),
@@ -117,7 +117,7 @@ export function DashboardView({ scope }: { scope: StudioScope }) {
           label="Tổng lượt xem"
           value={views}
           icon={Eye}
-          accent="#2563EB"
+          accent="var(--primary)"
           trend="+12% so với kỳ trước"
           trendUp
         />
@@ -125,16 +125,16 @@ export function DashboardView({ scope }: { scope: StudioScope }) {
           label="Tổng lượt thích"
           value={likes}
           icon={Heart}
-          accent="#EC4899"
+          accent="var(--colors-pink-600)"
           trend="+8%"
           trendUp
         />
-        <StatCard label="Đã xuất bản" value={published} icon={Upload} accent="#10B981" />
+        <StatCard label="Đã xuất bản" value={published} icon={Upload} accent="var(--success)" />
         <StatCard
           label="Người theo dõi"
           value={followers}
           icon={Users}
-          accent="#F59E0B"
+          accent="var(--warning)"
           trend="+34 tuần này"
           trendUp
         />
@@ -244,26 +244,26 @@ function OrgMemberStats({ items }: { items: ContentItem[] }) {
             {mounted ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: "#717680" }}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: "#717680" }}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                     tickLine={false}
                     axisLine={false}
                     allowDecimals={false}
                   />
                   <Tooltip
-                    contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12 }}
+                    contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
                   />
                   <Bar
                     dataKey="count"
                     radius={[6, 6, 0, 0]}
-                    fill="#2563EB"
+                    fill="var(--primary)"
                     animationDuration={600}
                   />
                 </BarChart>

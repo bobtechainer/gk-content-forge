@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 
 const MAP: Record<ContentStatus, { label: string; cls: string }> = {
   draft: { label: "Nháp", cls: "bg-muted text-muted-foreground" },
-  published: { label: "Đã xuất bản", cls: "bg-[#D1FAE5] text-[#065F46]" },
-  pending: { label: "Chờ duyệt", cls: "bg-[#FEF3C7] text-[#92400E]" },
-  rejected: { label: "Bị từ chối", cls: "bg-[#FEE2E2] text-[#991B1B]" },
+  published: { label: "Đã xuất bản", cls: "bg-success-100 text-success-700" },
+  pending: { label: "Chờ duyệt", cls: "bg-warning-100 text-warning-700" },
+  rejected: { label: "Bị từ chối", cls: "bg-error-100 text-error-700" },
 };
 
 export function StatusBadge({ status }: { status: ContentStatus }) {

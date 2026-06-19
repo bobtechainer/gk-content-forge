@@ -1,0 +1,33 @@
+/* Untitled UI type scale. Two families of styles: Display (headings) and Text (body).
+   Each token pairs a size with its line-height; Display sizes carry -2% tracking. */
+:root {
+  /* ---- Font sizes ---- */
+  --text-display-2xl: 72px;
+  --text-display-xl: 60px;
+  --text-display-lg: 48px;
+  --text-display-md: 36px;
+  --text-display-sm: 30px;
+  --text-display-xs: 24px;
+  --text-xl: 20px;
+  --text-lg: 18px;
+  --text-md: 16px;   /* MobiFone "Normal" */
+  --text-sm: 14px;   /* MobiFone "Smaller" — default body */
+  --text-xs: 13px;   /* MobiFone "Smallest" */
+
+  /* ---- Line heights ---- */
+  --line-height-display-2xl: 90px;
+  --line-height-display-xl: 72px;
+  --line-height-display-lg: 60px;
+  --line-height-display-md: 44px;
+  --line-height-display-sm: 38px;
+  --line-height-display-xs: 32px;
+  --line-height-xl: 30px;
+  --line-height-lg: 28px;
+  --line-height-md: 24px;
+  --line-height-sm: 20px;
+  --line-height-xs: 18px;
+
+  /* ---- Tracking ---- */
+  --tracking-display: -0.02em; /* applied to Display sizes md and up */
+  --tracking-normal: 0em;
+}

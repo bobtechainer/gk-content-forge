@@ -18,7 +18,7 @@ export function LogoLoader({ label = "Đang tải...", className, size = 40 }: L
           aria-hidden
         />
         <div
-          className="absolute inset-[-6px] animate-spin rounded-full border-2 border-transparent border-t-[#2563EB]"
+          className="absolute inset-[-6px] animate-spin rounded-full border-2 border-transparent border-t-primary"
           style={{ animationDuration: "1.1s" }}
         />
       </div>

@@ -86,7 +86,7 @@ export function SettingsView({ scope }: { scope: StudioScope }) {
       description="Quản lý hồ sơ, bảo mật, giao diện và thông báo theo loại tài khoản."
       actions={
         <Button
-          className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+          className="bg-primary text-white hover:bg-primary-hover"
           onClick={() => toast.success("Đã lưu cài đặt")}
         >
           Lưu thay đổi
@@ -117,7 +117,7 @@ export function SettingsView({ scope }: { scope: StudioScope }) {
               <button
                 type="button"
                 onClick={() => toast.info("Tải lên giấy phép (demo)")}
-                className="flex h-20 w-full items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-[#2563EB]"
+                className="flex h-20 w-full items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-primary"
               >
                 Tải lên tệp PDF/ảnh
               </button>

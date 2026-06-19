@@ -1,0 +1,48 @@
+/* Untitled UI spacing & radius primitives (px-valued, ergonomic aliases).
+   Source fig-tokens.css carries the same scale as unitless floats. */
+:root {
+  /* ---- Spacing scale (base 4px grid) ---- */
+  --spacing-none: 0px;
+  --spacing-xxs: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 6px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+  --spacing-2xl: 20px;
+  --spacing-3xl: 24px;
+  --spacing-4xl: 32px;
+  --spacing-5xl: 40px;
+  --spacing-6xl: 48px;
+  --spacing-7xl: 64px;
+  --spacing-8xl: 80px;
+  --spacing-9xl: 96px;
+  --spacing-10xl: 128px;
+  --spacing-11xl: 160px;
+
+  /* ---- Border radius ---- */
+  --radius-none: 0px;
+  --radius-xxs: 2px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
+  --radius-full: 9999px;
+
+  /* ---- Container widths ---- */
+  --container-padding-mobile: 16px;
+  --container-padding-desktop: 32px;
+  --container-max-width: 1280px;
+
+  /* ---- MobiFone layout primitives (additive) ----
+     Card radius = --radius-md (8px); pill radius = --radius-4xl (24px). */
+  --grid-gap-row: 25px;          /* desktop row gap (1.5625rem) */
+  --grid-gap-col: 24px;          /* desktop col gap (1.5rem)    */
+  --grid-gap-row-mobile: 12px;   /* mobile row gap (0.75rem)    */
+  --grid-gap-col-mobile: 13px;   /* mobile col gap (0.8125rem)  */
+  --card-padding: 15px 15px 20px 15px; /* top right bottom left */
+}

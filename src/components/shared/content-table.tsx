@@ -221,7 +221,7 @@ function ContentPreviewDialog({
               <div className="text-xs font-medium text-muted-foreground">Nền tảng</div>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {item.platforms.map((p) => (
-                  <span key={p} className="rounded-full bg-[#2563EB]/10 px-2.5 py-0.5 text-xs font-medium text-[#2563EB]">
+                  <span key={p} className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                     {p === "national" ? "Trường học số" : "GK Ebooks"}
                   </span>
                 ))}
@@ -241,7 +241,7 @@ function ContentPreviewDialog({
               <Button variant="outline" size="sm" onClick={onClose}>
                 Đóng
               </Button>
-              <Button asChild size="sm" className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]">
+              <Button asChild size="sm" className="bg-primary text-white hover:bg-primary-hover">
                 <Link to={builderTo(base, item)} params={{ id: item.id }} target="_blank" rel="noopener">
                   <Pencil className="mr-1.5 h-3.5 w-3.5" /> Chỉnh sửa
                 </Link>

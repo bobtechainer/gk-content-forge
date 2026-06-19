@@ -106,7 +106,7 @@ export function QuizSidebar({
               className={cn(
                 "flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-[10px] font-medium transition",
                 isActive
-                  ? "bg-[#2563EB]/10 text-[#2563EB]"
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
@@ -138,7 +138,7 @@ function QuestionsPanel({ onAddQuestion }: { onAddQuestion: (type: QuestionType)
   return (
     <div className="space-y-1 p-3">
       <div className="px-1 pb-2">
-        <h3 className="text-xs font-semibold text-[#2563EB]">Các loại câu hỏi</h3>
+        <h3 className="text-xs font-semibold text-primary">Các loại câu hỏi</h3>
       </div>
       <div className="grid grid-cols-2 gap-1.5">
         {QUESTION_TYPES.map((item) => (
@@ -172,11 +172,11 @@ function DraggableQuestionItem({
       onClick={() => onAdd(item.type)}
       className={cn(
         "flex flex-col items-center gap-1 rounded-lg border border-border bg-card p-2.5 text-center text-[11px] font-medium text-foreground transition",
-        "hover:border-[#2563EB] hover:bg-[#EFF6FF] active:scale-95",
+        "hover:border-primary hover:bg-accent active:scale-95",
         isDragging && "opacity-40",
       )}
     >
-      <Icon className="h-5 w-5 text-[#2563EB]" />
+      <Icon className="h-5 w-5 text-primary" />
       <span className="leading-tight">{item.label}</span>
     </button>
   );
@@ -227,7 +227,7 @@ function MaterialLibraryPanel({ onAttach }: { onAttach: (item: ContentItem) => v
   return (
     <div className="flex h-full flex-col">
       <div className="space-y-2 p-3 pb-2">
-        <h3 className="px-1 text-xs font-semibold text-[#10B981]">Kho học liệu</h3>
+        <h3 className="px-1 text-xs font-semibold text-success">Kho học liệu</h3>
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -291,7 +291,7 @@ function FilterChip({
       className={cn(
         "whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium transition",
         active
-          ? "border-[#10B981] bg-[#10B981] text-white"
+          ? "border-success bg-success text-white"
           : "border-border bg-card text-muted-foreground hover:border-muted-foreground/40",
       )}
     >
@@ -323,13 +323,13 @@ function MaterialRow({
       title={item.title}
       className={cn(
         "flex w-full items-center gap-2 rounded-lg border border-border bg-card p-2 text-left transition",
-        "hover:border-[#10B981] hover:bg-emerald-50 active:scale-[0.98]",
+        "hover:border-success hover:bg-emerald-50 active:scale-[0.98]",
         isDragging && "opacity-40",
       )}
     >
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
-        style={{ backgroundColor: `${accent}1A`, color: accent }}
+        style={{ backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
       >
         <Icon className="h-4 w-4" />
       </span>

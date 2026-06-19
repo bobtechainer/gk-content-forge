@@ -70,7 +70,7 @@ export function QuestionCard({
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
           {index + 1}
         </span>
-        <span className="rounded-full bg-[#EFF6FF] px-2 py-0.5 text-xs font-medium text-[#2563EB]">
+        <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-primary">
           {TYPE_LABEL[question.type]}
         </span>
         <div className="flex-1" />
@@ -117,7 +117,7 @@ export function QuestionCard({
                   </button>
                   <span
                     className="flex h-9 w-9 items-center justify-center rounded-md"
-                    style={{ backgroundColor: `${accent}1A`, color: accent }}
+                    style={{ backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
                   >
                     <Icon className="h-4 w-4" />
                   </span>
@@ -133,7 +133,7 @@ export function QuestionCard({
               onClick={() =>
                 toast.info("Kéo hoặc bấm học liệu từ tab “Học liệu” bên trái để thêm")
               }
-              className="flex h-[84px] w-[84px] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground transition hover:border-[#10B981] hover:text-[#10B981]"
+              className="flex h-[84px] w-[84px] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground transition hover:border-success hover:text-success"
             >
               <Plus className="h-5 w-5" />
               <span className="text-[10px] font-medium">Thêm</span>
@@ -148,14 +148,14 @@ export function QuestionCard({
               return (
                 <div
                   key={opt.id}
-                  className={`flex items-center gap-2 rounded-md border p-2 transition ${isCorrect ? "border-[#10B981] bg-[#D1FAE5]/40" : "border-border bg-card"}`}
+                  className={`flex items-center gap-2 rounded-md border p-2 transition ${isCorrect ? "border-success bg-success-100/40" : "border-border bg-card"}`}
                 >
                   <button
                     type="button"
                     onClick={() => update(quizId, question.id, { correctOptionId: opt.id })}
                     aria-label={`Đánh dấu đáp án ${String.fromCharCode(65 + i)} là đúng`}
                     aria-pressed={isCorrect}
-                    className={`flex min-h-6 min-w-6 shrink-0 items-center justify-center rounded-full border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isCorrect ? "border-[#10B981] bg-[#10B981]" : "border-border"}`}
+                    className={`flex min-h-6 min-w-6 shrink-0 items-center justify-center rounded-full border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isCorrect ? "border-success bg-success" : "border-border"}`}
                   >
                     {isCorrect && <span className="h-2 w-2 rounded-full bg-white" />}
                   </button>
@@ -205,7 +205,7 @@ export function QuestionCard({
                       );
                       update(quizId, question.id, { pairs: next });
                     }}
-                    className="bg-[#EFF6FF]"
+                    className="bg-accent"
                   />
                 ))}
               </div>

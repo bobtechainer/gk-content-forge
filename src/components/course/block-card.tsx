@@ -27,18 +27,18 @@ import { cn } from "@/lib/utils";
 /* ─── Block type metadata ──────────────────────────────────────── */
 
 const BLOCK_META: Record<CourseBlockType, { icon: typeof Type; color: string; label: string }> = {
-  text: { icon: Type, color: "#2563EB", label: "Văn bản" },
-  image: { icon: ImageIcon, color: "#059669", label: "Hình ảnh" },
-  video: { icon: VideoIcon, color: "#DC2626", label: "Video" },
-  callout: { icon: MessageSquare, color: "#D97706", label: "Callout" },
-  divider: { icon: Minus, color: "#6B7280", label: "Phân cách" },
-  embed: { icon: Link2, color: "#10B981", label: "Học liệu" },
-  code: { icon: Code2, color: "#7C3AED", label: "Code" },
-  math: { icon: Sigma, color: "#0891B2", label: "Công thức" },
-  columns: { icon: Columns2, color: "#8B5CF6", label: "Nhiều cột" },
-  quiz: { icon: ListChecks, color: "#F59E0B", label: "Câu hỏi" },
-  html: { icon: Boxes, color: "#EC4899", label: "HTML / Tương tác" },
-  section: { icon: SplitSquareVertical, color: "#0EA5E9", label: "Phần mới" },
+  text: { icon: Type, color: "var(--colors-brand-600)", label: "Văn bản" },
+  image: { icon: ImageIcon, color: "var(--colors-success-600)", label: "Hình ảnh" },
+  video: { icon: VideoIcon, color: "var(--colors-error-600)", label: "Video" },
+  callout: { icon: MessageSquare, color: "var(--colors-orange-600)", label: "Callout" },
+  divider: { icon: Minus, color: "var(--colors-gray-light-mode-500)", label: "Phân cách" },
+  embed: { icon: Link2, color: "var(--colors-teal-600)", label: "Học liệu" },
+  code: { icon: Code2, color: "var(--colors-purple-600)", label: "Code" },
+  math: { icon: Sigma, color: "var(--colors-cyan-600)", label: "Công thức" },
+  columns: { icon: Columns2, color: "var(--colors-violet-600)", label: "Nhiều cột" },
+  quiz: { icon: ListChecks, color: "var(--colors-warning-500)", label: "Câu hỏi" },
+  html: { icon: Boxes, color: "var(--colors-pink-600)", label: "HTML / Tương tác" },
+  section: { icon: SplitSquareVertical, color: "var(--colors-blue-light-500)", label: "Phần mới" },
 };
 
 const CALLOUT_STYLES: Record<CalloutVariant, { icon: typeof Info; bg: string; border: string; text: string; label: string }> = {
@@ -86,9 +86,9 @@ function LayoutDropdown({ layout, onChange }: { layout: BlockLayout; onChange: (
             return (
               <button key={opt.value} onClick={(e) => { e.stopPropagation(); onChange(opt.value); setOpen(false); }}
                 className={cn("flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition",
-                  layout === opt.value ? "bg-[#2563EB]/10 text-[#2563EB]" : "hover:bg-muted text-foreground")}>
+                  layout === opt.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground")}>
                 <div className={cn("flex h-7 w-10 items-center justify-center rounded border",
-                  layout === opt.value ? "border-[#2563EB]/30 bg-[#2563EB]/5" : "border-border bg-muted/30")}>
+                  layout === opt.value ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30")}>
                   <Icon className="h-3.5 w-3.5" />
                 </div>
                 <div>
@@ -142,7 +142,7 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
   return (
     <div ref={setNodeRef} style={style} onClick={onSelect}
       className={cn("group relative rounded-xl border bg-card transition-all",
-        isActive ? "border-[#2563EB]/40 ring-2 ring-[#2563EB]/10 shadow-md" : "border-border/60 hover:border-border hover:shadow-sm",
+        isActive ? "border-primary/40 ring-2 ring-primary/10 shadow-md" : "border-border/60 hover:border-border hover:shadow-sm",
         isDragging && "z-50 opacity-50 shadow-xl")}>
       {/* Floating toolbar */}
       <div className={cn("absolute -top-3 right-3 z-10 flex items-center gap-0.5 rounded-lg border bg-card px-1 py-0.5 shadow-md transition-opacity",
@@ -219,7 +219,7 @@ function TextBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
 function ImageBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
   return (
     <div className="space-y-2 p-3">
-      <MediaUploadField kind="image" value={block.content || ""} accent="#059669"
+      <MediaUploadField kind="image" value={block.content || ""} accent="var(--colors-success-600)"
         onChange={(v) => onUpdate({ content: v })} />
       {block.content && (
         <img src={block.content} alt={block.caption || ""} className="max-h-48 w-full rounded-lg object-contain" />
@@ -234,7 +234,7 @@ function ImageBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (
 function VideoBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
   return (
     <div className="space-y-2 p-3">
-      <MediaUploadField kind="video" value={block.content || ""} accent="#DC2626"
+      <MediaUploadField kind="video" value={block.content || ""} accent="var(--colors-error-600)"
         onChange={(v) => onUpdate({ content: v })} />
       {block.content && <VideoEmbed src={block.content} className="mt-1" />}
     </div>
@@ -299,7 +299,7 @@ function EmbedBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (
             <p className="text-[10px] text-muted-foreground">{typeLabel}</p>
           </div>
           <button onClick={() => setPicking((v) => !v)}
-            className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-medium text-[#10B981] transition hover:bg-emerald-50">
+            className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-medium text-success transition hover:bg-emerald-50">
             Đổi
           </button>
           <button onClick={detach}
@@ -309,7 +309,7 @@ function EmbedBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (
         </div>
       ) : (
         <button onClick={() => setPicking((v) => !v)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#10B981]/40 py-3 text-xs font-medium text-[#10B981] transition hover:bg-emerald-50">
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-success/40 py-3 text-xs font-medium text-success transition hover:bg-emerald-50">
           <Link2 className="h-3.5 w-3.5" /> Chọn học liệu từ kho
         </button>
       )}
@@ -350,7 +350,7 @@ function EmbedMaterialPicker({ onPick }: { onPick: (m: ContentItem) => void }) {
             <button
               key={m.id}
               onClick={() => onPick(m)}
-              className="flex w-full items-center gap-2 rounded-md border border-transparent p-1.5 text-left transition hover:border-[#10B981]/40 hover:bg-emerald-50"
+              className="flex w-full items-center gap-2 rounded-md border border-transparent p-1.5 text-left transition hover:border-success/40 hover:bg-emerald-50"
             >
               <span className="text-base">📄</span>
               <span className="min-w-0 flex-1">
@@ -388,7 +388,7 @@ function MathBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
     <div className="p-3 space-y-2">
       <textarea value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
         placeholder="Nhập công thức LaTeX, ví dụ: E = mc^2" rows={2} onClick={(e) => e.stopPropagation()}
-        className="w-full resize-none rounded-lg border bg-muted/30 px-3 py-2 font-mono text-sm outline-none focus:border-[#0891B2]" />
+        className="w-full resize-none rounded-lg border bg-muted/30 px-3 py-2 font-mono text-sm outline-none focus:border-cyan-600" />
       {block.content && <MathPreview content={block.content} />}
     </div>
   );
@@ -416,7 +416,7 @@ function QuizBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
     <div className="space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
       <textarea value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
         placeholder="Nhập câu hỏi…" rows={2}
-        className="w-full resize-none rounded-lg border bg-muted/30 px-3 py-2 text-sm font-medium outline-none focus:border-[#F59E0B]" />
+        className="w-full resize-none rounded-lg border bg-muted/30 px-3 py-2 text-sm font-medium outline-none focus:border-warning" />
       <div className="space-y-1.5">
         {options.map((opt, i) => (
           <div key={i} className="flex items-center gap-2">
@@ -426,7 +426,7 @@ function QuizBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
               <Check className="h-3 w-3" />
             </button>
             <input value={opt} onChange={(e) => setOption(i, e.target.value)} placeholder={`Lựa chọn ${i + 1}`}
-              className={cn("w-full rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs outline-none focus:border-[#F59E0B]",
+              className={cn("w-full rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs outline-none focus:border-warning",
                 i === correct && "border-emerald-300")} />
             <button type="button" onClick={() => removeOption(i)} disabled={options.length <= 2}
               className="shrink-0 rounded p-1 text-muted-foreground transition hover:text-red-500 disabled:opacity-30">
@@ -436,12 +436,12 @@ function QuizBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
         ))}
       </div>
       <button type="button" onClick={addOption}
-        className="flex items-center gap-1 rounded-md border border-dashed px-2 py-1 text-[11px] text-muted-foreground transition hover:border-[#F59E0B] hover:text-[#F59E0B]">
+        className="flex items-center gap-1 rounded-md border border-dashed px-2 py-1 text-[11px] text-muted-foreground transition hover:border-warning hover:text-warning">
         <Plus className="h-3 w-3" /> Thêm lựa chọn
       </button>
       <textarea value={block.quizExplanation || ""} onChange={(e) => onUpdate({ quizExplanation: e.target.value })}
         placeholder="Giải thích đáp án (hiện sau khi trả lời)…" rows={2}
-        className="w-full resize-none rounded-lg border bg-muted/30 px-3 py-2 text-[11px] outline-none focus:border-[#F59E0B]" />
+        className="w-full resize-none rounded-lg border bg-muted/30 px-3 py-2 text-[11px] outline-none focus:border-warning" />
       <p className="text-[10px] text-muted-foreground">✓ Bấm nút tròn để chọn đáp án đúng. Bấm <strong>Preview</strong> để thử tương tác.</p>
     </div>
   );
@@ -457,7 +457,7 @@ function HtmlBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
         <label className="text-[10px] font-medium text-muted-foreground">Mã HTML (mô phỏng, bảng tuần hoàn 3D, nhúng tương tác…)</label>
         <div className="relative">
           <button type="button" onClick={() => setShowTemplates((v) => !v)}
-            className="rounded-md border border-[#EC4899]/40 px-2 py-1 text-[10px] font-medium text-[#EC4899] transition hover:bg-pink-50">
+            className="rounded-md border border-pink-600/40 px-2 py-1 text-[10px] font-medium text-pink-600 transition hover:bg-pink-50">
             Chèn mẫu
           </button>
           {showTemplates && (
@@ -466,7 +466,7 @@ function HtmlBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
                 <button key={t.id} type="button"
                   onClick={() => { onUpdate({ content: t.html, layout: "full" }); setShowTemplates(false); }}
                   className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition hover:bg-muted">
-                  <Boxes className="h-3.5 w-3.5 shrink-0 text-[#EC4899]" />
+                  <Boxes className="h-3.5 w-3.5 shrink-0 text-pink-600" />
                   <span className="font-medium text-foreground">{t.label}</span>
                 </button>
               ))}
@@ -490,8 +490,8 @@ function HtmlBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
 function SectionBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
   return (
     <div className="p-3" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-2 rounded-lg border border-dashed border-[#0EA5E9]/50 bg-[#0EA5E9]/5 px-3 py-2.5">
-        <SplitSquareVertical className="h-4 w-4 shrink-0 text-[#0EA5E9]" />
+      <div className="flex items-center gap-2 rounded-lg border border-dashed border-blue-light-500/50 bg-blue-light-500/5 px-3 py-2.5">
+        <SplitSquareVertical className="h-4 w-4 shrink-0 text-blue-light-500" />
         <input value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
           placeholder="Tên phần (vd: Chặng 1 · Cảm nhận thời gian)"
           className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground" />
@@ -560,9 +560,9 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
             <button key={n} onClick={(e) => { e.stopPropagation(); setCount(n); }}
               title={`${n} cột`} aria-pressed={count === n}
               className={cn("flex h-7 items-center gap-[2px] rounded-md border px-1.5 transition",
-                count === n ? "border-[#8B5CF6] bg-[#8B5CF6]/10" : "border-border hover:border-[#8B5CF6]/40")}>
+                count === n ? "border-violet-600 bg-violet-600/10" : "border-border hover:border-violet-600/40")}>
               {Array.from({ length: n }).map((_, i) => (
-                <span key={i} className={cn("h-4 w-1.5 rounded-[1px]", count === n ? "bg-[#8B5CF6]" : "bg-muted-foreground/30")} />
+                <span key={i} className={cn("h-4 w-1.5 rounded-[1px]", count === n ? "bg-violet-600" : "bg-muted-foreground/30")} />
               ))}
             </button>
           ))}
@@ -592,8 +592,8 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
               }}
               onDrop={(e) => { e.preventDefault(); doMove(); dragRef.current = null; setDropIndicator(null); }}
               className={cn("min-h-[60px] rounded-lg border border-dashed p-1.5 transition-all",
-                isOverCol && dragRef.current ? "border-[#8B5CF6] bg-[#8B5CF6]/5" : "border-[#8B5CF6]/30 bg-[#8B5CF6]/[0.02]")}>
-              <div className="mb-1 text-center text-[8px] font-semibold text-[#8B5CF6]/40">Cột {ci + 1}</div>
+                isOverCol && dragRef.current ? "border-violet-600 bg-violet-600/5" : "border-violet-600/30 bg-violet-600/[0.02]")}>
+              <div className="mb-1 text-center text-[8px] font-semibold text-violet-600/40">Cột {ci + 1}</div>
               {items.map((child, bi) => {
                 const M = BLOCK_META[child.type];
                 const CI = M.icon;
@@ -657,12 +657,12 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
               {items.length === 0 && isOverCol && dragRef.current && <InsertLine />}
               {items.length === 0 && !dragRef.current && (
                 <div className="py-4 text-center">
-                  <MoveVertical className="mx-auto h-3.5 w-3.5 text-[#8B5CF6]/25" />
-                  <p className="text-[9px] mt-0.5 text-[#8B5CF6]/35">Kéo block vào</p>
+                  <MoveVertical className="mx-auto h-3.5 w-3.5 text-violet-600/25" />
+                  <p className="text-[9px] mt-0.5 text-violet-600/35">Kéo block vào</p>
                 </div>
               )}
               <button onClick={() => addChild(ci)}
-                className="mt-1 flex w-full items-center justify-center gap-1 rounded border border-dashed border-[#8B5CF6]/20 py-1 text-[9px] text-[#8B5CF6]/50 transition hover:border-[#8B5CF6]/40 hover:text-[#8B5CF6]">
+                className="mt-1 flex w-full items-center justify-center gap-1 rounded border border-dashed border-violet-600/20 py-1 text-[9px] text-violet-600/50 transition hover:border-violet-600/40 hover:text-violet-600">
                 <Plus className="h-2.5 w-2.5" /> Thêm block
               </button>
             </div>
@@ -676,9 +676,9 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
 function InsertLine() {
   return (
     <div className="flex items-center gap-1 py-0.5">
-      <div className="h-[2px] flex-1 rounded-full bg-[#8B5CF6]" />
-      <div className="h-2 w-2 rounded-full bg-[#8B5CF6]" />
-      <div className="h-[2px] flex-1 rounded-full bg-[#8B5CF6]" />
+      <div className="h-[2px] flex-1 rounded-full bg-violet-600" />
+      <div className="h-2 w-2 rounded-full bg-violet-600" />
+      <div className="h-[2px] flex-1 rounded-full bg-violet-600" />
     </div>
   );
 }

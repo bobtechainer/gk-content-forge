@@ -42,18 +42,18 @@ export interface BlockItem {
 }
 
 export const BLOCK_TYPES: BlockItem[] = [
-  { type: "text", label: "Văn bản", icon: Type, color: "#2563EB" },
-  { type: "image", label: "Hình ảnh", icon: ImageIcon, color: "#059669" },
-  { type: "video", label: "Video", icon: VideoIcon, color: "#DC2626" },
-  { type: "callout", label: "Callout", icon: MessageSquare, color: "#D97706" },
-  { type: "divider", label: "Phân cách", icon: Minus, color: "#6B7280" },
-  { type: "section", label: "Phần mới", icon: SplitSquareVertical, color: "#0EA5E9" },
-  { type: "embed", label: "Học liệu", icon: Link2, color: "#10B981" },
-  { type: "html", label: "HTML / Tương tác", icon: Boxes, color: "#EC4899" },
-  { type: "code", label: "Code", icon: Code2, color: "#7C3AED" },
-  { type: "math", label: "Công thức", icon: Sigma, color: "#0891B2" },
-  { type: "columns", label: "Nhiều cột", icon: Columns2, color: "#8B5CF6" },
-  { type: "quiz", label: "Câu hỏi", icon: ListChecks, color: "#F59E0B" },
+  { type: "text", label: "Văn bản", icon: Type, color: "var(--colors-brand-600)" },
+  { type: "image", label: "Hình ảnh", icon: ImageIcon, color: "var(--colors-success-600)" },
+  { type: "video", label: "Video", icon: VideoIcon, color: "var(--colors-error-600)" },
+  { type: "callout", label: "Callout", icon: MessageSquare, color: "var(--colors-orange-600)" },
+  { type: "divider", label: "Phân cách", icon: Minus, color: "var(--colors-gray-light-mode-500)" },
+  { type: "section", label: "Phần mới", icon: SplitSquareVertical, color: "var(--colors-blue-light-500)" },
+  { type: "embed", label: "Học liệu", icon: Link2, color: "var(--colors-teal-600)" },
+  { type: "html", label: "HTML / Tương tác", icon: Boxes, color: "var(--colors-pink-600)" },
+  { type: "code", label: "Code", icon: Code2, color: "var(--colors-purple-600)" },
+  { type: "math", label: "Công thức", icon: Sigma, color: "var(--colors-cyan-600)" },
+  { type: "columns", label: "Nhiều cột", icon: Columns2, color: "var(--colors-violet-600)" },
+  { type: "quiz", label: "Câu hỏi", icon: ListChecks, color: "var(--colors-warning-500)" },
 ];
 
 /* ─── Rail Tab definitions ──────────────────────────────────────── */
@@ -105,7 +105,7 @@ export function CoursePalette({
               className={cn(
                 "flex h-10 w-10 flex-col items-center justify-center gap-0.5 rounded-lg text-[10px] font-medium transition",
                 isActive
-                  ? "bg-[#2563EB]/10 text-[#2563EB]"
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
@@ -137,7 +137,7 @@ function BlocksPanel({ onAddBlock }: { onAddBlock: (type: CourseBlockType) => vo
   return (
     <div className="space-y-1 p-3">
       <div className="px-1 pb-2">
-        <h3 className="text-xs font-semibold text-[#2563EB]">Khối nội dung</h3>
+        <h3 className="text-xs font-semibold text-primary">Khối nội dung</h3>
         <p className="mt-0.5 text-[10px] text-muted-foreground">Kéo hoặc bấm để thêm vào bài</p>
       </div>
       <div className="grid grid-cols-2 gap-1.5">
@@ -172,7 +172,7 @@ function DraggableBlockItem({
       onClick={() => onAdd(item.type)}
       className={cn(
         "flex flex-col items-center gap-1 rounded-lg border border-border bg-card p-2.5 text-center text-[11px] font-medium text-foreground transition",
-        "hover:border-[#2563EB] hover:bg-[#EFF6FF] active:scale-95",
+        "hover:border-primary hover:bg-accent active:scale-95",
         isDragging && "opacity-40",
       )}
     >
@@ -225,7 +225,7 @@ function MaterialPanel({ onAttach }: { onAttach: (item: ContentItem) => void }) 
   return (
     <div className="flex h-full flex-col">
       <div className="space-y-2 p-3 pb-2">
-        <h3 className="px-1 text-xs font-semibold text-[#10B981]">Kho học liệu</h3>
+        <h3 className="px-1 text-xs font-semibold text-success">Kho học liệu</h3>
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -286,7 +286,7 @@ function FilterChip({
       className={cn(
         "whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium transition",
         active
-          ? "border-[#10B981] bg-[#10B981] text-white"
+          ? "border-success bg-success text-white"
           : "border-border bg-card text-muted-foreground hover:border-muted-foreground/40",
       )}
     >
@@ -312,13 +312,13 @@ function MaterialRow({ item, onAttach }: { item: ContentItem; onAttach: (item: C
       title={item.title}
       className={cn(
         "flex w-full items-center gap-2 rounded-lg border border-border bg-card p-2 text-left transition",
-        "hover:border-[#10B981] hover:bg-emerald-50 active:scale-[0.98]",
+        "hover:border-success hover:bg-emerald-50 active:scale-[0.98]",
         isDragging && "opacity-40",
       )}
     >
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
-        style={{ backgroundColor: `${accent}1A`, color: accent }}
+        style={{ backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
       >
         <Icon className="h-4 w-4" />
       </span>

@@ -51,7 +51,7 @@ function CanvasDropZone({ children }: { children: React.ReactNode }) {
     <div
       ref={setNodeRef}
       className={`flex flex-1 flex-col items-center justify-center p-4 transition ${
-        isOver ? "bg-[#EFF6FF] ring-2 ring-inset ring-dashed ring-[#2563EB]" : ""
+        isOver ? "bg-accent ring-2 ring-inset ring-dashed ring-primary" : ""
       }`}
     >
       {children}
@@ -263,7 +263,7 @@ export function QuizBuilder({ quizId: id, backTo }: { quizId: string; backTo: Qu
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-bold text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
             Q
           </div>
           <div className="flex min-w-0 flex-1 items-center gap-1">
@@ -289,7 +289,7 @@ export function QuizBuilder({ quizId: id, backTo }: { quizId: string; backTo: Qu
             </Button>
             <Button
               size="sm"
-              className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+              className="bg-primary text-white hover:bg-primary-hover"
               onClick={() => setPublishOpen(true)}
             >
               Xuất bản
@@ -374,7 +374,7 @@ export function QuizBuilder({ quizId: id, backTo }: { quizId: string; backTo: Qu
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 350, damping: 22 }}
-            className="rounded-md border border-[#2563EB] bg-card px-3 py-2 text-xs font-medium text-[#2563EB] shadow-lg"
+            className="rounded-md border border-primary bg-card px-3 py-2 text-xs font-medium text-primary shadow-lg"
           >
             + {TYPE_LABELS[activeType]}
           </motion.div>
@@ -384,7 +384,7 @@ export function QuizBuilder({ quizId: id, backTo }: { quizId: string; backTo: Qu
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 350, damping: 22 }}
-            className="max-w-[220px] truncate rounded-md border border-[#10B981] bg-card px-3 py-2 text-xs font-medium text-[#10B981] shadow-lg"
+            className="max-w-[220px] truncate rounded-md border border-success bg-card px-3 py-2 text-xs font-medium text-success shadow-lg"
           >
             📎 {activeMaterial.title}
           </motion.div>
@@ -410,7 +410,7 @@ export function QuizBuilder({ quizId: id, backTo }: { quizId: string; backTo: Qu
               Hủy
             </Button>
             <Button
-              className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+              className="bg-primary text-white hover:bg-primary-hover"
               onClick={handleConfirmReplace}
             >
               Thay thế
@@ -457,10 +457,10 @@ function BlankPagePlaceholder({ index }: { index: number }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="flex h-full max-h-[480px] w-full max-w-2xl flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#2563EB]/40 bg-card text-center"
+      className="flex h-full max-h-[480px] w-full max-w-2xl flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/40 bg-card text-center"
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EFF6FF]">
-        <Move className="h-8 w-8 text-[#2563EB]" />
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent">
+        <Move className="h-8 w-8 text-primary" />
       </div>
       <div className="mt-4 text-lg font-semibold text-foreground">Trang {index + 1}</div>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">

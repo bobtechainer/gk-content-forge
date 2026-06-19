@@ -28,7 +28,7 @@ export function MathPreview({ content, className }: { content: string; className
 
   return (
     <div
-      className={cn("overflow-x-auto rounded-lg border bg-white p-3 text-center text-[#0891B2]", className)}
+      className={cn("overflow-x-auto rounded-lg border bg-white p-3 text-center text-cyan-600", className)}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

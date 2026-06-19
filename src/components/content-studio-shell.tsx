@@ -262,7 +262,7 @@ export function ContentStudioShell() {
             {showCreate && (
               <Button
                 size="sm"
-                className="gap-1.5 bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+                className="gap-1.5 bg-primary text-white hover:bg-primary-hover"
                 onClick={() => setPickerOpen(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -271,7 +271,7 @@ export function ContentStudioShell() {
             )}
             <Button variant="ghost" size="icon" aria-label="Thông báo" className="relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#EF4444]" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
             </Button>
             <div className="hidden items-center gap-2 border-l border-border pl-3 sm:flex">
               <span
@@ -334,7 +334,7 @@ function WorkspaceSwitcher({ roleId }: { roleId: RoleId }) {
       ? memberships[0]?.orgName ?? "Tổ chức"
       : `${account.name} (Cá nhân)`;
   const currentColor =
-    workspace === "org" ? memberships[0]?.orgColor ?? "#6B7280" : account.avatarColor;
+    workspace === "org" ? memberships[0]?.orgColor ?? "var(--muted-foreground)" : account.avatarColor;
   const currentShort =
     workspace === "org" ? memberships[0]?.orgShortName ?? "ORG" : account.shortName;
 
@@ -386,7 +386,7 @@ function WorkspaceSwitcher({ roleId }: { roleId: RoleId }) {
             <div className="text-[10px] text-muted-foreground">Kênh cá nhân</div>
           </div>
           {workspace === "personal" && (
-            <span className="h-2 w-2 rounded-full bg-[#10B981]" />
+            <span className="h-2 w-2 rounded-full bg-success" />
           )}
         </DropdownMenuItem>
 
@@ -415,7 +415,7 @@ function WorkspaceSwitcher({ roleId }: { roleId: RoleId }) {
               </div>
             </div>
             {workspace === "org" && (
-              <span className="h-2 w-2 rounded-full bg-[#10B981]" />
+              <span className="h-2 w-2 rounded-full bg-success" />
             )}
           </DropdownMenuItem>
         ))}
@@ -465,7 +465,7 @@ function UnifiedNav({
       {showCreate && (
         <div className="px-3 pt-3">
           <Button
-            className="w-full justify-start gap-2 bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+            className="w-full justify-start gap-2 bg-primary text-white hover:bg-primary-hover"
             onClick={onCreate}
           >
             <Plus className="h-4 w-4" /> Tạo mới
@@ -546,7 +546,7 @@ function NavLinkRow({
       <Icon className="h-4 w-4" />
       <span className="flex-1">{item.label}</span>
       {count > 0 && (
-        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1.5 text-xs font-semibold text-white">
+        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-semibold text-white">
           {count}
         </span>
       )}
@@ -644,7 +644,7 @@ function BottomNav({
         to={item.to}
         className={cn(
           "flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
-          active ? "text-[#2563EB]" : "text-muted-foreground",
+          active ? "text-primary" : "text-muted-foreground",
         )}
       >
         <Icon className="h-5 w-5" />
@@ -667,7 +667,7 @@ function BottomNav({
             type="button"
             onClick={onCreate}
             aria-label="Tạo mới"
-            className="-mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#2563EB] text-white shadow-lg ring-4 ring-card"
+            className="-mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg ring-4 ring-card"
           >
             <Plus className="h-6 w-6" />
           </button>

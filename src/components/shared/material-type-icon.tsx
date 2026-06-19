@@ -4,17 +4,17 @@ import { cn } from "@/lib/utils";
 
 /** Accent color per material type, reused for tiles, badges and thumbnails. */
 export const MATERIAL_TYPE_ACCENT: Record<MaterialType, string> = {
-  book: "#20447E",
-  course: "#8B5CF6",
-  quiz: "#2563EB",
-  lesson: "#0EA5E9",
-  advanced: "#10B981",
-  scorm: "#6366F1",
-  document: "#F59E0B",
-  video: "#EF4444",
-  image: "#EC4899",
-  audio: "#14B8A6",
-  "3d_vr": "#F97316",
+  book: "var(--colors-brand-700)",
+  course: "var(--colors-violet-600)",
+  quiz: "var(--colors-brand-600)",
+  lesson: "var(--colors-blue-light-500)",
+  advanced: "var(--colors-success-600)",
+  scorm: "var(--colors-indigo-500)",
+  document: "var(--colors-warning-500)",
+  video: "var(--colors-error-500)",
+  image: "var(--colors-pink-600)",
+  audio: "var(--colors-teal-500)",
+  "3d_vr": "var(--colors-orange-500)",
 };
 
 /** Best-matching SVG (from /public/book) per material type, used where an SVG glyph is preferred. */
@@ -64,7 +64,7 @@ export function MaterialTypeIcon({
   return (
     <span
       className={cn("flex shrink-0 items-center justify-center rounded-lg", className)}
-      style={{ height: size, width: size, backgroundColor: `${accent}1A`, color: accent }}
+      style={{ height: size, width: size, backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
     >
       <Icon style={{ height: size * 0.5, width: size * 0.5 }} />
     </span>

@@ -36,9 +36,9 @@ const ROLE_LABELS: Record<OrgRole, string> = {
 };
 
 const ROLE_STYLE: Record<OrgRole, string> = {
-  owner: "bg-[#20447E]/10 text-[#20447E]",
-  manager: "bg-[#2563EB]/10 text-[#2563EB]",
-  editor: "bg-[#10B981]/10 text-[#10B981]",
+  owner: "bg-primary/10 text-primary",
+  manager: "bg-primary/10 text-primary",
+  editor: "bg-success/10 text-success",
 };
 
 export function MembersView() {
@@ -118,7 +118,7 @@ export function MembersView() {
                 </SelectContent>
               </Select>
             </div>
-            <Button className="gap-1.5 bg-[#2563EB] text-white hover:bg-[#1d4ed8]" onClick={invite}>
+            <Button className="gap-1.5 bg-primary text-white hover:bg-primary-hover" onClick={invite}>
               <UserPlus className="h-4 w-4" /> Mời
             </Button>
           </div>

@@ -60,7 +60,7 @@ export function ContentDonutChart({ items }: { items: ContentItem[] }) {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ borderRadius: 8, border: "1px solid #E5E7EB", fontSize: 12 }}
+                    contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 12 }}
                   />
                 </PieChart>
               </ResponsiveContainer>

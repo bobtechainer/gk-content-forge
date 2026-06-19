@@ -35,7 +35,7 @@ export function AiAssistantCard({ tips, interval = 5000 }: AiAssistantCardProps)
   }, [tips.length, interval]);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#20447E] via-[#2563EB] to-[#6366F1] p-5 text-white shadow-lg md:p-6">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-indigo-500 p-5 text-white shadow-lg md:p-6">
       <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-10 right-16 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
       <div className="relative flex items-start gap-3">

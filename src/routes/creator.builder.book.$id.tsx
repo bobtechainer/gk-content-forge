@@ -52,7 +52,7 @@ function ProductBuilder() {
         </Button>
         <Button
           size="sm"
-          className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+          className="bg-primary text-white hover:bg-primary-hover"
           onClick={() => setPublishOpen(true)}
         >
           Xuất bản

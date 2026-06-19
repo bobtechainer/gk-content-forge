@@ -138,11 +138,11 @@ function ProductButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition hover:border-[#2563EB] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition hover:border-primary hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span
         className="flex h-12 w-12 items-center justify-center rounded-lg"
-        style={{ backgroundColor: `${accent}1A`, color: accent }}
+        style={{ backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
       >
         <Icon className="h-6 w-6" />
       </span>
@@ -162,11 +162,11 @@ function MaterialButton({ id, onClick }: { id: LearningMaterialSubtype; onClick:
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 text-left transition hover:border-[#2563EB] hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 text-left transition hover:border-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
-        style={{ backgroundColor: `${accent}1A`, color: accent }}
+        style={{ backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`, color: accent }}
       >
         <Icon className="h-4 w-4" />
       </span>

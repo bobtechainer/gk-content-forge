@@ -114,7 +114,7 @@ export function MaterialUploadForm({ scope, id }: { scope: StudioScope; id: stri
         </Button>
         <Button
           size="sm"
-          className="bg-[#2563EB] text-white hover:bg-[#1d4ed8]"
+          className="bg-primary text-white hover:bg-primary-hover"
           onClick={() => setPublishOpen(true)}
         >
           Xuất bản
@@ -153,7 +153,7 @@ export function MaterialUploadForm({ scope, id }: { scope: StudioScope; id: stri
             }}
             className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-card p-8 text-center"
           >
-            <UploadCloud className="h-8 w-8 text-[#2563EB]" />
+            <UploadCloud className="h-8 w-8 text-primary" />
             <div className="text-sm font-medium text-foreground">Kéo & thả tệp vào đây</div>
             <div className="text-xs text-muted-foreground">hoặc</div>
             <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
@@ -225,7 +225,7 @@ export function MaterialUploadForm({ scope, id }: { scope: StudioScope; id: stri
               {tags.map((t) => (
                 <span
                   key={t}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#EFF6FF] px-2.5 py-1 text-xs font-medium text-[#2563EB]"
+                  className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-primary"
                 >
                   {t}
                   <button

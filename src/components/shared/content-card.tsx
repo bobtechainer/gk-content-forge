@@ -50,7 +50,7 @@ export function ContentCard({ item, scope }: { item: ContentItem; scope: Scope }
               params={{ id: item.id }}
               target="_blank"
               rel="noopener"
-              className="line-clamp-2 text-sm font-semibold text-foreground hover:text-[#2563EB]"
+              className="line-clamp-2 text-sm font-semibold text-foreground hover:text-primary"
             >
               {item.title}
             </Link>
