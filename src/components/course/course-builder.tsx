@@ -240,7 +240,6 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
             {/* Preview toggle */}
             <div className="flex rounded-lg border p-0.5">
               <button
-              <button
                 onClick={() => setPreviewMode(true)}
                 className={cn("flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
                   previewMode ? "bg-[#2563EB] text-white shadow-sm" : "text-muted-foreground hover:text-foreground")}
