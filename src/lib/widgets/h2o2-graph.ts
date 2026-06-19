@@ -1,157 +1,131 @@
-/* Chặng 2 — "Giải mã đồ thị H2O2": kéo cửa sổ thời gian dọc đường cong phân huỷ
- * H2O2, hiện tam giác ΔC/Δt và tốc độ trung bình v cập nhật theo thời gian thực.
- * Số liệu lấy từ Bảng 19.1. 100% tiếng Việt. */
-export const H2O2_GRAPH_WIDGET = `
-<div id="h2-root">
-  <style>
-    #h2-root{--bg1:#0b1220;--bg2:#0e2740;color:#e2e8f0;padding:22px;border-radius:18px;
-      background:radial-gradient(900px 360px at 85% -20%,#0e7490 0%,transparent 55%),linear-gradient(135deg,var(--bg1),var(--bg2))}
-    #h2-root h2{margin:0 0 2px;font-size:18px;font-weight:800}
-    #h2-root .sub{margin:0 0 14px;font-size:13px;color:#7dd3fc}
-    .h2-wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:stretch}
-    .h2-card{flex:1 1 320px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
-      border-radius:16px;padding:12px;backdrop-filter:blur(8px)}
-    .h2-side{flex:1 1 200px;display:flex;flex-direction:column;gap:10px;min-width:200px}
-    svg{width:100%;height:auto;display:block;touch-action:none}
-    .band{fill:rgba(34,211,238,.14);cursor:grab}
-    .band:active{cursor:grabbing}
-    .grid{stroke:rgba(255,255,255,.08)}
-    .curve{fill:none;stroke:#38bdf8;stroke-width:3;filter:drop-shadow(0 2px 6px rgba(56,189,248,.5))}
-    .area{fill:url(#h2grad)}
-    .pt{fill:#0b1220;stroke:#38bdf8;stroke-width:2.5}
-    .leg{stroke:#fbbf24;stroke-width:2.5;stroke-dasharray:5 4}
-    .hyp{stroke:#f472b6;stroke-width:3}
-    .lab{fill:#fde68a;font-size:11px;font-weight:700}
-    .axlab{fill:#94a3b8;font-size:11px}
-    .readout{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px}
-    .readout .k{font-size:12px;color:#93c5fd}
-    .vbig{font-size:34px;font-weight:800;color:#67e8f9;line-height:1.1;margin-top:2px}
-    .vbig small{font-size:13px;color:#94a3b8;font-weight:600}
-    .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dashed rgba(255,255,255,.12)}
-    .row b{color:#e2e8f0}
-    .presets{display:flex;gap:6px;flex-wrap:wrap}
-    .pbtn{flex:1;min-width:56px;padding:8px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.05);color:#cbd5e1;font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
-    .pbtn:hover{background:rgba(56,189,248,.18);border-color:#38bdf8}
-    .pbtn.on{background:#0891b2;border-color:#22d3ee;color:#fff}
-    .hint{font-size:12px;color:#7dd3fc;margin-top:2px}
-  </style>
+import { threeWidget } from "./three-kit";
 
-  <h2>Tốc độ trung bình thay đổi thế nào?</h2>
-  <p class="sub">Kéo dải xanh dọc theo đường cong (hoặc bấm khoảng thời gian) để xem độ dốc và tốc độ v.</p>
+/* Chặng 2 — Phân huỷ H2O2 (đồ thị tốc độ trung bình).
+ * Cốc H2O2 3D, kéo tay cầm thời gian: H2O2 tách thành H2O + O2, bọt O2 nổi lên
+ * (mạnh lúc đầu, yếu dần). Sổ tay vẽ đường cong [H2O2]-t và chạy v = -ΔC/Δt.
+ * Số liệu Bảng 19.1. */
 
-  <div class="h2-wrap">
-    <div class="h2-card">
-      <svg id="h2-svg" viewBox="0 0 560 340">
-        <defs>
-          <linearGradient id="h2grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="rgba(56,189,248,.35)"/>
-            <stop offset="1" stop-color="rgba(56,189,248,0)"/>
-          </linearGradient>
-        </defs>
-        <g id="h2-grid"></g>
-        <rect id="h2-band" class="band" x="56" y="24" width="120" height="268" rx="6"></rect>
-        <path id="h2-area" class="area"></path>
-        <path id="h2-curve" class="curve"></path>
-        <line id="h2-legh" class="leg"></line>
-        <line id="h2-legv" class="leg"></line>
-        <line id="h2-hyp" class="hyp"></line>
-        <text id="h2-labdc" class="lab"></text>
-        <text id="h2-labdt" class="lab"></text>
-        <g id="h2-pts"></g>
-        <text x="276" y="334" class="axlab" text-anchor="middle">Thời gian (giờ)</text>
-        <text x="14" y="160" class="axlab" transform="rotate(-90 14 160)" text-anchor="middle">Nồng độ H2O2 (mol/L)</text>
-      </svg>
-    </div>
+const BODY = `
+<div class="gk-stage" style="height:440px">
+  <canvas></canvas>
 
-    <div class="h2-side">
-      <div class="readout">
-        <div class="k">Tốc độ trung bình</div>
-        <div class="vbig"><span id="h2-v">0,098</span> <small>mol/(L·h)</small></div>
-        <div class="row"><span>Khoảng thời gian</span><b id="h2-int">0 → 3 h</b></div>
-        <div class="row"><span>ΔC</span><b id="h2-dc">-0,293 mol/L</b></div>
-        <div class="row"><span>Δt</span><b id="h2-dt">3 h</b></div>
-        <div class="hint" id="h2-msg">Độ dốc đang lớn nhất — phản ứng nhanh nhất lúc đầu.</div>
-      </div>
-      <div class="presets">
-        <button class="pbtn on" data-s="0">0–3 h</button>
-        <button class="pbtn" data-s="3">3–6 h</button>
-        <button class="pbtn" data-s="6">6–9 h</button>
-        <button class="pbtn" data-s="9">9–12 h</button>
-      </div>
-    </div>
+  <div class="gk-ov note" style="right:12px;top:12px;width:250px">
+    <div class="ttl">Sổ tay phòng thí nghiệm</div>
+    <svg viewBox="0 0 240 150" id="h2-svg"></svg>
+    <div class="vline"><span>v = −ΔC/Δt</span><b id="h2-v">0,098</b></div>
+    <div class="sub" id="h2-int">Khoảng 0–3 h · ΔC = −0,293 mol/L</div>
   </div>
 
-  <script>
-    (function(){
-      var T=[0,3,6,9,12], C=[1.000,0.707,0.500,0.354,0.250];
-      var L=56,R=536,TP=24,BT=292,W=R-L,H=BT-TP;
-      function x(t){return L+(t/12)*W;}
-      function y(c){return TP+(1-c)*H;}
-      var svg=document.getElementById('h2-svg');
-      function el(id){return document.getElementById(id);}
+  <div class="gk-ov read" style="left:12px;top:12px">
+    <div class="k">Thời gian</div><div class="v"><span id="h2-t">0</span> h</div>
+    <div class="k" style="margin-top:6px">[H₂O₂] còn lại</div><div class="v" style="color:#7dd3fc"><span id="h2-c">1,000</span></div>
+  </div>
 
-      // grid + axis ticks
-      var g='';
-      for(var i=0;i<=12;i+=3){g+='<line class="grid" x1="'+x(i)+'" y1="'+TP+'" x2="'+x(i)+'" y2="'+BT+'"/>'+'<text class="axlab" x="'+x(i)+'" y="'+(BT+16)+'" text-anchor="middle">'+i+'</text>';}
-      for(var c=0;c<=1.0001;c+=0.25){g+='<line class="grid" x1="'+L+'" y1="'+y(c)+'" x2="'+R+'" y2="'+y(c)+'"/>'+'<text class="axlab" x="'+(L-8)+'" y="'+(y(c)+4)+'" text-anchor="end">'+c.toFixed(2).replace('.',',')+'</text>';}
-      el('h2-grid').innerHTML=g;
-
-      // curve + area
-      var d='M '+x(T[0])+' '+y(C[0]);
-      for(var k=1;k<T.length;k++){d+=' L '+x(T[k])+' '+y(C[k]);}
-      el('h2-curve').setAttribute('d',d);
-      el('h2-area').setAttribute('d',d+' L '+x(12)+' '+BT+' L '+x(0)+' '+BT+' Z');
-      var ph='';for(var p=0;p<T.length;p++){ph+='<circle class="pt" cx="'+x(T[p])+'" cy="'+y(C[p])+'" r="4.5"/>';}
-      el('h2-pts').innerHTML=ph;
-
-      var start=0;
-      function fmt(n,dg){return n.toFixed(dg).replace('.',',');}
-
-      function render(animate){
-        var idx=start/3, t1=T[idx],t2=T[idx+1],c1=C[idx],c2=C[idx+1];
-        var x1=x(t1),x2=x(t2),y1=y(c1),y2=y(c2);
-        el('h2-band').setAttribute('x',x1);
-        el('h2-band').setAttribute('width',x2-x1);
-        el('h2-legh').setAttribute('x1',x1);el('h2-legh').setAttribute('y1',y1);el('h2-legh').setAttribute('x2',x2);el('h2-legh').setAttribute('y2',y1);
-        el('h2-legv').setAttribute('x1',x2);el('h2-legv').setAttribute('y1',y1);el('h2-legv').setAttribute('x2',x2);el('h2-legv').setAttribute('y2',y2);
-        el('h2-hyp').setAttribute('x1',x1);el('h2-hyp').setAttribute('y1',y1);el('h2-hyp').setAttribute('x2',x2);el('h2-hyp').setAttribute('y2',y2);
-        el('h2-labdt').setAttribute('x',(x1+x2)/2);el('h2-labdt').setAttribute('y',y1-6);el('h2-labdt').setAttribute('text-anchor','middle');el('h2-labdt').textContent='Δt = 3 h';
-        el('h2-labdc').setAttribute('x',x2+6);el('h2-labdc').setAttribute('y',(y1+y2)/2);el('h2-labdc').textContent='ΔC';
-        var dc=c2-c1, v=-dc/(t2-t1);
-        el('h2-int').textContent=t1+' → '+t2+' h';
-        el('h2-dc').textContent=fmt(dc,3)+' mol/L';
-        el('h2-dt').textContent='3 h';
-        var msg=idx===0?'Độ dốc đang lớn nhất — phản ứng nhanh nhất lúc đầu.':(idx===3?'Đường cong thoải hẳn — phản ứng đã chậm lại nhiều.':'Độ dốc nhỏ dần — tốc độ đang giảm theo thời gian.');
-        el('h2-msg').textContent=msg;
-        document.querySelectorAll('.pbtn').forEach(function(b){b.classList.toggle('on',Number(b.dataset.s)===start);});
-        countTo(v);
-      }
-
-      var shown=0.098, raf=null;
-      function countTo(v){
-        if(raf)cancelAnimationFrame(raf);
-        var from=shown,to=v,t0=null;
-        function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/350,1);shown=from+(to-from)*p;
-          el('h2-v').textContent=fmt(shown,3);if(p<1)raf=requestAnimationFrame(step);}
-        raf=requestAnimationFrame(step);
-      }
-
-      // preset buttons
-      document.querySelectorAll('.pbtn').forEach(function(b){b.addEventListener('click',function(){start=Number(b.dataset.s);render(true);});});
-
-      // drag band
-      var band=el('h2-band'),dragging=false;
-      function timeFromEvent(e){var r=svg.getBoundingClientRect();var px=( (e.touches?e.touches[0].clientX:e.clientX) - r.left)/r.width*560;var t=(px-L)/W*12;return t;}
-      function snap(t){var s=Math.round((t-1.5)/3)*3;return Math.max(0,Math.min(9,s));}
-      function down(e){dragging=true;e.preventDefault();}
-      function move(e){if(!dragging)return;var ns=snap(timeFromEvent(e));if(ns!==start){start=ns;render(true);}}
-      function up(){dragging=false;}
-      band.addEventListener('mousedown',down);band.addEventListener('touchstart',down,{passive:false});
-      svg.addEventListener('mousemove',move);svg.addEventListener('touchmove',move,{passive:false});
-      window.addEventListener('mouseup',up);window.addEventListener('touchend',up);
-
-      render(false);
-    })();
-  </script>
+  <div class="gk-ov track" id="h2-track">
+    <div class="rail"></div>
+    <div class="knob gk-grab" id="h2-knob"></div>
+    <div class="ticks"><span>0h</span><span>3h</span><span>6h</span><span>9h</span><span>12h</span></div>
+  </div>
+  <div class="gk-hintbar">Kéo nút thời gian để xem H₂O₂ phân huỷ và độ dốc thoải dần.</div>
 </div>`;
+
+const CSS = `
+  .note{z-index:4;background:rgba(8,14,28,.62);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px;backdrop-filter:blur(6px)}
+  .note .ttl{font-size:11px;color:#9db4e6;font-weight:700;margin-bottom:4px}
+  .note svg{width:100%;height:auto;display:block}
+  .note .vline{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;font-size:12px;color:#9db4e6}
+  .note .vline b{font-size:20px;color:#67e8f9}
+  .note .sub{font-size:11px;color:#7dd3fc;margin-top:2px}
+  .read{z-index:4}
+  .track{left:12px;right:280px;bottom:54px;z-index:4}
+  .track .rail{height:6px;border-radius:6px;background:linear-gradient(90deg,#38bdf8,#818cf8,#a78bfa)}
+  .track .knob{position:absolute;top:-9px;left:0;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#38bdf8);box-shadow:0 2px 10px rgba(56,189,248,.7);transform:translateX(-12px)}
+  .track .ticks{display:flex;justify-content:space-between;font-size:10px;color:#9db4e6;margin-top:8px}
+  .h2-grid{stroke:rgba(255,255,255,.10)} .h2-cur{fill:none;stroke:#38bdf8;stroke-width:2.5}
+  .h2-leg{stroke:#fbbf24;stroke-width:2;stroke-dasharray:4 3} .h2-dot{fill:#fde047}
+`;
+
+const SCENE = `
+  var stage=document.querySelector("#h2-beaker .gk-stage")||document.querySelector(".gk-stage");
+  var canvas=stage.querySelector("canvas");
+  var S=GK.makeScene(canvas,{camera:[0,2.0,7.2],target:[0,1.0,0]});
+
+  // beaker
+  var beaker=GK.glass(THREE,1.35,1.2,2.2); beaker.position.y=1.1; S.scene.add(beaker);
+  var bottom=new THREE.Mesh(new THREE.CircleGeometry(1.2,40),
+    new THREE.MeshStandardMaterial({color:0xeaf6ff,transparent:true,opacity:0.18,side:THREE.DoubleSide}));
+  bottom.rotation.x=-Math.PI/2; bottom.position.y=0; S.scene.add(bottom);
+  var liq=GK.liquid(THREE,1.18,1.7,0x7fd4ff,0.5); liq.position.y=0.85; S.scene.add(liq);
+
+  var molG=new THREE.Group(); molG.position.y=0.85; S.scene.add(molG);
+  var mols=[];
+  for(var i=0;i<16;i++){ var m=GK.molecule(THREE,GK.MOL.H2O2,0.30);
+    m.position.set((Math.random()-0.5)*1.7,(Math.random()-0.5)*1.4,(Math.random()-0.5)*1.7); molG.add(m); mols.push(m); }
+  var bub=GK.bubbles(THREE,S.scene,{x:0,z:0,yMin:0.2,yMax:2.0,r:0.06,color:0xcdefff,count:48,spread:1.7});
+
+  // data (Bảng 19.1) + first-order model C(t)=exp(-k t)
+  var K=0.11552; // halves every 6h, C(12)=0.25
+  function Cof(t){return Math.exp(-K*t);}
+  var TBL=[1.000,0.707,0.500,0.354,0.250];
+  function fmt(n,d){return n.toFixed(d).replace(".",",");}
+
+  // graph
+  var svg=document.getElementById("h2-svg"); var L=30,R=228,TP=12,BT=120,W=R-L,H=BT-TP;
+  function gx(t){return L+(t/12)*W;} function gy(c){return TP+(1-c)*H;}
+  var g="";
+  for(var t=0;t<=12;t+=3){g+='<line class="h2-grid" x1="'+gx(t)+'" y1="'+TP+'" x2="'+gx(t)+'" y2="'+BT+'"/>';}
+  g+='<line class="h2-grid" x1="'+L+'" y1="'+BT+'" x2="'+R+'" y2="'+BT+'"/>';
+  var d="M "+gx(0)+" "+gy(Cof(0));
+  for(var tt=0.5;tt<=12.01;tt+=0.5){ d+=" L "+gx(tt)+" "+gy(Cof(tt)); }
+  g+='<path class="h2-cur" d="'+d+'"/>';
+  g+='<line id="h2-lh" class="h2-leg"/><line id="h2-lv" class="h2-leg"/><circle id="h2-pt" class="h2-dot" r="3.5"/>';
+  g+='<text x="'+((L+R)/2)+'" y="138" fill="#9db4e6" font-size="9" text-anchor="middle">thời gian (h)</text>';
+  svg.innerHTML=g;
+  var lh=document.getElementById("h2-lh"),lv=document.getElementById("h2-lv"),pt=document.getElementById("h2-pt");
+
+  var elT=document.getElementById("h2-t"),elC=document.getElementById("h2-c"),elV=document.getElementById("h2-v"),elInt=document.getElementById("h2-int");
+  var time=0, targetRate=1;
+
+  function setTime(t){
+    time=Math.max(0,Math.min(12,t));
+    var c=Cof(time);
+    elT.textContent=Math.round(time); elC.textContent=fmt(c,3);
+    targetRate=c; // first-order: rate ∝ C
+    // graph window (3h containing t)
+    var i0=Math.min(3,Math.floor(time/3)); var t1=i0*3,t2=t1+3, c1=TBL[i0],c2=TBL[i0+1];
+    var v=-(c2-c1)/3;
+    elV.textContent=fmt(v,3); elInt.textContent="Khoảng "+t1+"–"+t2+" h · ΔC = "+fmt(c2-c1,3)+" mol/L";
+    lh.setAttribute("x1",gx(t1));lh.setAttribute("y1",gy(c1));lh.setAttribute("x2",gx(t2));lh.setAttribute("y2",gy(c1));
+    lv.setAttribute("x1",gx(t2));lv.setAttribute("y1",gy(c1));lv.setAttribute("x2",gx(t2));lv.setAttribute("y2",gy(c2));
+    pt.setAttribute("cx",gx(time));pt.setAttribute("cy",gy(c));
+    // fewer molecules + shorter liquid as it decomposes
+    liq.scale.y=0.5+0.5*c; liq.position.y=0.85*(0.5+0.5*c)+0.0;
+    for(var k=0;k<mols.length;k++){ mols[k].visible = k < Math.round(c*mols.length); }
+  }
+
+  // drag the time knob
+  var track=document.getElementById("h2-track"), knob=document.getElementById("h2-knob");
+  function setFromX(clientX){ var r=track.getBoundingClientRect(); var f=(clientX-r.left)/r.width; f=Math.max(0,Math.min(1,f));
+    knob.style.left=(f*100)+"%"; setTime(f*12); }
+  var drag=false;
+  knob.addEventListener("pointerdown",function(e){drag=true;knob.setPointerCapture(e.pointerId);});
+  window.addEventListener("pointermove",function(e){ if(drag)setFromX(e.clientX); });
+  window.addEventListener("pointerup",function(){drag=false;});
+  track.addEventListener("pointerdown",function(e){ if(e.target===knob)return; setFromX(e.clientX); });
+
+  setTime(0);
+  S.start(function(dt){
+    bub.update(dt,Math.max(0,targetRate));
+    molG.rotation.y+=dt*0.3;
+    for(var k=0;k<mols.length;k++){ mols[k].rotation.x+=dt*0.7; mols[k].rotation.y+=dt*0.5; }
+  });
+`;
+
+export const H2O2_GRAPH_WIDGET = threeWidget({
+  id: "h2-beaker",
+  title: "Phân huỷ H₂O₂ — tốc độ giảm dần theo thời gian",
+  subtitle: "Kéo nút thời gian: H₂O₂ tách thành H₂O + O₂, bọt O₂ nổi lên, đồ thị cho thấy độ dốc thoải dần.",
+  css: CSS,
+  body: BODY,
+  sceneJs: SCENE,
+});
