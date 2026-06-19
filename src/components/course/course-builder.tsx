@@ -240,18 +240,19 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
             {/* Preview toggle */}
             <div className="flex rounded-lg border p-0.5">
               <button
-                onClick={() => setPreviewMode(false)}
-                className={cn("flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
-                  !previewMode ? "bg-[#2563EB] text-white shadow-sm" : "text-muted-foreground hover:text-foreground")}
-              >
-                <Edit3 className="h-3 w-3" /> Soạn
-              </button>
               <button
                 onClick={() => setPreviewMode(true)}
                 className={cn("flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
                   previewMode ? "bg-[#2563EB] text-white shadow-sm" : "text-muted-foreground hover:text-foreground")}
               >
                 <Eye className="h-3 w-3" /> Preview
+              </button>
+              <button
+                onClick={() => setPreviewMode(false)}
+                className={cn("flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
+                  !previewMode ? "bg-[#2563EB] text-white shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              >
+                <Edit3 className="h-3 w-3" /> Soạn
               </button>
             </div>
             <Button size="sm" className="h-8 bg-[#2563EB] text-xs text-white hover:bg-[#1d4ed8]" onClick={() => setPublishOpen(true)}>
