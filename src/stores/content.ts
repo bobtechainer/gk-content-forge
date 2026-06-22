@@ -123,6 +123,13 @@ export const useContent = create<ContentState>()(
         });
       },
     }),
-    { name: "gk-content" },
+    {
+      name: "gk-content",
+      // Tăng version khi đổi SEED_CONTENT để trình duyệt đã cache localStorage
+      // được nạp lại nội dung seed mới (nếu không, bản dev cũ hiển thị data cũ
+      // trong khi bản build mới hiển thị data mới → lệch nhau).
+      version: 2,
+      migrate: () => ({ items: SEED_CONTENT }),
+    },
   ),
 );

@@ -169,7 +169,7 @@ let _seq = 0;
 const stamp = (tier: ContentTier, subject: string, year = 2026) =>
   generateRegistryId(tier, subject, ++_seq, year);
 
-export const SEED_CONTENT: ContentItem[] = [
+const BASE_SEED_CONTENT: ContentItem[] = [
   {
     id: "c1",
     title: "Ôn tập Đại số chương 1 - Lớp 8",
@@ -920,17 +920,21 @@ const NODE_SEED_CONTENT: ContentItem[] = [
   { id: "n26", title: "Tài liệu hướng dẫn dạy học GDPT 2018", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "document", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd", ownerName: "NXB Giáo dục VN", createdAt: "2026-02-14", views: 14300, likes: 980, shares: 410, thumbnailColor: "#0EA5A4", subject: "Ngữ văn", grade: "Lớp 10", platforms: ["national"], tags: ["GDPT 2018", "Hướng dẫn"], description: "Tài liệu hướng dẫn triển khai chương trình GDPT 2018 cho giáo viên.", tier: "root", registryId: stamp("root", "Ngữ văn"), qualityLabel: "ministry_standard" },
 ];
 
-/* Gán ownerNodeId cho các item cũ (theo ownerId) để scope theo node hoạt động,
- * rồi gộp nội dung riêng từng kênh vào SEED_CONTENT. */
+/* Gán ownerNodeId cho item cũ (theo ownerId) để scope theo node, rồi gộp nội
+ * dung riêng từng kênh. Dùng biểu thức THUẦN (không mutate/side-effect) để bản
+ * build production (package.json "sideEffects": false) không tree-shake bỏ qua. */
 const OWNER_NODE_BY_ROLE: Partial<Record<RoleId, string>> = {
   publisher: "nxbgd",
   teacher: "pn-hieu",
   verified_teacher: "pn-nhi",
 };
-for (const item of SEED_CONTENT) {
-  if (!item.ownerNodeId) item.ownerNodeId = OWNER_NODE_BY_ROLE[item.ownerId];
-}
-SEED_CONTENT.push(...NODE_SEED_CONTENT);
+export const SEED_CONTENT: ContentItem[] = [
+  ...BASE_SEED_CONTENT.map((item) => ({
+    ...item,
+    ownerNodeId: item.ownerNodeId ?? OWNER_NODE_BY_ROLE[item.ownerId],
+  })),
+  ...NODE_SEED_CONTENT,
+];
 
 export const VERIFICATION_REQUESTS: VerificationRequest[] = [
   {
