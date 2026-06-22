@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MembersPage } from "@/components/studio-pages";
+import { OrgMembersPage } from "@/components/org/org-members-page";
 
 export const Route = createFileRoute("/org/members")({
-  component: MembersPage,
+  head: () => ({ meta: [{ title: "Thành viên & vai trò — GK Content Studio" }] }),
+  component: OrgMembersPage,
 });

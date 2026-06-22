@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { DEMO_LOGINS } from "@/lib/mock-data";
-import { getRoleHomePath } from "@/lib/taxonomy";
+import { LOGINS } from "@/lib/org-mock-data";
+import type { Login } from "@/lib/org/types";
+import { useIdentity } from "@/stores/identity";
 import { useSession } from "@/stores/session";
-import { VerifiedBadge } from "@/components/shared/verified-badge";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/login")({
       { title: "Đăng nhập — GK Content Studio" },
       {
         name: "description",
-        content: "Chọn vai trò để bắt đầu trải nghiệm demo GK Content Studio.",
+        content: "Chọn tài khoản để bắt đầu trải nghiệm demo GK Content Studio.",
       },
     ],
   }),
@@ -20,12 +20,26 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const setRole = useSession((s) => s.setRole);
+  const loginAs = useIdentity((s) => s.loginAs);
+  const setView = useSession((s) => s.setView);
   const navigate = useNavigate();
 
-  const pick = (login: (typeof DEMO_LOGINS)[number]) => {
-    setRole(login.roleId, login.schoolRole);
-    navigate({ to: getRoleHomePath(login.roleId, login.schoolRole) as string });
+  const pick = (login: Login) => {
+    loginAs(login.id);
+    // Tài khoản hệ thống (admin / hội đồng thẩm định) không có hồ sơ tổ chức —
+    // set view-group và vào thẳng màn làm việc.
+    if (login.systemRole === "admin") {
+      setView("admin");
+      navigate({ to: "/admin/dashboard" });
+      return;
+    }
+    if (login.systemRole === "reviewer") {
+      setView("reviewer");
+      navigate({ to: "/reviewer/queue" });
+      return;
+    }
+    // Tài khoản thường → màn chọn hồ sơ (Netflix flow).
+    navigate({ to: "/choose-profile" });
   };
 
   return (
@@ -46,48 +60,40 @@ function LoginPage() {
             Chào mừng đến với <span className="text-primary">GK Studio</span>
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">
-            Đây là bản demo. Chọn vai trò bên dưới để vào thẳng dashboard và trải nghiệm luồng tạo —
-            duyệt — xuất bản nội dung.
+            Đây là bản demo. Chọn một tài khoản bên dưới để đăng nhập. Tài khoản có nhiều hồ sơ sẽ
+            mời bạn chọn hồ sơ làm việc ở bước tiếp theo.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {DEMO_LOGINS.map((login, i) => {
-            const a = login.account;
-            return (
-              <motion.button
-                key={login.key}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                whileHover={{ y: -4 }}
-                onClick={() => pick(login)}
-                className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 text-left shadow-sm transition hover:border-primary hover:shadow-xl"
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {LOGINS.map((login, i) => (
+            <motion.button
+              key={login.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06 }}
+              whileHover={{ y: -4 }}
+              onClick={() => pick(login)}
+              className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 text-left shadow-sm transition hover:border-primary hover:shadow-xl"
+            >
+              <div
+                className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-10 transition group-hover:scale-150"
+                style={{ backgroundColor: login.avatarColor }}
+              />
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold text-white"
+                style={{ backgroundColor: login.avatarColor }}
               >
-                <div
-                  className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-10 transition group-hover:scale-150"
-                  style={{ backgroundColor: a.avatarColor }}
-                />
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-semibold text-white"
-                  style={{ backgroundColor: a.avatarColor }}
-                >
-                  {a.shortName}
-                </div>
-                <div className="mt-4 flex items-center gap-1.5">
-                  <span className="font-semibold text-foreground">{a.name}</span>
-                  <VerifiedBadge verified={a.verified} />
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{a.accountType}</p>
-                <p className="mt-1 text-xs font-medium text-muted-foreground">{login.tagline}</p>
-                <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{a.bio}</p>
-                <div className="mt-4 flex items-center text-xs font-medium text-primary">
-                  Vào dashboard{" "}
-                  <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-1" />
-                </div>
-              </motion.button>
-            );
-          })}
+                {login.shortName}
+              </div>
+              <div className="mt-4 break-words font-semibold text-foreground">{login.name}</div>
+              <p className="mt-1 break-all text-xs text-muted-foreground">{login.email}</p>
+              <div className="mt-4 flex items-center text-xs font-medium text-primary">
+                {login.systemRole ? "Vào hệ thống" : "Đăng nhập"}{" "}
+                <ArrowRight className="ml-1 h-3 w-3 transition group-hover:translate-x-1" />
+              </div>
+            </motion.button>
+          ))}
         </div>
       </div>
     </div>

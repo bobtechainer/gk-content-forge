@@ -15,6 +15,7 @@ import { Route as ReviewerRouteImport } from './routes/reviewer'
 import { Route as OrgRouteImport } from './routes/org'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CreatorRouteImport } from './routes/creator'
+import { Route as ChooseProfileRouteImport } from './routes/choose-profile'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StudentProgressRouteImport } from './routes/student.progress'
@@ -26,6 +27,7 @@ import { Route as ReviewerReportsRouteImport } from './routes/reviewer.reports'
 import { Route as ReviewerQueueRouteImport } from './routes/reviewer.queue'
 import { Route as OrgVerificationRouteImport } from './routes/org.verification'
 import { Route as OrgStudioRouteImport } from './routes/org.studio'
+import { Route as OrgStructureRouteImport } from './routes/org.structure'
 import { Route as OrgSigningRouteImport } from './routes/org.signing'
 import { Route as OrgSettingsRouteImport } from './routes/org.settings'
 import { Route as OrgMembersRouteImport } from './routes/org.members'
@@ -96,6 +98,11 @@ const CreatorRoute = CreatorRouteImport.update({
   path: '/creator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChooseProfileRoute = ChooseProfileRouteImport.update({
+  id: '/choose-profile',
+  path: '/choose-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -149,6 +156,11 @@ const OrgVerificationRoute = OrgVerificationRouteImport.update({
 const OrgStudioRoute = OrgStudioRouteImport.update({
   id: '/studio',
   path: '/studio',
+  getParentRoute: () => OrgRoute,
+} as any)
+const OrgStructureRoute = OrgStructureRouteImport.update({
+  id: '/structure',
+  path: '/structure',
   getParentRoute: () => OrgRoute,
 } as any)
 const OrgSigningRoute = OrgSigningRouteImport.update({
@@ -352,6 +364,7 @@ const CreatorBuilderBookIdRoute = CreatorBuilderBookIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/choose-profile': typeof ChooseProfileRoute
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
@@ -383,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/org/members': typeof OrgMembersRoute
   '/org/settings': typeof OrgSettingsRoute
   '/org/signing': typeof OrgSigningRoute
+  '/org/structure': typeof OrgStructureRoute
   '/org/studio': typeof OrgStudioRouteWithChildren
   '/org/verification': typeof OrgVerificationRoute
   '/reviewer/queue': typeof ReviewerQueueRoute
@@ -410,6 +424,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/choose-profile': typeof ChooseProfileRoute
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
@@ -441,6 +456,7 @@ export interface FileRoutesByTo {
   '/org/members': typeof OrgMembersRoute
   '/org/settings': typeof OrgSettingsRoute
   '/org/signing': typeof OrgSigningRoute
+  '/org/structure': typeof OrgStructureRoute
   '/org/studio': typeof OrgStudioRouteWithChildren
   '/org/verification': typeof OrgVerificationRoute
   '/reviewer/queue': typeof ReviewerQueueRoute
@@ -469,6 +485,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/choose-profile': typeof ChooseProfileRoute
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
@@ -500,6 +517,7 @@ export interface FileRoutesById {
   '/org/members': typeof OrgMembersRoute
   '/org/settings': typeof OrgSettingsRoute
   '/org/signing': typeof OrgSigningRoute
+  '/org/structure': typeof OrgStructureRoute
   '/org/studio': typeof OrgStudioRouteWithChildren
   '/org/verification': typeof OrgVerificationRoute
   '/reviewer/queue': typeof ReviewerQueueRoute
@@ -529,6 +547,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/choose-profile'
     | '/creator'
     | '/login'
     | '/org'
@@ -560,6 +579,7 @@ export interface FileRouteTypes {
     | '/org/members'
     | '/org/settings'
     | '/org/signing'
+    | '/org/structure'
     | '/org/studio'
     | '/org/verification'
     | '/reviewer/queue'
@@ -587,6 +607,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/choose-profile'
     | '/creator'
     | '/login'
     | '/org'
@@ -618,6 +639,7 @@ export interface FileRouteTypes {
     | '/org/members'
     | '/org/settings'
     | '/org/signing'
+    | '/org/structure'
     | '/org/studio'
     | '/org/verification'
     | '/reviewer/queue'
@@ -645,6 +667,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/choose-profile'
     | '/creator'
     | '/login'
     | '/org'
@@ -676,6 +699,7 @@ export interface FileRouteTypes {
     | '/org/members'
     | '/org/settings'
     | '/org/signing'
+    | '/org/structure'
     | '/org/studio'
     | '/org/verification'
     | '/reviewer/queue'
@@ -704,6 +728,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ChooseProfileRoute: typeof ChooseProfileRoute
   CreatorRoute: typeof CreatorRouteWithChildren
   LoginRoute: typeof LoginRoute
   OrgRoute: typeof OrgRouteWithChildren
@@ -754,6 +779,13 @@ declare module '@tanstack/react-router' {
       path: '/creator'
       fullPath: '/creator'
       preLoaderRoute: typeof CreatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/choose-profile': {
+      id: '/choose-profile'
+      path: '/choose-profile'
+      fullPath: '/choose-profile'
+      preLoaderRoute: typeof ChooseProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -831,6 +863,13 @@ declare module '@tanstack/react-router' {
       path: '/studio'
       fullPath: '/org/studio'
       preLoaderRoute: typeof OrgStudioRouteImport
+      parentRoute: typeof OrgRoute
+    }
+    '/org/structure': {
+      id: '/org/structure'
+      path: '/structure'
+      fullPath: '/org/structure'
+      preLoaderRoute: typeof OrgStructureRouteImport
       parentRoute: typeof OrgRoute
     }
     '/org/signing': {
@@ -1226,6 +1265,7 @@ interface OrgRouteChildren {
   OrgMembersRoute: typeof OrgMembersRoute
   OrgSettingsRoute: typeof OrgSettingsRoute
   OrgSigningRoute: typeof OrgSigningRoute
+  OrgStructureRoute: typeof OrgStructureRoute
   OrgStudioRoute: typeof OrgStudioRouteWithChildren
   OrgVerificationRoute: typeof OrgVerificationRoute
   OrgBuilderBookIdRoute: typeof OrgBuilderBookIdRoute
@@ -1242,6 +1282,7 @@ const OrgRouteChildren: OrgRouteChildren = {
   OrgMembersRoute: OrgMembersRoute,
   OrgSettingsRoute: OrgSettingsRoute,
   OrgSigningRoute: OrgSigningRoute,
+  OrgStructureRoute: OrgStructureRoute,
   OrgStudioRoute: OrgStudioRouteWithChildren,
   OrgVerificationRoute: OrgVerificationRoute,
   OrgBuilderBookIdRoute: OrgBuilderBookIdRoute,
@@ -1301,6 +1342,7 @@ const StudentRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  ChooseProfileRoute: ChooseProfileRoute,
   CreatorRoute: CreatorRouteWithChildren,
   LoginRoute: LoginRoute,
   OrgRoute: OrgRouteWithChildren,

@@ -140,6 +140,8 @@ export interface ContentItem {
   qualityLabel?: QualityLabel;
   coAuthors?: string[];
   versionHistory?: ContentVersion[];
+  /** Id của OrgNode sở hữu nội dung này (luồng identity mới). */
+  ownerNodeId?: string;
 }
 
 export interface VerificationChecklist {

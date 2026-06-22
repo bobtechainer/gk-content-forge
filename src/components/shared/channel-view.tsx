@@ -67,14 +67,16 @@ export function ChannelView({ scope }: { scope: StudioScope }) {
   const editTo = scope === "org" ? "/org/channel/edit" : "/creator/channel/edit";
 
   return (
-    <div className="mx-auto max-w-[1440px] pb-8">
-      {/* Banner — responsive */}
-      <div
-        className="h-32 w-full sm:h-40 md:h-56"
-        style={{
-          background: `linear-gradient(120deg, ${account.avatarColor}, var(--primary))`,
-        }}
-      />
+    <div className="mx-auto max-w-[1440px] pb-8 pt-4 sm:pt-6">
+      {/* Banner — bo góc + tách khỏi header trên cùng cho thoáng (tránh sát) */}
+      <div className="px-4 sm:px-6 md:px-8">
+        <div
+          className="h-32 w-full rounded-2xl sm:h-40 md:h-56"
+          style={{
+            background: `linear-gradient(120deg, ${account.avatarColor}, var(--primary))`,
+          }}
+        />
+      </div>
       <div className="px-4 sm:px-6 md:px-8">
         {/* Profile header — responsive stack */}
         <div className="-mt-10 flex flex-col gap-3 sm:-mt-12 sm:gap-4 md:-mt-14 md:flex-row md:items-end md:justify-between">

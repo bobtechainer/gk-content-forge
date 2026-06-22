@@ -16,7 +16,11 @@ interface ContentState {
   createDraft: (
     type: ContentType,
     ownerId: RoleId,
-    options?: { category?: CreationCategory; materialSubtype?: LearningMaterialSubtype },
+    options?: {
+      category?: CreationCategory;
+      materialSubtype?: LearningMaterialSubtype;
+      ownerNodeId?: string;
+    },
   ) => string;
   updateItem: (id: string, patch: Partial<ContentItem>) => void;
   deleteItem: (id: string) => void;
@@ -62,6 +66,7 @@ export const useContent = create<ContentState>()(
           materialSubtype,
           status: "draft",
           ownerId,
+          ownerNodeId: options?.ownerNodeId,
           createdAt: new Date().toISOString().slice(0, 10),
           views: 0,
           likes: 0,

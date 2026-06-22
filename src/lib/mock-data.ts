@@ -66,22 +66,22 @@ export const ACCOUNTS: Record<RoleId, Account> = {
     email: "lienhe@nxbgd.vn",
     businessLicense: "GP-XB-0123/NXBGD",
     managers: [
-      { email: "owner@nxbgd.vn", name: "Lê Quốc Owner", role: "owner", joinedAt: "2025-09-01" },
+      { email: "owner@nxbgd.vn", name: "Đoàn Thuận Anh Thư", role: "owner", joinedAt: "2025-09-01" },
       {
         email: "manager1@nxbgd.vn",
-        name: "Phạm Thu Manager",
+        name: "Trần Thị Mai",
         role: "manager",
         joinedAt: "2025-10-12",
       },
       {
         email: "editor1@nxbgd.vn",
-        name: "Đỗ Văn Editor",
+        name: "Vũ Đức Long",
         role: "editor",
         joinedAt: "2025-11-03",
       },
       {
         email: "editor2@nxbgd.vn",
-        name: "Vũ Thị Biên Tập",
+        name: "Đỗ Quỳnh Chi",
         role: "editor",
         joinedAt: "2026-01-20",
       },
@@ -89,7 +89,7 @@ export const ACCOUNTS: Record<RoleId, Account> = {
   },
   admin: {
     id: "admin",
-    name: "Admin Hệ thống",
+    name: "Admin Trường học số Quốc gia",
     shortName: "AD",
     accountType: "Admin",
     verified: "admin",
@@ -99,7 +99,7 @@ export const ACCOUNTS: Record<RoleId, Account> = {
   },
   reviewer: {
     id: "reviewer",
-    name: "Hội đồng thẩm định",
+    name: "Hội đồng thẩm định Trường học số Quốc gia",
     shortName: "HĐ",
     accountType: "Admin",
     verified: "admin",
@@ -873,6 +873,64 @@ export const SEED_CONTENT: ContentItem[] = [
     description: "Sách giáo khoa Khoa học tự nhiên 6.",
   },
 ];
+
+/* ─── Nội dung riêng theo từng kênh/tổ chức (cảm giác website thật) ──────
+ * Mỗi node có bộ học liệu khác biệt. ownerId giữ giá trị RoleId hợp lệ (fallback
+ * luồng cũ); ownerNodeId là chủ sở hữu thật theo cây tổ chức (luồng identity).
+ * ──────────────────────────────────────────────────────────────────────── */
+const NODE_SEED_CONTENT: ContentItem[] = [
+  // ── Chi nhánh Toán (nxbgd-toan) ───────────────────────────────────────
+  { id: "n1", title: "SGK Toán 10 — Tập 1 (bản điện tử)", type: "book", category: "book", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd-toan", ownerName: "Chi nhánh Toán", createdAt: "2026-01-12", views: 18420, likes: 1240, shares: 318, thumbnailColor: "#237BD3", subject: "Toán", grade: "Lớp 10", platforms: ["national", "ebooks"], tags: ["SGK", "Toán", "Lớp 10"], description: "Sách giáo khoa Toán 10 tập 1 theo chương trình GDPT 2018.", tier: "root", registryId: stamp("root", "Toán"), qualityLabel: "ministry_standard" },
+  { id: "n2", title: "Chuyên đề Hàm số bậc hai", type: "course", category: "course", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd-toan", ownerName: "Chi nhánh Toán", createdAt: "2026-02-03", views: 7330, likes: 540, shares: 96, thumbnailColor: "#20447E", subject: "Toán", grade: "Lớp 10", platforms: ["national"], tags: ["Hàm số", "Chuyên đề"], description: "Khóa học chuyên sâu về hàm số bậc hai và đồ thị.", tier: "root", registryId: stamp("root", "Toán"), qualityLabel: "reviewed" },
+  { id: "n3", title: "1000 bài tập Hình học không gian 11", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "document", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd-toan", ownerName: "Chi nhánh Toán", createdAt: "2026-02-21", views: 9610, likes: 712, shares: 130, thumbnailColor: "#0EA5A4", subject: "Toán", grade: "Lớp 11", platforms: ["national", "ebooks"], tags: ["Hình học", "Bài tập"], description: "Tuyển tập 1000 bài tập hình học không gian có lời giải.", fileName: "hinh-hoc-kg-11.pdf", fileExtension: "pdf", tier: "root", registryId: stamp("root", "Toán"), qualityLabel: "ministry_standard" },
+  { id: "n4", title: "Đề kiểm tra giữa kỳ Toán 11", type: "learning_material", legacyType: "quiz", category: "learning_material", materialSubtype: "quiz", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd-toan", ownerName: "Chi nhánh Toán", createdAt: "2026-03-09", views: 5120, likes: 388, shares: 64, thumbnailColor: "#237BD3", subject: "Toán", grade: "Lớp 11", platforms: ["national"], tags: ["Đề thi", "Giữa kỳ"], description: "Bộ đề kiểm tra giữa học kỳ môn Toán lớp 11.", tier: "root", registryId: stamp("root", "Toán"), qualityLabel: "reviewed" },
+  { id: "n5", title: "Bài giảng Lượng giác — Lớp 11", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "video", status: "pending", ownerId: "publisher", ownerNodeId: "nxbgd-toan", ownerName: "Chi nhánh Toán", createdAt: "2026-06-02", views: 0, likes: 0, shares: 0, thumbnailColor: "#7C3AED", subject: "Toán", grade: "Lớp 11", platforms: ["national"], tags: ["Lượng giác", "Video"], description: "Bài giảng video về công thức lượng giác.", qualityLabel: "documented" },
+
+  // ── Chi nhánh Ngữ văn (nxbgd-van) ─────────────────────────────────────
+  { id: "n6", title: "SGK Ngữ văn 10 — Kết nối tri thức", type: "book", category: "book", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd-van", ownerName: "Chi nhánh Ngữ văn", createdAt: "2026-01-15", views: 15880, likes: 1080, shares: 270, thumbnailColor: "#0EA5A4", subject: "Ngữ văn", grade: "Lớp 10", platforms: ["national", "ebooks"], tags: ["SGK", "Ngữ văn"], description: "Sách giáo khoa Ngữ văn 10 bộ Kết nối tri thức.", tier: "root", registryId: stamp("root", "Ngữ văn"), qualityLabel: "ministry_standard" },
+  { id: "n7", title: "Đọc hiểu văn bản nghị luận", type: "course", category: "course", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd-van", ownerName: "Chi nhánh Ngữ văn", createdAt: "2026-02-18", views: 6240, likes: 452, shares: 71, thumbnailColor: "#16A34A", subject: "Ngữ văn", grade: "Lớp 12", platforms: ["national"], tags: ["Đọc hiểu", "Nghị luận"], description: "Khóa học kỹ năng đọc hiểu văn bản nghị luận.", tier: "root", registryId: stamp("root", "Ngữ văn"), qualityLabel: "reviewed" },
+  { id: "n8", title: "Tuyển tập đề thi Ngữ văn THPT", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "document", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd-van", ownerName: "Chi nhánh Ngữ văn", createdAt: "2026-03-22", views: 8120, likes: 590, shares: 118, thumbnailColor: "#0EA5A4", subject: "Ngữ văn", grade: "Lớp 12", platforms: ["national", "ebooks"], tags: ["Đề thi", "THPT"], description: "Tuyển tập đề thi tham khảo môn Ngữ văn.", fileName: "de-thi-van-thpt.pdf", fileExtension: "pdf", tier: "root", registryId: stamp("root", "Ngữ văn"), qualityLabel: "ministry_standard" },
+  { id: "n9", title: "Bài giảng: Truyện Kiều — Nguyễn Du", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "lesson", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd-van", ownerName: "Chi nhánh Ngữ văn", createdAt: "2026-04-05", views: 4960, likes: 401, shares: 58, thumbnailColor: "#E11D48", subject: "Ngữ văn", grade: "Lớp 11", platforms: ["national"], tags: ["Truyện Kiều", "Văn học"], description: "Bài giảng phân tích tác phẩm Truyện Kiều.", tier: "root", registryId: stamp("root", "Ngữ văn"), qualityLabel: "reviewed" },
+  { id: "n10", title: "Sổ tay nghị luận xã hội", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "document", status: "pending", ownerId: "publisher", ownerNodeId: "nxbgd-van", ownerName: "Chi nhánh Ngữ văn", createdAt: "2026-06-10", views: 0, likes: 0, shares: 0, thumbnailColor: "#EA580C", subject: "Ngữ văn", grade: "Lớp 12", platforms: ["national"], tags: ["Làm văn", "NLXH"], description: "Sổ tay hướng dẫn viết nghị luận xã hội.", qualityLabel: "documented" },
+
+  // ── VietEdu — EdTech tương tác (vietedu) ──────────────────────────────
+  { id: "n11", title: "Lớp học thích ứng: Toán 6 (AI)", type: "course", category: "course", status: "published", ownerId: "publisher", ownerNodeId: "vietedu", ownerName: "VietEdu", createdAt: "2026-02-08", views: 21300, likes: 1820, shares: 460, thumbnailColor: "#7C3AED", subject: "Toán", grade: "Lớp 6", platforms: ["national"], tags: ["Adaptive", "AI", "Toán"], description: "Lộ trình học thích ứng cá nhân hóa theo năng lực bằng AI.", tier: "partner", registryId: stamp("partner", "Toán"), qualityLabel: "trusted_partner", license: { type: "commercial", scope: "national", rightsHolder: "Công ty VietEdu", validUntil: "2028-12-31", accessTerms: "paid" } },
+  { id: "n12", title: "Phòng thí nghiệm ảo Hóa học 3D", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "3d_vr", status: "published", ownerId: "publisher", ownerNodeId: "vietedu", ownerName: "VietEdu", createdAt: "2026-03-01", views: 16740, likes: 1510, shares: 392, thumbnailColor: "#237BD3", subject: "Hóa học", grade: "Lớp 10", platforms: ["national"], tags: ["3D", "VR", "Thí nghiệm"], description: "Mô phỏng thí nghiệm hóa học an toàn trong không gian 3D.", tier: "partner", registryId: stamp("partner", "Hóa học"), qualityLabel: "trusted_partner", license: { type: "commercial", scope: "national", rightsHolder: "Công ty VietEdu", validUntil: "2028-12-31", accessTerms: "paid" } },
+  { id: "n13", title: "Tiếng Anh giao tiếp — Video tương tác", type: "course", category: "course", status: "published", ownerId: "publisher", ownerNodeId: "vietedu", ownerName: "VietEdu", createdAt: "2026-03-19", views: 13920, likes: 1190, shares: 305, thumbnailColor: "#0EA5A4", subject: "Tiếng Anh", grade: "Lớp 9", platforms: ["national"], tags: ["Tiếng Anh", "Tương tác"], description: "Khóa video luyện phản xạ giao tiếp có chấm điểm phát âm.", tier: "partner", registryId: stamp("partner", "Tiếng Anh"), qualityLabel: "trusted_partner", license: { type: "commercial", scope: "national", rightsHolder: "Công ty VietEdu", validUntil: "2027-12-31", accessTerms: "paid" } },
+  { id: "n14", title: "Bộ đề luyện thi thích ứng IELTS", type: "learning_material", legacyType: "quiz", category: "learning_material", materialSubtype: "quiz", status: "published", ownerId: "publisher", ownerNodeId: "vietedu", ownerName: "VietEdu", createdAt: "2026-04-12", views: 9870, likes: 860, shares: 214, thumbnailColor: "#7C3AED", subject: "Tiếng Anh", grade: "Lớp 12", platforms: ["national"], tags: ["IELTS", "Adaptive"], description: "Ngân hàng đề luyện thi IELTS điều chỉnh độ khó theo lực học.", tier: "partner", qualityLabel: "trusted_partner" },
+  { id: "n15", title: "Mô phỏng Vật lý: Điện từ trường (VR)", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "3d_vr", status: "published", ownerId: "publisher", ownerNodeId: "vietedu", ownerName: "VietEdu", createdAt: "2026-04-28", views: 8450, likes: 770, shares: 188, thumbnailColor: "#2563EB", subject: "Vật lý", grade: "Lớp 11", platforms: ["national"], tags: ["VR", "Vật lý"], description: "Mô phỏng trực quan điện trường, từ trường trong VR.", tier: "partner", qualityLabel: "trusted_partner" },
+  { id: "n16", title: "Game hóa: Học bảng tuần hoàn", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "advanced", status: "published", ownerId: "publisher", ownerNodeId: "vietedu", ownerName: "VietEdu", createdAt: "2026-05-15", views: 11260, likes: 1030, shares: 277, thumbnailColor: "#16A34A", subject: "Hóa học", grade: "Lớp 10", platforms: ["national"], tags: ["Game hóa", "Tương tác"], description: "Học liệu game hóa giúp ghi nhớ bảng tuần hoàn nguyên tố.", tier: "partner", qualityLabel: "trusted_partner" },
+
+  // ── Nguyễn Minh Hồng — cá nhân, Tiếng Anh (pn-hong) ───────────────────
+  { id: "n17", title: "Phonics cho học sinh tiểu học", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "lesson", status: "published", ownerId: "teacher", ownerNodeId: "pn-hong", ownerName: "Nguyễn Minh Hồng", createdAt: "2026-03-02", views: 3210, likes: 268, shares: 47, thumbnailColor: "#F59E0B", subject: "Tiếng Anh", grade: "Lớp 3", platforms: ["national"], tags: ["Phonics", "Tiểu học"], description: "Bộ bài giảng phát âm Phonics cho học sinh tiểu học.", tier: "community", qualityLabel: "reviewed" },
+  { id: "n18", title: "100 flashcard từ vựng THCS", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "document", status: "published", ownerId: "teacher", ownerNodeId: "pn-hong", ownerName: "Nguyễn Minh Hồng", createdAt: "2026-04-09", views: 2540, likes: 201, shares: 39, thumbnailColor: "#EA580C", subject: "Tiếng Anh", grade: "Lớp 7", platforms: ["national"], tags: ["Từ vựng", "Flashcard"], description: "Bộ 100 flashcard từ vựng theo chủ đề cho học sinh THCS.", tier: "community", qualityLabel: "reviewed" },
+  { id: "n19", title: "Bài tập ngữ pháp Tiếng Anh 7", type: "learning_material", legacyType: "quiz", category: "learning_material", materialSubtype: "quiz", status: "draft", ownerId: "teacher", ownerNodeId: "pn-hong", ownerName: "Nguyễn Minh Hồng", createdAt: "2026-06-14", views: 0, likes: 0, shares: 0, thumbnailColor: "#237BD3", subject: "Tiếng Anh", grade: "Lớp 7", platforms: ["national"], tags: ["Ngữ pháp", "Bài tập"], description: "Bộ bài tập ngữ pháp theo từng đơn vị bài học (đang soạn).", tier: "community", qualityLabel: "submitted" },
+
+  // ── Lê Trung Hiếu — cá nhân, Hóa học THCS (pn-hieu) ───────────────────
+  { id: "n20", title: "Thí nghiệm điện phân — video hướng dẫn", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "video", status: "published", ownerId: "teacher", ownerNodeId: "pn-hieu", ownerName: "Lê Trung Hiếu", createdAt: "2026-03-11", views: 1820, likes: 156, shares: 28, thumbnailColor: "#16A34A", subject: "Hóa học", grade: "Lớp 9", platforms: ["national"], tags: ["Thí nghiệm", "Điện phân"], description: "Video hướng dẫn thí nghiệm điện phân dung dịch.", tier: "community", qualityLabel: "reviewed" },
+  { id: "n21", title: "Bộ đề Hóa học 9 — Học kỳ 1", type: "learning_material", legacyType: "quiz", category: "learning_material", materialSubtype: "quiz", status: "published", ownerId: "teacher", ownerNodeId: "pn-hieu", ownerName: "Lê Trung Hiếu", createdAt: "2026-04-20", views: 2110, likes: 174, shares: 31, thumbnailColor: "#7C3AED", subject: "Hóa học", grade: "Lớp 9", platforms: ["national"], tags: ["Đề thi", "Học kỳ 1"], description: "Bộ đề ôn tập Hóa học 9 học kỳ 1 có đáp án.", tier: "community", qualityLabel: "reviewed" },
+  { id: "n22", title: "Bài giảng: Bảng tuần hoàn nguyên tố", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "lesson", status: "published", ownerId: "teacher", ownerNodeId: "pn-hieu", ownerName: "Lê Trung Hiếu", createdAt: "2026-05-06", views: 1640, likes: 143, shares: 22, thumbnailColor: "#2563EB", subject: "Hóa học", grade: "Lớp 8", platforms: ["national"], tags: ["Bảng tuần hoàn"], description: "Bài giảng giới thiệu cấu trúc bảng tuần hoàn nguyên tố.", tier: "community", qualityLabel: "documented" },
+
+  // ── Hoàng Xuân Nhi — cá nhân, Toán THPT chuyên (pn-nhi) ───────────────
+  { id: "n23", title: "Bồi dưỡng HSG: Chuyên đề Số học", type: "course", category: "course", status: "published", ownerId: "verified_teacher", ownerNodeId: "pn-nhi", ownerName: "Hoàng Xuân Nhi", createdAt: "2026-02-26", views: 5680, likes: 487, shares: 92, thumbnailColor: "#2563EB", subject: "Toán", grade: "Lớp 12", platforms: ["national"], tags: ["HSG", "Số học"], description: "Khóa bồi dưỡng học sinh giỏi chuyên đề số học.", tier: "community", qualityLabel: "reviewed" },
+  { id: "n24", title: "Tuyển tập đề thi chuyên Toán", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "document", status: "published", ownerId: "verified_teacher", ownerNodeId: "pn-nhi", ownerName: "Hoàng Xuân Nhi", createdAt: "2026-04-02", views: 4920, likes: 420, shares: 80, thumbnailColor: "#20447E", subject: "Toán", grade: "Lớp 12", platforms: ["national", "ebooks"], tags: ["Đề thi", "Chuyên Toán"], description: "Tuyển tập đề thi vào lớp chuyên Toán các năm.", fileName: "de-chuyen-toan.pdf", fileExtension: "pdf", tier: "community", qualityLabel: "reviewed" },
+
+  // ── NXB Giáo dục VN — gốc, liên môn (nxbgd) ───────────────────────────
+  { id: "n25", title: "Bộ SGK lớp 12 (trọn bộ)", type: "book", category: "book", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd", ownerName: "NXB Giáo dục VN", createdAt: "2026-01-20", views: 31250, likes: 2410, shares: 640, thumbnailColor: "#20447E", subject: "Toán", grade: "Lớp 12", platforms: ["national", "ebooks"], tags: ["SGK", "Trọn bộ"], description: "Bộ sách giáo khoa lớp 12 đầy đủ các môn, bản điện tử.", tier: "root", registryId: stamp("root", "Toán"), qualityLabel: "ministry_standard" },
+  { id: "n26", title: "Tài liệu hướng dẫn dạy học GDPT 2018", type: "learning_material", legacyType: "material", category: "learning_material", materialSubtype: "document", status: "published", ownerId: "publisher", ownerNodeId: "nxbgd", ownerName: "NXB Giáo dục VN", createdAt: "2026-02-14", views: 14300, likes: 980, shares: 410, thumbnailColor: "#0EA5A4", subject: "Ngữ văn", grade: "Lớp 10", platforms: ["national"], tags: ["GDPT 2018", "Hướng dẫn"], description: "Tài liệu hướng dẫn triển khai chương trình GDPT 2018 cho giáo viên.", tier: "root", registryId: stamp("root", "Ngữ văn"), qualityLabel: "ministry_standard" },
+];
+
+/* Gán ownerNodeId cho các item cũ (theo ownerId) để scope theo node hoạt động,
+ * rồi gộp nội dung riêng từng kênh vào SEED_CONTENT. */
+const OWNER_NODE_BY_ROLE: Partial<Record<RoleId, string>> = {
+  publisher: "nxbgd",
+  teacher: "pn-hieu",
+  verified_teacher: "pn-nhi",
+};
+for (const item of SEED_CONTENT) {
+  if (!item.ownerNodeId) item.ownerNodeId = OWNER_NODE_BY_ROLE[item.ownerId];
+}
+SEED_CONTENT.push(...NODE_SEED_CONTENT);
 
 export const VERIFICATION_REQUESTS: VerificationRequest[] = [
   {

@@ -39,11 +39,15 @@ import { builderHref } from "@/lib/builder-url";
 import { ACCOUNTS, CONTENT_REPORTS, VERIFICATION_REQUESTS, resolveDemoAccount } from "@/lib/mock-data";
 import type { CreationCategory, LearningMaterialSubtype, RoleId, SchoolRole } from "@/lib/types";
 import { resolveActiveOrgId } from "@/lib/use-scoped-content";
+import type { Capability } from "@/lib/org/capabilities";
+import { useActiveProfile } from "@/lib/org/use-active-profile";
 import { cn } from "@/lib/utils";
 import { useContent } from "@/stores/content";
 import { useSession, type Workspace } from "@/stores/session";
+import { useIdentity } from "@/stores/identity";
 import { useUi } from "@/stores/ui";
 import { RoleSwitcher } from "./role-switcher";
+import { ProfileSwitcher } from "./identity/profile-switcher";
 import { MaterialTypePicker } from "./shared/material-type-picker";
 import { VerifiedBadge } from "./shared/verified-badge";
 
@@ -57,6 +61,11 @@ interface NavItem {
   label: string;
   icon: IconType;
   badge?: BadgeKey;
+  /**
+   * Năng lực tối thiểu để thấy mục này (luồng identity). Mục sẽ bị lọc bỏ nếu hồ
+   * sơ đang hoạt động không `can(requiredCapability)`. Bỏ trống = luôn hiển thị.
+   */
+  requiredCapability?: Capability;
 }
 
 interface NavSection {
@@ -92,6 +101,48 @@ const ORG_NAV: NavSection[] = [
       { to: "/org/members", label: "Quản lý thành viên", icon: Users },
       { to: "/org/signing", label: "Đăng ký & ký số", icon: Stamp },
       { to: "/org/analytics", label: "Phân tích hiệu quả", icon: LineChart },
+      { to: "/org/verification", label: "Xác minh tổ chức", icon: BadgeCheck },
+    ],
+  },
+];
+
+/**
+ * Nav nhóm "org" (business) cho luồng identity — gắn năng lực để gate. Các mục
+ * quản trị (Tổ chức & đơn vị, Thành viên, Ký số, Phân tích) chỉ hiện khi hồ sơ
+ * đang hoạt động có năng lực tương ứng. Lọc qua `filterNavByCapability`.
+ */
+const ORG_IDENTITY_NAV: NavSection[] = [
+  {
+    id: "org",
+    label: "Tổ chức",
+    items: [
+      { to: "/org/dashboard", label: "Trang chủ", icon: Home },
+      { to: "/org/library", label: "Thư viện tổ chức", icon: Library },
+      { to: "/org/channel", label: "Kênh tổ chức", icon: Tv },
+      {
+        to: "/org/structure",
+        label: "Tổ chức & đơn vị",
+        icon: Building2,
+        requiredCapability: "suborg.manage",
+      },
+      {
+        to: "/org/members",
+        label: "Thành viên & vai trò",
+        icon: Users,
+        requiredCapability: "members.manage",
+      },
+      {
+        to: "/org/signing",
+        label: "Đăng ký & ký số",
+        icon: Stamp,
+        requiredCapability: "content.publish_sign",
+      },
+      {
+        to: "/org/analytics",
+        label: "Phân tích",
+        icon: LineChart,
+        requiredCapability: "analytics.view",
+      },
       { to: "/org/verification", label: "Xác minh tổ chức", icon: BadgeCheck },
     ],
   },
@@ -142,6 +193,24 @@ const SCHOOL_NAV_MANAGER: NavSection[] = [
     ],
   },
 ];
+
+/**
+ * Lọc bỏ mọi mục có `requiredCapability` mà hồ sơ đang hoạt động không thực hiện
+ * được. Mục không gắn năng lực luôn giữ lại. Section rỗng sau khi lọc bị loại.
+ */
+function filterNavByCapability(
+  sections: NavSection[],
+  can: (c: Capability) => boolean,
+): NavSection[] {
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !item.requiredCapability || can(item.requiredCapability),
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
+}
 
 function getNavSections(roleId: RoleId, workspace: Workspace, schoolRole?: SchoolRole): NavSection[] {
   switch (roleId) {
@@ -194,6 +263,10 @@ export function ContentStudioShell() {
   const hasHydrated = useSession((s) => s.hasHydrated);
   const workspace = useSession((s) => s.workspace);
   const schoolRole = useSession((s) => s.schoolRole);
+  const activeNodeId = useSession((s) => s.activeNodeId);
+  // Luồng identity (Netflix): có login đang hoạt động → dùng ProfileSwitcher.
+  const activeLoginId = useIdentity((s) => s.activeLoginId);
+  const activeProfile = useActiveProfile();
   const createDraft = useContent((s) => s.createDraft);
   const pendingCount = useContent((s) => s.items.filter((i) => i.status === "pending").length);
   const navigate = useNavigate();
@@ -209,14 +282,49 @@ export function ContentStudioShell() {
 
   if (!hasHydrated || !roleId) return null;
 
+  // Luồng identity: có login + hồ sơ đã chọn (viewGroup dẫn xuất) → gate theo
+  // năng lực. Luồng cũ (school/demo role-switch) giữ nguyên hành vi.
+  const { viewGroup, can, node, login } = activeProfile;
+  const hasIdentity = Boolean(activeLoginId && viewGroup);
+
   const account = resolveDemoAccount(roleId, schoolRole);
   const isBuilder = pathname.includes("/builder/");
-  const sections = getNavSections(roleId, workspace, schoolRole);
+  // Nhóm org của luồng identity dùng nav gắn năng lực; các nhóm còn lại theo cũ.
+  const sections =
+    hasIdentity && viewGroup === "org"
+      ? filterNavByCapability(ORG_IDENTITY_NAV, can)
+      : getNavSections(roleId, workspace, schoolRole);
   const footerNav = getFooterNav(roleId, workspace);
-  const showCreate = canCreate(roleId);
+  const showCreate = hasIdentity ? can("content.create") : canCreate(roleId);
   const scope = getScopeFromWorkspace(roleId, workspace);
-  // Content created inside the org workspace is owned by the org, not the person.
-  const createOwnerId = scope === "org" ? resolveActiveOrgId(roleId) : roleId;
+  // Chủ sở hữu nội dung = node tổ chức đang hoạt động (luồng identity). Luồng cũ
+  // dùng resolveActiveOrgId/roleId như trước.
+  const createOwnerId = activeNodeId
+    ? (activeNodeId as RoleId)
+    : scope === "org"
+      ? resolveActiveOrgId(roleId)
+      : roleId;
+  // Tài khoản hiển thị: hồ sơ business → node tổ chức; personal → login; còn lại
+  // rơi về tài khoản demo cũ.
+  const displayedAccount = hasIdentity
+    ? node?.type === "business"
+      ? {
+          name: node.name,
+          shortName: node.shortName,
+          avatarColor: node.avatarColor,
+          accountType: "Tổ chức",
+          verified: "none" as const,
+        }
+      : login
+        ? {
+            name: login.name,
+            shortName: login.shortName,
+            avatarColor: login.avatarColor,
+            accountType: "Cá nhân",
+            verified: "none" as const,
+          }
+        : account
+    : account;
 
   const badges: Record<BadgeKey, number> = {
     pending: pendingCount,
@@ -229,7 +337,7 @@ export function ContentStudioShell() {
   // tab we open reads it back immediately.
   const handleCreateCategory = (category: CreationCategory) => {
     if (category === "learning_material") return;
-    const id = createDraft(category, createOwnerId, { category });
+    const id = createDraft(category, createOwnerId, { category, ownerNodeId: activeNodeId });
     window.open(builderHref(scope, { id, category, materialSubtype: undefined }), "_blank", "noopener");
   };
 
@@ -237,6 +345,7 @@ export function ContentStudioShell() {
     const id = createDraft("learning_material", createOwnerId, {
       category: "learning_material",
       materialSubtype,
+      ownerNodeId: activeNodeId,
     });
     window.open(
       builderHref(scope, { id, category: "learning_material", materialSubtype }),
@@ -274,6 +383,7 @@ export function ContentStudioShell() {
           badges={badges}
           showCreate={showCreate}
           onCreate={() => setPickerOpen(true)}
+          hasIdentity={hasIdentity}
         />
       </aside>
 
@@ -303,6 +413,7 @@ export function ContentStudioShell() {
                   badges={badges}
                   showCreate={showCreate}
                   onCreate={() => setPickerOpen(true)}
+                  hasIdentity={hasIdentity}
                 />
               </SheetContent>
             </Sheet>
@@ -314,7 +425,6 @@ export function ContentStudioShell() {
           {(roleId === "teacher" || roleId === "verified_teacher" || roleId === "publisher") && <HeaderSearch scope={scope} />}
 
           <div className="flex shrink-0 items-center gap-2 md:gap-3">
-            <RoleSwitcher />
             {showCreate && (
               <Button
                 size="sm"
@@ -329,21 +439,31 @@ export function ContentStudioShell() {
               <Bell className="h-5 w-5" />
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
             </Button>
-            <div className="hidden items-center gap-2 border-l border-border pl-3 sm:flex">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
-                style={{ backgroundColor: account.avatarColor }}
-              >
-                {account.shortName}
-              </span>
-              <div className="hidden text-right md:block">
-                <div className="flex items-center gap-1 text-sm font-medium text-foreground">
-                  {account.name}
-                  <VerifiedBadge verified={account.verified} />
+            {/* Một control tài khoản DUY NHẤT, cố định ở góc phải: hồ sơ hiện tại +
+                đổi hồ sơ + đăng xuất gộp trong ProfileSwitcher. Luồng cũ (không có
+                login identity) mới rơi về RoleSwitcher + khối avatar. */}
+            {activeLoginId ? (
+              <ProfileSwitcher />
+            ) : (
+              <div className="flex items-center gap-2 md:gap-3">
+                <RoleSwitcher />
+                <div className="hidden items-center gap-2 border-l border-border pl-3 sm:flex">
+                  <span
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white"
+                    style={{ backgroundColor: displayedAccount.avatarColor }}
+                  >
+                    {displayedAccount.shortName}
+                  </span>
+                  <div className="hidden text-right md:block">
+                    <div className="flex items-center gap-1 text-sm font-medium text-foreground">
+                      {displayedAccount.name}
+                      <VerifiedBadge verified={displayedAccount.verified} />
+                    </div>
+                    <div className="text-xs text-muted-foreground">{displayedAccount.accountType}</div>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">{account.accountType}</div>
               </div>
-            </div>
+            )}
           </div>
         </header>
         <main className="min-h-[calc(100vh-4rem)]">
@@ -491,6 +611,7 @@ function UnifiedNav({
   badges,
   showCreate,
   onCreate,
+  hasIdentity,
 }: {
   roleId: RoleId;
   workspace: Workspace;
@@ -500,6 +621,7 @@ function UnifiedNav({
   badges: Record<BadgeKey, number>;
   showCreate: boolean;
   onCreate: () => void;
+  hasIdentity: boolean;
 }) {
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -512,10 +634,13 @@ function UnifiedNav({
         </div>
       </div>
 
-      {/* Workspace switcher — only for personal accounts with org memberships */}
-      <div className="px-3 pt-3">
-        <WorkspaceSwitcher roleId={roleId} />
-      </div>
+      {/* Workspace switcher — chỉ luồng cũ. Luồng identity đổi ngữ cảnh qua
+          ProfileSwitcher (một chỗ duy nhất ở góc phải header), nên ẩn ở đây. */}
+      {!hasIdentity && (
+        <div className="px-3 pt-3">
+          <WorkspaceSwitcher roleId={roleId} />
+        </div>
+      )}
 
       {/* Create button */}
       {showCreate && (
