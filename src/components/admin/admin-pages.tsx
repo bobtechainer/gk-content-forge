@@ -320,16 +320,9 @@ export function AdminDashboardPage() {
       </div>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle>Hàng đợi xử lý</CardTitle>
-            <CardDescription>Nội dung chờ duyệt mới nhất</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/admin/content-review">
-              Duyệt ngay <ArrowRight className="ml-1 h-4 w-4" />
-            </Link>
-          </Button>
+        <CardHeader>
+          <CardTitle>Hàng đợi xử lý</CardTitle>
+          <CardDescription>Nội dung chờ duyệt mới nhất (Hội đồng thẩm định xử lý)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {queue.length === 0 ? (

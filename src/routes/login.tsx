@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { LOGINS } from "@/lib/org-mock-data";
 import type { Login } from "@/lib/org/types";
+import { ProfilePicker } from "@/components/identity/profile-picker";
 import { useIdentity } from "@/stores/identity";
 import { useSession } from "@/stores/session";
 
@@ -21,8 +23,11 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const loginAs = useIdentity((s) => s.loginAs);
+  const logout = useIdentity((s) => s.logout);
   const setView = useSession((s) => s.setView);
   const navigate = useNavigate();
+  // Chọn hồ sơ (Netflix flow) hiển thị NGAY trên /login — không tách route riêng.
+  const [picking, setPicking] = useState(false);
 
   const pick = (login: Login) => {
     loginAs(login.id);
@@ -38,9 +43,20 @@ function LoginPage() {
       navigate({ to: "/reviewer/queue" });
       return;
     }
-    // Tài khoản thường → màn chọn hồ sơ (Netflix flow).
-    navigate({ to: "/choose-profile" });
+    // Tài khoản thường → chọn hồ sơ ngay tại đây.
+    setPicking(true);
   };
+
+  if (picking) {
+    return (
+      <ProfilePicker
+        onBack={() => {
+          logout();
+          setPicking(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted via-accent to-muted">

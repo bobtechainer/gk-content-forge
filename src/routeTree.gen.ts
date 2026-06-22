@@ -15,7 +15,6 @@ import { Route as ReviewerRouteImport } from './routes/reviewer'
 import { Route as OrgRouteImport } from './routes/org'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CreatorRouteImport } from './routes/creator'
-import { Route as ChooseProfileRouteImport } from './routes/choose-profile'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StudentProgressRouteImport } from './routes/student.progress'
@@ -43,15 +42,12 @@ import { Route as CreatorLibraryRouteImport } from './routes/creator.library'
 import { Route as CreatorDeptReviewRouteImport } from './routes/creator.dept-review'
 import { Route as CreatorDashboardRouteImport } from './routes/creator.dashboard'
 import { Route as CreatorChannelRouteImport } from './routes/creator.channel'
-import { Route as AdminVerificationRequestsRouteImport } from './routes/admin.verification-requests'
 import { Route as AdminVerificationRouteImport } from './routes/admin.verification'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminStudioRouteImport } from './routes/admin.studio'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminLibraryRouteImport } from './routes/admin.library'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
-import { Route as AdminContentReviewRouteImport } from './routes/admin.content-review'
 import { Route as AdminChannelRouteImport } from './routes/admin.channel'
 import { Route as StudentLearnIdRouteImport } from './routes/student.learn.$id'
 import { Route as ReviewerReviewIdRouteImport } from './routes/reviewer.review.$id'
@@ -96,11 +92,6 @@ const LoginRoute = LoginRouteImport.update({
 const CreatorRoute = CreatorRouteImport.update({
   id: '/creator',
   path: '/creator',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChooseProfileRoute = ChooseProfileRouteImport.update({
-  id: '/choose-profile',
-  path: '/choose-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -238,12 +229,6 @@ const CreatorChannelRoute = CreatorChannelRouteImport.update({
   path: '/channel',
   getParentRoute: () => CreatorRoute,
 } as any)
-const AdminVerificationRequestsRoute =
-  AdminVerificationRequestsRouteImport.update({
-    id: '/verification-requests',
-    path: '/verification-requests',
-    getParentRoute: () => AdminRoute,
-  } as any)
 const AdminVerificationRoute = AdminVerificationRouteImport.update({
   id: '/verification',
   path: '/verification',
@@ -264,11 +249,6 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminLibraryRoute = AdminLibraryRouteImport.update({
   id: '/library',
   path: '/library',
@@ -277,11 +257,6 @@ const AdminLibraryRoute = AdminLibraryRouteImport.update({
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminContentReviewRoute = AdminContentReviewRouteImport.update({
-  id: '/content-review',
-  path: '/content-review',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminChannelRoute = AdminChannelRouteImport.update({
@@ -364,7 +339,6 @@ const CreatorBuilderBookIdRoute = CreatorBuilderBookIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/choose-profile': typeof ChooseProfileRoute
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
@@ -372,15 +346,12 @@ export interface FileRoutesByFullPath {
   '/school': typeof SchoolRouteWithChildren
   '/student': typeof StudentRouteWithChildren
   '/admin/channel': typeof AdminChannelRoute
-  '/admin/content-review': typeof AdminContentReviewRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/library': typeof AdminLibraryRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/studio': typeof AdminStudioRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/verification': typeof AdminVerificationRoute
-  '/admin/verification-requests': typeof AdminVerificationRequestsRoute
   '/creator/channel': typeof CreatorChannelRouteWithChildren
   '/creator/dashboard': typeof CreatorDashboardRoute
   '/creator/dept-review': typeof CreatorDeptReviewRoute
@@ -424,7 +395,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/choose-profile': typeof ChooseProfileRoute
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
@@ -432,15 +402,12 @@ export interface FileRoutesByTo {
   '/school': typeof SchoolRouteWithChildren
   '/student': typeof StudentRouteWithChildren
   '/admin/channel': typeof AdminChannelRoute
-  '/admin/content-review': typeof AdminContentReviewRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/library': typeof AdminLibraryRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/studio': typeof AdminStudioRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/verification': typeof AdminVerificationRoute
-  '/admin/verification-requests': typeof AdminVerificationRequestsRoute
   '/creator/channel': typeof CreatorChannelRouteWithChildren
   '/creator/dashboard': typeof CreatorDashboardRoute
   '/creator/dept-review': typeof CreatorDeptReviewRoute
@@ -485,7 +452,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/choose-profile': typeof ChooseProfileRoute
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
   '/org': typeof OrgRouteWithChildren
@@ -493,15 +459,12 @@ export interface FileRoutesById {
   '/school': typeof SchoolRouteWithChildren
   '/student': typeof StudentRouteWithChildren
   '/admin/channel': typeof AdminChannelRoute
-  '/admin/content-review': typeof AdminContentReviewRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/library': typeof AdminLibraryRoute
-  '/admin/reports': typeof AdminReportsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/studio': typeof AdminStudioRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/verification': typeof AdminVerificationRoute
-  '/admin/verification-requests': typeof AdminVerificationRequestsRoute
   '/creator/channel': typeof CreatorChannelRouteWithChildren
   '/creator/dashboard': typeof CreatorDashboardRoute
   '/creator/dept-review': typeof CreatorDeptReviewRoute
@@ -547,7 +510,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/choose-profile'
     | '/creator'
     | '/login'
     | '/org'
@@ -555,15 +517,12 @@ export interface FileRouteTypes {
     | '/school'
     | '/student'
     | '/admin/channel'
-    | '/admin/content-review'
     | '/admin/dashboard'
     | '/admin/library'
-    | '/admin/reports'
     | '/admin/settings'
     | '/admin/studio'
     | '/admin/users'
     | '/admin/verification'
-    | '/admin/verification-requests'
     | '/creator/channel'
     | '/creator/dashboard'
     | '/creator/dept-review'
@@ -607,7 +566,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
-    | '/choose-profile'
     | '/creator'
     | '/login'
     | '/org'
@@ -615,15 +573,12 @@ export interface FileRouteTypes {
     | '/school'
     | '/student'
     | '/admin/channel'
-    | '/admin/content-review'
     | '/admin/dashboard'
     | '/admin/library'
-    | '/admin/reports'
     | '/admin/settings'
     | '/admin/studio'
     | '/admin/users'
     | '/admin/verification'
-    | '/admin/verification-requests'
     | '/creator/channel'
     | '/creator/dashboard'
     | '/creator/dept-review'
@@ -667,7 +622,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/choose-profile'
     | '/creator'
     | '/login'
     | '/org'
@@ -675,15 +629,12 @@ export interface FileRouteTypes {
     | '/school'
     | '/student'
     | '/admin/channel'
-    | '/admin/content-review'
     | '/admin/dashboard'
     | '/admin/library'
-    | '/admin/reports'
     | '/admin/settings'
     | '/admin/studio'
     | '/admin/users'
     | '/admin/verification'
-    | '/admin/verification-requests'
     | '/creator/channel'
     | '/creator/dashboard'
     | '/creator/dept-review'
@@ -728,7 +679,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  ChooseProfileRoute: typeof ChooseProfileRoute
   CreatorRoute: typeof CreatorRouteWithChildren
   LoginRoute: typeof LoginRoute
   OrgRoute: typeof OrgRouteWithChildren
@@ -779,13 +729,6 @@ declare module '@tanstack/react-router' {
       path: '/creator'
       fullPath: '/creator'
       preLoaderRoute: typeof CreatorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/choose-profile': {
-      id: '/choose-profile'
-      path: '/choose-profile'
-      fullPath: '/choose-profile'
-      preLoaderRoute: typeof ChooseProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -977,13 +920,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorChannelRouteImport
       parentRoute: typeof CreatorRoute
     }
-    '/admin/verification-requests': {
-      id: '/admin/verification-requests'
-      path: '/verification-requests'
-      fullPath: '/admin/verification-requests'
-      preLoaderRoute: typeof AdminVerificationRequestsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/verification': {
       id: '/admin/verification'
       path: '/verification'
@@ -1012,13 +948,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/library': {
       id: '/admin/library'
       path: '/library'
@@ -1031,13 +960,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/content-review': {
-      id: '/admin/content-review'
-      path: '/content-review'
-      fullPath: '/admin/content-review'
-      preLoaderRoute: typeof AdminContentReviewRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/channel': {
@@ -1150,28 +1072,22 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminChannelRoute: typeof AdminChannelRoute
-  AdminContentReviewRoute: typeof AdminContentReviewRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminLibraryRoute: typeof AdminLibraryRoute
-  AdminReportsRoute: typeof AdminReportsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStudioRoute: typeof AdminStudioRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminVerificationRoute: typeof AdminVerificationRoute
-  AdminVerificationRequestsRoute: typeof AdminVerificationRequestsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminChannelRoute: AdminChannelRoute,
-  AdminContentReviewRoute: AdminContentReviewRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminLibraryRoute: AdminLibraryRoute,
-  AdminReportsRoute: AdminReportsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStudioRoute: AdminStudioRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminVerificationRoute: AdminVerificationRoute,
-  AdminVerificationRequestsRoute: AdminVerificationRequestsRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -1342,7 +1258,6 @@ const StudentRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  ChooseProfileRoute: ChooseProfileRoute,
   CreatorRoute: CreatorRouteWithChildren,
   LoginRoute: LoginRoute,
   OrgRoute: OrgRouteWithChildren,

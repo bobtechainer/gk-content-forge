@@ -18,8 +18,9 @@ function homePathForRole(role: ReturnType<typeof viewGroupRoleIdFor>): string {
   return "/creator/dashboard";
 }
 
-export function ProfilePicker() {
+export function ProfilePicker({ onBack }: { onBack?: () => void } = {}) {
   const navigate = useNavigate();
+  const back = onBack ?? (() => navigate({ to: "/login" }));
   const activeLoginId = useIdentity((s) => s.activeLoginId);
   const selectProfile = useIdentity((s) => s.selectProfile);
   const verifiedPins = useIdentity((s) => s.verifiedPins);
@@ -58,7 +59,7 @@ export function ProfilePicker() {
         <p className="text-sm text-muted-foreground">
           Chưa có phiên đăng nhập. Hãy chọn tài khoản để tiếp tục.
         </p>
-        <Button onClick={() => navigate({ to: "/login" })}>Về trang đăng nhập</Button>
+        <Button onClick={back}>Về trang đăng nhập</Button>
       </main>
     );
   }
@@ -82,7 +83,7 @@ export function ProfilePicker() {
         </header>
 
         {profiles.length === 0 ? (
-          <EmptyProfiles onBack={() => navigate({ to: "/login" })} />
+          <EmptyProfiles onBack={back} />
         ) : (
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {profiles.map((profile) => (
@@ -92,7 +93,7 @@ export function ProfilePicker() {
         )}
 
         <div className="mt-10 text-center">
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/login" })}>
+          <Button variant="ghost" size="sm" onClick={back}>
             Đổi tài khoản đăng nhập
           </Button>
         </div>
