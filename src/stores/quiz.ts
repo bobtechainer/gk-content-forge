@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { Question, QuestionType } from "@/lib/types";
 import { SAMPLE_QUESTIONS } from "@/lib/mock-data";
 
@@ -60,76 +61,86 @@ function blankQuestion(): Question {
   };
 }
 
-export const useQuiz = create<QuizState>((set, get) => ({
-  questionsByQuiz: {},
-  blankIds: new Set<string>(),
+export const useQuiz = create<QuizState>()(
+  persist(
+    (set, get) => ({
+      questionsByQuiz: {},
+      blankIds: new Set<string>(),
 
-  init: (quizId) => {
-    if (!get().questionsByQuiz[quizId])
-      set({ questionsByQuiz: { ...get().questionsByQuiz, [quizId]: [...SAMPLE_QUESTIONS] } });
-  },
-
-  addQuestion: (quizId, type, atIndex) => {
-    const list = get().questionsByQuiz[quizId] ?? [];
-    const next = [...list];
-    const q = defaultFor(type);
-    if (atIndex === undefined) next.push(q);
-    else next.splice(atIndex, 0, q);
-    set({ questionsByQuiz: { ...get().questionsByQuiz, [quizId]: next } });
-  },
-
-  addBlank: (quizId) => {
-    const list = get().questionsByQuiz[quizId] ?? [];
-    const q = blankQuestion();
-    set({
-      questionsByQuiz: { ...get().questionsByQuiz, [quizId]: [...list, q] },
-      blankIds: new Set(get().blankIds).add(q.id),
-    });
-    return q.id;
-  },
-
-  replaceQuestion: (quizId, qid, newType) => {
-    const list = get().questionsByQuiz[quizId] ?? [];
-    const fresh = defaultFor(newType, qid); // keep same ID for position stability
-    const nextBlanks = new Set(get().blankIds);
-    nextBlanks.delete(qid);
-    set({
-      questionsByQuiz: {
-        ...get().questionsByQuiz,
-        [quizId]: list.map((q) => (q.id === qid ? fresh : q)),
+      init: (quizId) => {
+        if (!get().questionsByQuiz[quizId])
+          set({ questionsByQuiz: { ...get().questionsByQuiz, [quizId]: [...SAMPLE_QUESTIONS] } });
       },
-      blankIds: nextBlanks,
-    });
-  },
 
-  updateQuestion: (quizId, qid, patch) => {
-    const list = get().questionsByQuiz[quizId] ?? [];
-    set({
-      questionsByQuiz: {
-        ...get().questionsByQuiz,
-        [quizId]: list.map((q) => (q.id === qid ? { ...q, ...patch } : q)),
+      addQuestion: (quizId, type, atIndex) => {
+        const list = get().questionsByQuiz[quizId] ?? [];
+        const next = [...list];
+        const q = defaultFor(type);
+        if (atIndex === undefined) next.push(q);
+        else next.splice(atIndex, 0, q);
+        set({ questionsByQuiz: { ...get().questionsByQuiz, [quizId]: next } });
       },
-    });
-  },
 
-  deleteQuestion: (quizId, qid) => {
-    const list = get().questionsByQuiz[quizId] ?? [];
-    const nextBlanks = new Set(get().blankIds);
-    nextBlanks.delete(qid);
-    set({
-      questionsByQuiz: { ...get().questionsByQuiz, [quizId]: list.filter((q) => q.id !== qid) },
-      blankIds: nextBlanks,
-    });
-  },
+      addBlank: (quizId) => {
+        const list = get().questionsByQuiz[quizId] ?? [];
+        const q = blankQuestion();
+        set({
+          questionsByQuiz: { ...get().questionsByQuiz, [quizId]: [...list, q] },
+          blankIds: new Set(get().blankIds).add(q.id),
+        });
+        return q.id;
+      },
 
-  reorder: (quizId, fromId, toId) => {
-    const list = get().questionsByQuiz[quizId] ?? [];
-    const from = list.findIndex((q) => q.id === fromId);
-    const to = list.findIndex((q) => q.id === toId);
-    if (from < 0 || to < 0 || from === to) return;
-    const next = [...list];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    set({ questionsByQuiz: { ...get().questionsByQuiz, [quizId]: next } });
-  },
-}));
+      replaceQuestion: (quizId, qid, newType) => {
+        const list = get().questionsByQuiz[quizId] ?? [];
+        const fresh = defaultFor(newType, qid); // keep same ID for position stability
+        const nextBlanks = new Set(get().blankIds);
+        nextBlanks.delete(qid);
+        set({
+          questionsByQuiz: {
+            ...get().questionsByQuiz,
+            [quizId]: list.map((q) => (q.id === qid ? fresh : q)),
+          },
+          blankIds: nextBlanks,
+        });
+      },
+
+      updateQuestion: (quizId, qid, patch) => {
+        const list = get().questionsByQuiz[quizId] ?? [];
+        set({
+          questionsByQuiz: {
+            ...get().questionsByQuiz,
+            [quizId]: list.map((q) => (q.id === qid ? { ...q, ...patch } : q)),
+          },
+        });
+      },
+
+      deleteQuestion: (quizId, qid) => {
+        const list = get().questionsByQuiz[quizId] ?? [];
+        const nextBlanks = new Set(get().blankIds);
+        nextBlanks.delete(qid);
+        set({
+          questionsByQuiz: { ...get().questionsByQuiz, [quizId]: list.filter((q) => q.id !== qid) },
+          blankIds: nextBlanks,
+        });
+      },
+
+      reorder: (quizId, fromId, toId) => {
+        const list = get().questionsByQuiz[quizId] ?? [];
+        const from = list.findIndex((q) => q.id === fromId);
+        const to = list.findIndex((q) => q.id === toId);
+        if (from < 0 || to < 0 || from === to) return;
+        const next = [...list];
+        const [moved] = next.splice(from, 1);
+        next.splice(to, 0, moved);
+        set({ questionsByQuiz: { ...get().questionsByQuiz, [quizId]: next } });
+      },
+    }),
+    {
+      name: "gk-quiz",
+      version: 1,
+      // blankIds là Set (transient editing state) → không persist
+      partialize: (s) => ({ questionsByQuiz: s.questionsByQuiz }),
+    },
+  ),
+);
