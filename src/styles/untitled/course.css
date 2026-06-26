@@ -1,0 +1,34 @@
+/* Token cho khối nội dung học liệu + lớp theme per-course (Phase 0: chỉ Default).
+   Mọi --course-* fallback về token MobiFone global → an toàn khi chưa chọn theme. */
+:root {
+  /* Callout — ánh xạ sang ramp Untitled UI sẵn có */
+  --callout-info-bg: var(--brand-50);
+  --callout-info-fg: var(--text-brand);
+  --callout-info-line: var(--brand-200, var(--border-brand));
+  --callout-tip-bg: var(--success-50);
+  --callout-tip-fg: var(--success-700);
+  --callout-tip-line: var(--success-600);
+  --callout-warn-bg: var(--warning-50);
+  --callout-warn-fg: var(--warning-700);
+  --callout-warn-line: var(--warning-600);
+  --callout-danger-bg: var(--error-50);
+  --callout-danger-fg: var(--error-700);
+  --callout-danger-line: var(--error-600);
+
+  /* Code/HTML surface (thay bg-[#1e1e2e]).
+     --colors-gray-light-mode-900 = rgb(24,29,39); fallback hex #131c2c là giá trị cuối an toàn. */
+  --code-surface: var(--colors-gray-light-mode-900, #131c2c);
+  --code-ink: var(--colors-success-300);
+
+  /* Lớp scope per-course — Phase 0 chỉ định nghĩa biến, default = global */
+  --course-accent: var(--bg-brand-solid);
+  --course-accent-soft: var(--bg-brand-primary);
+  --course-surface: var(--bg-primary);
+  --course-ink: var(--text-primary);
+  --course-radius: var(--radius);
+}
+
+/* Scope theme per-course; Phase 3 sẽ override các biến này per courseId. */
+[data-course-theme] {
+  /* Phase 0: kế thừa, chưa override gì — placeholder cho Phase 3. */
+}

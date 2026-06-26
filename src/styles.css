@@ -19,6 +19,7 @@
 @import "./styles/untitled/spacing.css";
 @import "./styles/untitled/shadows.css";
 @import "./styles/untitled/gradients.css";
+@import "./styles/untitled/course.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -144,6 +145,22 @@
   --color-indigo-100: var(--colors-indigo-100);
   --color-indigo-500: var(--colors-indigo-500);
   --color-indigo-600: var(--colors-indigo-600);
+
+  /* ---- Course callout + code tokens (Task 4) ---- */
+  --color-callout-info: var(--callout-info-bg);
+  --color-callout-info-fg: var(--callout-info-fg);
+  --color-callout-info-line: var(--callout-info-line);
+  --color-callout-tip: var(--callout-tip-bg);
+  --color-callout-tip-fg: var(--callout-tip-fg);
+  --color-callout-tip-line: var(--callout-tip-line);
+  --color-callout-warn: var(--callout-warn-bg);
+  --color-callout-warn-fg: var(--callout-warn-fg);
+  --color-callout-warn-line: var(--callout-warn-line);
+  --color-callout-danger: var(--callout-danger-bg);
+  --color-callout-danger-fg: var(--callout-danger-fg);
+  --color-callout-danger-line: var(--callout-danger-line);
+  --color-code-surface: var(--code-surface);
+  --color-code-ink: var(--code-ink);
 }
 
 :root {
