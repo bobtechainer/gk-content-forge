@@ -10,6 +10,7 @@ import type {
   RoleId,
 } from "@/lib/types";
 import { SEED_CONTENT } from "@/lib/mock-data";
+import { mergeContentItems } from "@/lib/stores/merge-content";
 
 interface ContentState {
   items: ContentItem[];
@@ -125,11 +126,20 @@ export const useContent = create<ContentState>()(
     }),
     {
       name: "gk-content",
-      // Tăng version khi đổi SEED_CONTENT để trình duyệt đã cache localStorage
-      // được nạp lại nội dung seed mới (nếu không, bản dev cũ hiển thị data cũ
-      // trong khi bản build mới hiển thị data mới → lệch nhau).
-      version: 2,
-      migrate: () => ({ items: SEED_CONTENT }),
+      version: 3,
+      // Migrate KHÔNG hủy: giữ item người dùng, làm mới seed.
+      migrate: (persisted) => {
+        const items = (persisted as { items?: ContentItem[] } | undefined)?.items ?? [];
+        return { items: mergeContentItems(items, SEED_CONTENT) };
+      },
+      // Khi nạp state cũ cùng version: vẫn refresh seed + giữ user item.
+      merge: (persisted, current) => ({
+        ...current,
+        items: mergeContentItems(
+          (persisted as { items?: ContentItem[] } | undefined)?.items ?? [],
+          SEED_CONTENT,
+        ),
+      }),
     },
   ),
 );
