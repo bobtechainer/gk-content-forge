@@ -229,6 +229,18 @@ function cloneSampleCourse(courseId: string): CourseData {
   return { chapters, lessons };
 }
 
+/** Migrate KHÔNG hủy: giữ nguyên courseData người dùng đã soạn. */
+export function courseMigrate(
+  persisted: unknown,
+  _version: number,
+): Pick<CourseState, "courseData" | "activeLessonId"> {
+  const p = (persisted ?? {}) as Partial<Pick<CourseState, "courseData" | "activeLessonId">>;
+  return {
+    courseData: p.courseData ?? {},
+    activeLessonId: p.activeLessonId ?? null,
+  };
+}
+
 export const useCourse = create<CourseState>()(
   persist(
     (set, get) => ({
@@ -494,13 +506,8 @@ export const useCourse = create<CourseState>()(
     }),
     {
       name: "gk-course",
-      // v2 rewrites demo content to match the textbook (Bài 19 — Tốc độ phản ứng,
-      // SGK Kết nối tri thức Hoá 10) with humanized Vietnamese text and updated
-      // quiz questions. Wipe older persisted data so courses re-seed on next open.
-      version: 2,
-      // Only the data slice is returned; persist shallow-merges it over the
-      // store's actions, so the cast is safe at runtime.
-      migrate: () => ({ courseData: {}, activeLessonId: null }) as CourseState,
+      version: 3,
+      migrate: (persisted, version) => courseMigrate(persisted, version) as CourseState,
     },
   ),
 );

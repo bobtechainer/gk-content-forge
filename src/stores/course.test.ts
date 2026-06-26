@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useCourse, partitionSections } from "./course";
+import { useCourse, partitionSections, courseMigrate } from "./course";
 import type { CourseBlock } from "./course";
 import { builderHref } from "@/lib/builder-url";
 
@@ -137,6 +137,23 @@ describe("partitionSections", () => {
     expect(parts).toHaveLength(2);
     expect(parts[0].title).toBeNull();
     expect(parts[0].blocks.map((b) => b.id)).toEqual(["intro"]);
+  });
+});
+
+describe("course migrate is non-destructive", () => {
+  it("preserves persisted courseData across a version bump", () => {
+    const persisted = {
+      courseData: { c1: { chapters: [], lessons: [{ id: "l1", title: "Của tôi", chapterId: "ch", blocks: [] }] } },
+      activeLessonId: "l1",
+    };
+    const out = courseMigrate(persisted, 2);
+    expect(out.courseData.c1.lessons[0].title).toBe("Của tôi");
+    expect(out.activeLessonId).toBe("l1");
+  });
+
+  it("tolerates empty/undefined persisted (fresh install)", () => {
+    const out = courseMigrate(undefined, 2);
+    expect(out.courseData).toEqual({});
   });
 });
 
