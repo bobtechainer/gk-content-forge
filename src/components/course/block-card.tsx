@@ -422,7 +422,7 @@ function QuizBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
           <div key={i} className="flex items-center gap-2">
             <button type="button" onClick={() => onUpdate({ quizCorrect: i })} title="Đánh dấu đáp án đúng"
               className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition",
-                i === correct ? "border-callout-tip-line bg-callout-tip-line text-white" : "border-border text-transparent hover:border-callout-tip-line")}>
+                i === correct ? "border-callout-tip-line bg-success text-white" : "border-border text-transparent hover:border-callout-tip-line")}>
               <Check className="h-3 w-3" />
             </button>
             <input value={opt} onChange={(e) => setOption(i, e.target.value)} placeholder={`Lựa chọn ${i + 1}`}

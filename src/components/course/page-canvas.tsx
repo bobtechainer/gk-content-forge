@@ -79,8 +79,8 @@ function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (corr
                 state === "wrong" && "border-callout-danger-line bg-callout-danger text-callout-danger-fg",
                 state === "muted" && "border-border opacity-60")}>
               <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
-                state === "correct" && "border-callout-tip-line bg-callout-tip-line text-white",
-                state === "wrong" && "border-callout-danger-line bg-callout-danger-line text-white",
+                state === "correct" && "border-callout-tip-line bg-success text-white",
+                state === "wrong" && "border-callout-danger-line bg-destructive text-white",
                 (state === "idle" || state === "muted") && "border-border text-muted-foreground")}>
                 {state === "correct" ? "✓" : state === "wrong" ? "✕" : String.fromCharCode(65 + i)}
               </span>
