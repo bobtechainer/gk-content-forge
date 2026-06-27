@@ -19,8 +19,10 @@ import { useContent } from "@/stores/content";
 import { useSession } from "@/stores/session";
 import { useCourse } from "@/stores/course";
 import { snapshotCourse } from "@/lib/publish/snapshot";
+import { analyzeContent } from "@/lib/publish/analyze";
 import { ACCOUNTS } from "@/lib/mock-data";
 import type { Platform } from "@/lib/types";
+import type { PublishAnalysis } from "@/lib/ai/types";
 
 export function PublishSheet({
   open,
@@ -35,7 +37,7 @@ export function PublishSheet({
   title: string;
   onPublished?: () => void;
 }) {
-  const [analyzing, setAnalyzing] = useState(true);
+  const [analysis, setAnalysis] = useState<PublishAnalysis | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [desc, setDesc] = useState("");
@@ -50,16 +52,15 @@ export function PublishSheet({
 
   useEffect(() => {
     if (!open) return;
-    setAnalyzing(true);
-    const t = setTimeout(() => {
-      setAnalyzing(false);
-      setTags(["Toán", "Đại số", "Lớp 8", "Ôn tập"]);
-      setDesc(
-        "Bộ đề được biên soạn tự động bởi AI, giúp học sinh ôn tập kiến thức trọng tâm và rèn luyện kỹ năng giải bài tập.",
-      );
-    }, 2000);
-    return () => clearTimeout(t);
-  }, [open]);
+    setAnalysis(null);
+    // Compute real quality rubric from course blocks
+    const courseData = useCourse.getState().courseData[contentId];
+    const blocks = courseData?.lessons.flatMap((l) => l.blocks) ?? [];
+    const result = analyzeContent(blocks, { subject, grade });
+    setAnalysis(result);
+    setTags(result.tags);
+    setDesc(result.description);
+  }, [open, contentId, subject, grade]);
 
   const togglePlatform = (p: Platform) => {
     setPlatforms((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
@@ -91,8 +92,6 @@ export function PublishSheet({
     onPublished?.();
   };
 
-  const score = 92;
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-[480px]">
@@ -105,7 +104,7 @@ export function PublishSheet({
 
         <div className="flex-1 overflow-y-auto p-5">
           <AnimatePresence mode="wait">
-            {analyzing ? (
+            {!analysis ? (
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }}
@@ -114,7 +113,7 @@ export function PublishSheet({
                 className="space-y-4"
               >
                 <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                  <Loader2 className="h-4 w-4 animate-spin" /> AI đang phân tích nội dung…
+                  <Loader2 className="h-4 w-4 animate-spin" /> Đang phân tích nội dung…
                 </div>
                 {[80, 100, 60, 90, 70].map((w, i) => (
                   <div
@@ -132,14 +131,34 @@ export function PublishSheet({
                 className="space-y-6"
               >
                 <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-4">
-                  <QualityRing score={score} />
+                  <QualityRing score={analysis.score} />
                   <div>
-                    <div className="text-sm font-medium text-foreground">Chất lượng AI</div>
+                    <div className="text-sm font-medium text-foreground">Chất lượng nội dung</div>
                     <div className="text-xs text-muted-foreground">
-                      Nội dung rõ ràng, có cấu trúc tốt
+                      {analysis.score >= 70
+                        ? "Nội dung rõ ràng, có cấu trúc tốt"
+                        : analysis.score >= 40
+                          ? "Nội dung cơ bản — có thể cải thiện thêm"
+                          : "Nội dung còn thiếu — xem gợi ý bên dưới"}
                     </div>
                   </div>
                 </div>
+
+                {analysis.notes.length > 0 && (
+                  <div className="rounded-lg border border-warning/40 bg-warning/5 p-3">
+                    <p className="mb-1.5 text-xs font-medium text-foreground">
+                      Gợi ý cải thiện
+                    </p>
+                    <ul className="space-y-1">
+                      {analysis.notes.map((note) => (
+                        <li key={note} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                          <span className="mt-0.5 shrink-0 text-warning">•</span>
+                          {note}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 <div>
                   <Label className="mb-2 block">Tags</Label>
@@ -285,7 +304,7 @@ export function PublishSheet({
           </Button>
           <Button
             className="gap-1.5 bg-primary text-white hover:bg-primary-hover"
-            disabled={analyzing || publishing}
+            disabled={!analysis || publishing}
             onClick={submit}
           >
             {publishing ? (
