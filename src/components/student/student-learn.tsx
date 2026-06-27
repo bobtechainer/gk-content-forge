@@ -21,6 +21,8 @@ import type { PublishedLesson } from "@/lib/publish/snapshot";
 import { BlockRenderer } from "@/components/blocks/block-renderer";
 import { PageFrame } from "../shared/page-frame";
 import { PageSkeleton } from "../shared/page-skeleton";
+import { useCourseTheme } from "@/stores/course-theme";
+import { getResolvedThemeVars } from "@/lib/theme/resolve";
 
 interface SavedProgress {
   /** id của section đã hoàn thành (dạng `lessonId:sectionIdx`) */
@@ -116,6 +118,8 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
   }, [contentId, completed, currentSectionIdx, currentLessonIdx]);
 
   const overallPct = totalSections > 0 ? Math.round((completed.length / totalSections) * 100) : 0;
+  const courseTheme = useCourseTheme((s) => s.byCourse[contentId]);
+  const themeVars = getResolvedThemeVars(courseTheme) as React.CSSProperties;
 
   const currentLessonData = lessonsWithSections[currentLessonIdx];
   const currentSection = currentLessonData?.sections[currentSectionIdx];
@@ -320,7 +324,7 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
 
         {/* Nội dung phần đang học */}
         {currentSection && (
-          <div className="space-y-4">
+          <div data-course-theme style={themeVars} className="space-y-4">
             <Card className="print-content">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">

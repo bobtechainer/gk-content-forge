@@ -1,6 +1,8 @@
 import { useContent } from "@/stores/content";
 import { useCourse } from "@/stores/course";
-import type { ContentRepository, CourseRepository } from "./types";
+import { useCourseTheme } from "@/stores/course-theme";
+import { SYSTEM_THEMES } from "@/lib/theme/system-themes";
+import type { ContentRepository, CourseRepository, ThemeRepository } from "./types";
 
 export const localContentRepository: ContentRepository = {
   findAll: () => useContent.getState().items,
@@ -10,4 +12,10 @@ export const localContentRepository: ContentRepository = {
 export const localCourseRepository: CourseRepository = {
   get: (courseId) => useCourse.getState().courseData[courseId],
   ensureSeeded: (courseId) => useCourse.getState().init(courseId),
+};
+
+export const localThemeRepository: ThemeRepository = {
+  get: (courseId) => useCourseTheme.getState().getTheme(courseId),
+  set: (courseId, theme) => useCourseTheme.getState().setTheme(courseId, theme),
+  listSystemThemes: () => Object.values(SYSTEM_THEMES),
 };

@@ -338,6 +338,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                   previewMode={previewMode}
                   dropIndex={dropIndex}
                   viewport={viewport}
+                  courseId={id}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
