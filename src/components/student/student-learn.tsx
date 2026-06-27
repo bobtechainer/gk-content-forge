@@ -14,6 +14,7 @@ import { usePageLoading } from "@/lib/use-page-loading";
 import { cn } from "@/lib/utils";
 import { useContent } from "@/stores/content";
 import { partitionSections } from "@/stores/course";
+import { useAttempts } from "@/stores/attempts";
 import type { LessonSection } from "@/stores/course";
 import type { PublishedLesson } from "@/lib/publish/snapshot";
 import { BlockRenderer } from "@/components/blocks/block-renderer";
@@ -122,9 +123,16 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
     : null;
 
   // Quiz results cho section đang xem
-  const handleQuizResult = useCallback((blockId: string, correct: boolean) => {
-    setQuizResults((prev) => ({ ...prev, [blockId]: correct }));
-  }, []);
+  const handleQuizResult = useCallback(
+    (blockId: string, correct: boolean) => {
+      setQuizResults((prev) => ({ ...prev, [blockId]: correct }));
+      const lessonId = currentLessonData?.lesson.id;
+      if (lessonId) {
+        useAttempts.getState().record(lessonId, blockId, correct);
+      }
+    },
+    [currentLessonData],
+  );
 
   // Kiểm tra section hiện tại đã "pass" chưa:
   // - Nếu không có quiz block nào -> pass ngay
