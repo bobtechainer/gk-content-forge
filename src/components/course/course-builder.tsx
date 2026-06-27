@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, Eye, Pencil,
   PanelLeftClose, PanelLeft, PanelRightClose, PanelRight,
-  FolderTree, Edit3,
+  FolderTree, Edit3, Monitor, Tablet, Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CoursePalette, BLOCK_TYPES } from "./course-palette";
@@ -24,6 +24,7 @@ import type { CourseBlockType } from "@/stores/course";
 import { useContent } from "@/stores/content";
 import type { ContentItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { type Viewport } from "@/lib/preview/viewport";
 
 export type CourseBuilderBackTo = "/creator/dashboard" | "/org/dashboard";
 
@@ -65,6 +66,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
   const [showBottomStrip, setShowBottomStrip] = useState(true);
   // Mở builder mặc định ở chế độ Preview (tiện trình diễn demo); bấm "Soạn" để chỉnh sửa.
   const [previewMode, setPreviewMode] = useState(true);
+  const [viewport, setViewport] = useState<Viewport>("desktop");
 
   useEffect(() => { init(id); }, [id, init]);
   useEffect(() => { if (item) setTitle(item.title); }, [item?.id]); // eslint-disable-line
@@ -255,6 +257,23 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 <Edit3 className="h-3 w-3" /> Soạn
               </button>
             </div>
+            {previewMode && (
+              <div className="flex rounded-lg border p-0.5">
+                {([["desktop", Monitor], ["tablet", Tablet], ["mobile", Smartphone]] as const).map(([vp, Icon]) => (
+                  <button
+                    key={vp}
+                    onClick={() => setViewport(vp)}
+                    aria-label={`Xem ở ${vp}`}
+                    className={cn(
+                      "flex items-center rounded-md px-2 py-1 transition",
+                      viewport === vp ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                  </button>
+                ))}
+              </div>
+            )}
             <Button size="sm" className="h-8 bg-primary text-xs text-white hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>
               Xuất bản
             </Button>
@@ -298,6 +317,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                   lessonTitle={activeLesson.title}
                   previewMode={previewMode}
                   dropIndex={dropIndex}
+                  viewport={viewport}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">

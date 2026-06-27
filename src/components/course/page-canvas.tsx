@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import { Plus, Move, Lock, CheckCircle2, ArrowRight, RotateCcw } from "lucide-react";
 import type { CourseBlock, CourseBlockType, BlockLayout, LessonSection } from "@/stores/course";
 import { partitionSections } from "@/stores/course";
+import { viewportMaxWidth, type Viewport } from "@/lib/preview/viewport";
 import { BlockCard } from "./block-card";
 import { VideoEmbed } from "./block-media";
 import { CodeHighlight, MathPreview } from "./block-render";
@@ -198,7 +199,7 @@ function sectionQuizIds(section: LessonSection): string[] {
   return section.blocks.filter((b) => b.type === "quiz").map((b) => b.id);
 }
 
-function PreviewJourney({ blocks, lessonTitle }: { blocks: CourseBlock[]; lessonTitle: string }) {
+function PreviewJourney({ blocks, lessonTitle, viewport }: { blocks: CourseBlock[]; lessonTitle: string; viewport?: Viewport }) {
   const sections = useMemo(() => partitionSections(blocks), [blocks]);
   const [unlockedUpTo, setUnlockedUpTo] = useState(0);
   const [results, setResults] = useState<Record<string, boolean>>({});
@@ -218,7 +219,7 @@ function PreviewJourney({ blocks, lessonTitle }: { blocks: CourseBlock[]; lesson
 
   return (
     <div className="min-h-full bg-white">
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-10">
+      <div className={cn("mx-auto w-full px-4 py-10 sm:px-6 lg:px-10", viewport ? viewportMaxWidth(viewport) : "max-w-6xl")}>
         <div className="mx-auto mb-8 max-w-2xl">
           <h1 className="text-2xl font-bold text-foreground">{lessonTitle}</h1>
           {hasGate && (
@@ -404,10 +405,12 @@ interface PageCanvasProps {
   previewMode?: boolean;
   /** Live insertion index while dragging (0..blocks.length), or null when not dragging over the canvas. */
   dropIndex?: number | null;
+  /** Active viewport for preview max-width constraint. Ephemeral — not persisted. */
+  viewport?: Viewport;
 }
 
 export function PageCanvas({
-  blocks, activeBlockId, onSelectBlock, onAddBlock, onUpdateBlock, onDeleteBlock, onDuplicateBlock, lessonTitle, previewMode, dropIndex,
+  blocks, activeBlockId, onSelectBlock, onAddBlock, onUpdateBlock, onDeleteBlock, onDuplicateBlock, lessonTitle, previewMode, dropIndex, viewport,
 }: PageCanvasProps) {
   const { setNodeRef, isOver } = useDroppable({ id: "canvas-drop" });
   const [slashMenu, setSlashMenu] = useState<{ index: number } | null>(null);
@@ -437,7 +440,7 @@ export function PageCanvas({
 
   /* ─── Preview Mode (gated journey, exactly what a learner sees) ─── */
   if (previewMode) {
-    return <PreviewJourney blocks={blocks} lessonTitle={lessonTitle} />;
+    return <PreviewJourney blocks={blocks} lessonTitle={lessonTitle} viewport={viewport} />;
   }
 
   /* ─── Edit Mode ──────────────── */
