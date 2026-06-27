@@ -35,7 +35,7 @@ export function Certificate({
 
       {/* Nội dung chứng nhận — hiển thị khi in */}
       <div
-        className="print-content rounded-xl border-2 p-8 text-center"
+        className="print-content certificate-print rounded-xl border-2 p-8 text-center"
         style={{
           borderColor: "var(--course-accent, var(--primary))",
           backgroundColor: "var(--course-surface, #ffffff)",
@@ -59,11 +59,11 @@ export function Certificate({
         </div>
 
         {/* Người học */}
-        <p className="mb-1 text-sm text-muted-foreground">Chứng nhận cấp cho</p>
+        <p className="mb-1 text-sm" style={{ color: "var(--course-ink)", opacity: 0.8 }}>Chứng nhận cấp cho</p>
         <p className="mb-6 text-xl font-semibold">{learnerName}</p>
 
         {/* Khoá học */}
-        <p className="mb-1 text-sm text-muted-foreground">đã hoàn thành khoá học</p>
+        <p className="mb-1 text-sm" style={{ color: "var(--course-ink)", opacity: 0.8 }}>đã hoàn thành khoá học</p>
         <p
           className="mb-6 text-lg font-bold"
           style={{ color: "var(--course-accent, var(--primary))" }}

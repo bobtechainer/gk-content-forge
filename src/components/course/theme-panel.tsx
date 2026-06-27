@@ -79,7 +79,7 @@ function ThemeCard({ id, label, theme, isActive, onApply }: ThemeCardProps) {
         <span
           style={{
             background: "var(--course-accent-soft)",
-            color: "var(--course-ink)",
+            color: "var(--course-soft-ink)",
             borderRadius: "var(--course-radius)",
             fontSize: "11px",
           }}
@@ -248,7 +248,7 @@ function CustomEditor({ courseId, onClose }: CustomEditorProps) {
           <span
             style={{
               background: "var(--course-accent-soft)",
-              color: "var(--course-ink)",
+              color: "var(--course-soft-ink)",
               borderRadius: "var(--course-radius)",
               fontSize: "12px",
             }}

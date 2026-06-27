@@ -56,6 +56,19 @@
     display: none !important;
   }
 
+  /* ── Certificate: giữ màu theme và ẩn nội dung không liên quan ── */
+  .certificate-print {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    background: var(--course-surface) !important;
+    color: var(--course-ink) !important;
+  }
+
+  /* Khi có chứng nhận, chỉ in chứng nhận — ẩn các print-content khác */
+  body:has(.certificate-print) .print-content:not(.certificate-print) {
+    display: none !important;
+  }
+
   /* ── Page breaks ── */
   h1,
   h2,

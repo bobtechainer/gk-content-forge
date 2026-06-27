@@ -50,6 +50,7 @@ export function getResolvedThemeVars(theme?: CourseTheme): CourseThemeVars {
     "--course-accent": r.accent,
     "--course-accent-soft": r.soft,
     "--course-accent-fg": r.ink,
+    "--course-soft-ink": accessibleInk(r.soft),
     "--course-surface": surface,
     "--course-ink": ink,
     "--course-radius": `${theme.radiusStep}px`,

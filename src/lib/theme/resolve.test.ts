@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getResolvedThemeVars } from "./resolve";
 import { contrastRatio } from "./color";
+import { SYSTEM_THEMES } from "./system-themes";
 import type { CourseTheme } from "./resolve";
 
 const lightTheme: CourseTheme = {
@@ -28,6 +29,7 @@ describe("getResolvedThemeVars", () => {
     expect(vars["--course-accent"]).toBeTruthy();
     expect(vars["--course-accent-soft"]).toBeTruthy();
     expect(vars["--course-accent-fg"]).toBeTruthy();
+    expect(vars["--course-soft-ink"]).toBeTruthy();
     expect(vars["--course-surface"]).toBeTruthy();
     expect(vars["--course-ink"]).toBeTruthy();
     expect(vars["--course-radius"]).toBe("8px");
@@ -75,5 +77,34 @@ describe("getResolvedThemeVars", () => {
     const vars = getResolvedThemeVars(unknownFontTheme);
     expect(vars["--course-font-heading"]).toBeTruthy();
     expect(vars["--course-font-body"]).toBeTruthy();
+  });
+
+  it("emits --course-soft-ink for a light theme", () => {
+    const vars = getResolvedThemeVars(lightTheme);
+    expect(vars["--course-soft-ink"]).toBeTruthy();
+  });
+
+  it("emits --course-soft-ink for a dark theme", () => {
+    const vars = getResolvedThemeVars(darkTheme);
+    expect(vars["--course-soft-ink"]).toBeTruthy();
+  });
+});
+
+describe("soft-ink WCAG AA contrast — all system themes", () => {
+  it("contrastRatio(--course-accent-soft, --course-soft-ink) >= 4.5 for every preset", () => {
+    for (const [id, theme] of Object.entries(SYSTEM_THEMES)) {
+      const vars = getResolvedThemeVars(theme);
+      const soft = vars["--course-accent-soft"];
+      const softInk = vars["--course-soft-ink"];
+
+      expect(soft, `theme "${id}" missing --course-accent-soft`).toBeDefined();
+      expect(softInk, `theme "${id}" missing --course-soft-ink`).toBeDefined();
+
+      const ratio = contrastRatio(soft!, softInk!);
+      expect(
+        ratio,
+        `theme "${id}": soft-ink contrast ${ratio.toFixed(2)}:1 < 4.5:1 (soft=${soft}, softInk=${softInk})`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });
