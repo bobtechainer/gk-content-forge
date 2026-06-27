@@ -17,6 +17,7 @@ import { PageCanvas } from "./page-canvas";
 import { LessonStrip } from "./lesson-strip";
 import { StructureDrawer } from "./structure-drawer";
 import { CourseAiPanel } from "./course-ai-panel";
+import { ThemePanel } from "./theme-panel";
 import { PublishSheet } from "@/components/publish-sheet";
 import { toast } from "sonner";
 import { useCourse } from "@/stores/course";
@@ -294,6 +295,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 {activeLessonPublishState === "never" ? "Xuất bản bài" : "Xuất bản thay đổi"}
               </Button>
             )}
+            <ThemePanel courseId={id} />
             <Button size="sm" className="h-8 bg-primary text-xs text-white hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>
               Xuất bản
             </Button>
