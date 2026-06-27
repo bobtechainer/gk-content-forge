@@ -51,16 +51,21 @@ export function PublishSheet({
   const roleId = useSession((s) => s.roleId);
 
   useEffect(() => {
-    if (!open) return;
-    setAnalysis(null);
+    if (!open) {
+      setAnalysis(null);
+      return;
+    }
     // Compute real quality rubric from course blocks
     const courseData = useCourse.getState().courseData[contentId];
     const blocks = courseData?.lessons.flatMap((l) => l.blocks) ?? [];
     const result = analyzeContent(blocks, { subject, grade });
+    // Only prefill tags/desc on first compute (when !analysis), to avoid overwriting user edits
+    if (!analysis) {
+      setTags(result.tags);
+      setDesc(result.description);
+    }
     setAnalysis(result);
-    setTags(result.tags);
-    setDesc(result.description);
-  }, [open, contentId, subject, grade]);
+  }, [open, contentId, subject, grade, analysis]);
 
   const togglePlatform = (p: Platform) => {
     setPlatforms((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
