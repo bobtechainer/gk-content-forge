@@ -237,7 +237,6 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
           <Button
             variant="ghost"
             onClick={() => window.print()}
-            aria-label="In / Xuất PDF"
           >
             <Printer className="mr-1.5 h-4 w-4" />
             In / Xuất PDF
