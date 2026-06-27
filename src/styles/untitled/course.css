@@ -18,7 +18,7 @@
   /* Code/HTML surface (thay bg-[#1e1e2e]).
      --colors-gray-light-mode-900 = rgb(24,29,39); fallback hex #131c2c là giá trị cuối an toàn. */
   --code-surface: var(--colors-gray-light-mode-900, #131c2c);
-  --code-ink: var(--colors-success-300);
+  --code-ink: var(--colors-success-300, #75e0a7);
 
   /* Lớp scope per-course — Phase 0 chỉ định nghĩa biến, default = global */
   --course-accent: var(--bg-brand-solid);
