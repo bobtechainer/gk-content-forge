@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw } from "lucide-react";
 import type { CourseBlock, BlockLayout } from "@/stores/course";
+import { useContent } from "@/stores/content";
 import type { BlockRendererProps } from "./block-renderer";
 import { VideoEmbed } from "@/components/course/block-media";
 import { CodeHighlight, MathPreview } from "@/components/course/block-render";
@@ -86,6 +87,7 @@ export function CalloutView({ block }: { block: CourseBlock }) {
 /* ─── Embed view ───────────────────────────────────────────────── */
 
 export function EmbedView({ block }: { block: CourseBlock }) {
+  // iframe embed — keep existing path unchanged
   if (block.embedUrl) {
     const aspect = block.embedAspect ?? "16:9";
     const paddingTop = aspect === "16:9" ? "56.25%" : aspect === "4:3" ? "75%" : undefined;
@@ -105,8 +107,44 @@ export function EmbedView({ block }: { block: CourseBlock }) {
       </div>
     );
   }
+
+  // Live resolve: look up material by id when embedMaterialId is set
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const liveMaterial = useContent((s) =>
+    block.embedMaterialId ? s.items.find((x) => x.id === block.embedMaterialId) : undefined,
+  );
+
+  if (block.embedMaterialId) {
+    if (liveMaterial) {
+      return (
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-callout-tip/30 p-4">
+          <span className="text-xl">📎</span>
+          <div>
+            <p className="font-medium text-foreground">{liveMaterial.title}</p>
+            <p className="text-xs text-muted-foreground">
+              {liveMaterial.materialSubtype ?? liveMaterial.type}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    // Material no longer exists — stale state
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-4">
+        <span className="text-xl">📎</span>
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Học liệu không còn tồn tại</p>
+          {block.embedTitle && (
+            <p className="text-xs text-muted-foreground/50">{block.embedTitle}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: denormalized title/type (no embedMaterialId set)
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-callout-tip/30 p-4">
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-callout-tip/30 p-4">
       <span className="text-xl">📎</span>
       <div>
         <p className="font-medium text-foreground">{block.embedTitle || "Học liệu"}</p>

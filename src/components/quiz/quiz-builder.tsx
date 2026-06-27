@@ -35,6 +35,7 @@ import { QuestionStrip } from "@/components/quiz/question-strip";
 import { AiPanel } from "@/components/quiz/ai-panel";
 import { QuizSettingsDialog } from "@/components/quiz/quiz-settings";
 import { PublishSheet } from "@/components/publish-sheet";
+import { InsertFromLibraryButton } from "@/components/quiz/library-actions-ui";
 import { toast } from "sonner";
 import { useQuiz } from "@/stores/quiz";
 import { useContent } from "@/stores/content";
@@ -277,6 +278,7 @@ export function QuizBuilder({ quizId: id, backTo }: { quizId: string; backTo: Qu
             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <InsertFromLibraryButton quizId={id} />
             <Button
               variant="outline"
               size="sm"

@@ -11,6 +11,7 @@ import { MATERIAL_TYPE_ICONS } from "@/lib/taxonomy";
 import { MATERIAL_TYPE_ACCENT } from "@/components/shared/material-type-icon";
 import { useQuiz } from "@/stores/quiz";
 import { toast } from "sonner";
+import { SaveToLibraryButton } from "@/components/quiz/library-actions-ui";
 
 const TYPE_LABEL: Record<Question["type"], string> = {
   multiple_choice: "Trắc nghiệm",
@@ -74,6 +75,7 @@ export function QuestionCard({
           {TYPE_LABEL[question.type]}
         </span>
         <div className="flex-1" />
+        <SaveToLibraryButton question={question} />
         <Button
           variant="ghost"
           size="icon"
