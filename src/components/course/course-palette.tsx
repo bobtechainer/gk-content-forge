@@ -16,6 +16,8 @@ import {
   BookOpen,
   Search,
   Layers,
+  ChevronsUpDown,
+  ListOrdered,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ContentItem, LearningMaterialSubtype, MaterialType } from "@/lib/types";
@@ -54,6 +56,9 @@ export const BLOCK_TYPES: BlockItem[] = [
   { type: "math", label: "Công thức", icon: Sigma, color: "var(--colors-cyan-600)" },
   { type: "columns", label: "Nhiều cột", icon: Columns2, color: "var(--colors-violet-600)" },
   { type: "quiz", label: "Câu hỏi", icon: ListChecks, color: "var(--colors-warning-500)" },
+  { type: "accordion", label: "Accordion", icon: ChevronsUpDown, color: "var(--colors-indigo-600)" },
+  { type: "process", label: "Quy trình", icon: ListOrdered, color: "var(--colors-orange-600)" },
+  { type: "flashcards", label: "Thẻ ghi nhớ", icon: Layers, color: "var(--colors-violet-600)" },
 ];
 
 /* ─── Rail Tab definitions ──────────────────────────────────────── */
