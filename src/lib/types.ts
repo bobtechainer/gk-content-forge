@@ -1,3 +1,5 @@
+import type { PublishedCourse } from "@/lib/publish/snapshot";
+
 export type RoleId =
   | "teacher"
   | "verified_teacher"
@@ -142,6 +144,8 @@ export interface ContentItem {
   versionHistory?: ContentVersion[];
   /** Id của OrgNode sở hữu nội dung này (luồng identity mới). */
   ownerNodeId?: string;
+  /** Snapshot nội dung tại thời điểm xuất bản — học sinh học từ snapshot này. */
+  publishedSnapshot?: PublishedCourse;
 }
 
 export interface VerificationChecklist {

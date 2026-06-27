@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useContent } from "@/stores/content";
 import { useSession } from "@/stores/session";
+import { useCourse } from "@/stores/course";
+import { snapshotCourse } from "@/lib/publish/snapshot";
 import { ACCOUNTS } from "@/lib/mock-data";
 import type { Platform } from "@/lib/types";
 
@@ -68,14 +70,21 @@ export function PublishSheet({
     await new Promise((r) => setTimeout(r, 900));
     const verified =
       roleId && (ACCOUNTS[roleId].verified === "L2" || ACCOUNTS[roleId].verified === "admin");
-    publish(contentId, {
-      tags,
-      description: desc,
-      platforms,
-      subject,
-      grade,
-      ownerVerified: !!verified,
-    });
+    // contentId IS the courseId used by the builder — see course-builder.tsx
+    const courseData = useCourse.getState().courseData[contentId];
+    const snapshot = courseData ? snapshotCourse(courseData, Date.now()) : undefined;
+    publish(
+      contentId,
+      {
+        tags,
+        description: desc,
+        platforms,
+        subject,
+        grade,
+        ownerVerified: !!verified,
+      },
+      snapshot,
+    );
     setPublishing(false);
     onOpenChange(false);
     toast.success(verified ? "Đã xuất bản thành công!" : "Đã gửi nội dung — chờ duyệt từ admin");

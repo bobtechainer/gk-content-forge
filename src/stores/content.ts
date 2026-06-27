@@ -9,6 +9,7 @@ import type {
   Platform,
   RoleId,
 } from "@/lib/types";
+import type { PublishedCourse } from "@/lib/publish/snapshot";
 import { SEED_CONTENT } from "@/lib/mock-data";
 import { mergeContentItems } from "@/lib/stores/merge-content";
 
@@ -37,6 +38,7 @@ interface ContentState {
       grade: string;
       ownerVerified: boolean;
     },
+    snapshot?: PublishedCourse,
   ) => void;
 }
 
@@ -105,7 +107,7 @@ export const useContent = create<ContentState>()(
       },
       setStatus: (id, status) =>
         set({ items: get().items.map((i) => (i.id === id ? { ...i, status } : i)) }),
-      publish: (id, args) => {
+      publish: (id, args, snapshot) => {
         const status: ContentStatus = args.ownerVerified ? "published" : "pending";
         set({
           items: get().items.map((i) =>
@@ -118,6 +120,7 @@ export const useContent = create<ContentState>()(
                   platforms: args.platforms,
                   subject: args.subject,
                   grade: args.grade,
+                  ...(snapshot !== undefined && { publishedSnapshot: snapshot }),
                 }
               : i,
           ),
