@@ -87,6 +87,11 @@ export function CalloutView({ block }: { block: CourseBlock }) {
 /* ─── Embed view ───────────────────────────────────────────────── */
 
 export function EmbedView({ block }: { block: CourseBlock }) {
+  // Hoist useContent to top (before any conditional returns) to comply with Rules of Hooks
+  const liveMaterial = useContent((s) =>
+    block.embedMaterialId ? s.items.find((x) => x.id === block.embedMaterialId) : undefined,
+  );
+
   // iframe embed — keep existing path unchanged
   if (block.embedUrl) {
     const aspect = block.embedAspect ?? "16:9";
@@ -109,10 +114,6 @@ export function EmbedView({ block }: { block: CourseBlock }) {
   }
 
   // Live resolve: look up material by id when embedMaterialId is set
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const liveMaterial = useContent((s) =>
-    block.embedMaterialId ? s.items.find((x) => x.id === block.embedMaterialId) : undefined,
-  );
 
   if (block.embedMaterialId) {
     if (liveMaterial) {
