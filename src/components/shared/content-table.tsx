@@ -16,6 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useContent } from "@/stores/content";
+import { useCourseTheme } from "@/stores/course-theme";
+import { courseThumbnailColor } from "@/lib/theme/thumbnail";
 
 type Scope = "creator" | "org" | "admin";
 
@@ -36,6 +38,7 @@ const builderTo = builderRoutePattern;
 
 export function ContentTable({ items, scope = "creator" }: { items: ContentItem[]; scope?: Scope }) {
   const del = useContent((s) => s.deleteItem);
+  const courseThemes = useCourseTheme((s) => s.byCourse);
   const base = scope === "org" ? "/org" : "/creator";
   const canEdit = scope !== "admin";
   const [preview, setPreview] = useState<ContentItem | null>(null);
@@ -65,6 +68,7 @@ export function ContentTable({ items, scope = "creator" }: { items: ContentItem[
             {items.map((item) => {
               const Icon = getContentIcon(item);
               const type = resolveType(item);
+              const thumbnailBg = courseThumbnailColor(item, courseThemes[item.id]);
               return (
                 <tr key={item.id} className="border-t border-border hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3">
@@ -75,7 +79,7 @@ export function ContentTable({ items, scope = "creator" }: { items: ContentItem[
                     >
                       <div
                         className="flex h-9 w-12 shrink-0 items-center justify-center rounded text-white"
-                        style={{ backgroundColor: item.thumbnailColor }}
+                        style={{ backgroundColor: thumbnailBg }}
                       >
                         <Icon className="h-4 w-4" />
                       </div>

@@ -23,6 +23,7 @@ import { PageFrame } from "../shared/page-frame";
 import { PageSkeleton } from "../shared/page-skeleton";
 import { useCourseTheme } from "@/stores/course-theme";
 import { getResolvedThemeVars } from "@/lib/theme/resolve";
+import { Certificate } from "./certificate";
 
 interface SavedProgress {
   /** id của section đã hoàn thành (dạng `lessonId:sectionIdx`) */
@@ -78,6 +79,8 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
   /** blockId -> đã trả lời đúng chưa */
   const [quizResults, setQuizResults] = useState<Record<string, boolean>>({});
+  /** Hiển thị chứng nhận hoàn thành khoá học */
+  const [showCertificate, setShowCertificate] = useState(false);
 
   const snapshot = item?.publishedSnapshot;
 
@@ -188,6 +191,7 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
         toast.success("Đã hoàn thành bài học, chuyển sang bài tiếp theo.");
       } else {
         toast.success("Bạn đã hoàn thành toàn bộ khoá học!");
+        setShowCertificate(true);
       }
     }
   };
@@ -265,6 +269,11 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
           <div className="text-sm font-semibold text-primary">{overallPct}%</div>
         </CardContent>
       </Card>
+
+      {/* Chứng nhận hoàn thành khoá học */}
+      {showCertificate && (
+        <Certificate courseTitle={lessonTitle} theme={courseTheme} />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         {/* Danh sách lesson + section (gating) */}
@@ -351,9 +360,23 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
                   ? "Bạn đã hoàn thành phần này — sẵn sàng sang phần kế tiếp."
                   : "Trả lời đúng mọi câu hỏi để mở khoá phần tiếp theo."}
               </p>
-              <Button disabled={!sectionPassed} onClick={markSectionDone}>
-                {isLastSection ? "Hoàn thành bài học" : "Đánh dấu hoàn thành phần"}
-              </Button>
+              <div className="flex gap-2">
+                {isLastSection && showCertificate && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      document
+                        .querySelector("[data-course-theme]")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  >
+                    Nhận chứng nhận
+                  </Button>
+                )}
+                <Button disabled={!sectionPassed} onClick={markSectionDone}>
+                  {isLastSection ? "Hoàn thành bài học" : "Đánh dấu hoàn thành phần"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
