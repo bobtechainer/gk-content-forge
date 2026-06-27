@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 // ---------------------------------------------------------------------------
 // All mocks MUST be hoisted before any actual module imports.
@@ -28,12 +28,15 @@ vi.mock("../shared/page-frame", () => ({
   PageFrame: ({
     children,
     title,
+    actions,
   }: {
     children: React.ReactNode;
     title: string;
+    actions?: React.ReactNode;
   }) => (
     <div>
       <h1>{title}</h1>
+      {actions && <div data-testid="page-actions">{actions}</div>}
       {children}
     </div>
   ),
@@ -73,6 +76,50 @@ describe("StudentLearnPage — empty state when no snapshot", () => {
   it("shows unpublished empty state when item has no publishedSnapshot", () => {
     render(<StudentLearnPage contentId="c_test" />);
     expect(screen.getByText(/Nội dung chưa được xuất bản/i)).toBeInTheDocument();
+  });
+});
+
+describe("StudentLearnPage — nút in / xuất PDF", () => {
+  const originalPrint = window.print;
+
+  beforeEach(() => {
+    localStorage.clear();
+    window.print = vi.fn();
+    mockContentItem = {
+      id: "c_print",
+      title: "Bài học in",
+      subject: "Toán",
+      grade: "Lớp 7",
+      status: "published",
+      publishedSnapshot: {
+        publishedAt: 3000,
+        lessons: [
+          {
+            id: "l1",
+            title: "Bài 1",
+            blocks: [
+              { id: "b1", type: "text", content: "<p>Nội dung</p>" } as any,
+            ],
+          },
+        ],
+      },
+    } as ContentItem;
+  });
+
+  afterEach(() => {
+    window.print = originalPrint;
+  });
+
+  it("hiển thị nút In / Xuất PDF trong learner view đã xuất bản", () => {
+    render(<StudentLearnPage contentId="c_print" />);
+    expect(screen.getByRole("button", { name: /in \/ xuất pdf/i })).toBeInTheDocument();
+  });
+
+  it("gọi window.print() khi nhấn nút In / Xuất PDF", () => {
+    render(<StudentLearnPage contentId="c_print" />);
+    const printBtn = screen.getByRole("button", { name: /in \/ xuất pdf/i });
+    fireEvent.click(printBtn);
+    expect(window.print).toHaveBeenCalledTimes(1);
   });
 });
 

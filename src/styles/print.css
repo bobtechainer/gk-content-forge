@@ -1,0 +1,90 @@
+/*
+ * Print stylesheet — ẩn chrome ứng dụng, hiển thị nội dung bài học trên giấy.
+ * Chỉ áp dụng trong @media print (Window.print / "Lưu dưới dạng PDF").
+ */
+
+@media print {
+  /* ── Ẩn các thành phần không liên quan đến nội dung ── */
+  .no-print {
+    display: none !important;
+  }
+
+  /* ── Bố cục trang in ── */
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Vùng nội dung in chiếm toàn bộ chiều rộng */
+  .print-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* ── Tránh cắt block ngang trang ── */
+  .print-content > *,
+  .print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ── Bỏ shadow và nền trang trí ── */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Card và các container: bỏ border-radius và shadow, giữ border nhẹ */
+  [class*="rounded"],
+  [class*="shadow"] {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* ── Màu sắc: chuyển về đen trắng để in rõ ── */
+  a {
+    color: black !important;
+    text-decoration: underline;
+  }
+
+  /* ── Đáp án / giải thích quiz: luôn hiển thị khi in ── */
+  .quiz-explanation,
+  .quiz-answer-reveal {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* ── Ẩn các phần tử tương tác không cần thiết khi in ── */
+  button:not(.print-show),
+  [role="progressbar"],
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* ── Page breaks ── */
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  img,
+  table,
+  figure {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    max-width: 100% !important;
+  }
+}

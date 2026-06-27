@@ -20,6 +20,7 @@
 @import "./styles/untitled/shadows.css";
 @import "./styles/untitled/gradients.css";
 @import "./styles/untitled/course.css";
+@import "./styles/print.css";
 
 @custom-variant dark (&:is(.dark *));
 

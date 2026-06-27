@@ -5,6 +5,7 @@ import {
   BookOpen,
   CheckCircle2,
   Lock,
+  Printer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -232,15 +233,25 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
       title={lessonTitle}
       description={`${lessonSubject}${lessonGrade ? ` · ${lessonGrade}` : ""} — học theo từng phần, mỗi phần mở khoá phần kế.`}
       actions={
-        <Button variant="outline" asChild>
-          <Link to="/student/home">
-            <ArrowLeft className="mr-1.5 h-4 w-4" /> Quay lại
-          </Link>
-        </Button>
+        <div className="no-print flex gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => window.print()}
+            aria-label="In / Xuất PDF"
+          >
+            <Printer className="mr-1.5 h-4 w-4" />
+            In / Xuất PDF
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/student/home">
+              <ArrowLeft className="mr-1.5 h-4 w-4" /> Quay lại
+            </Link>
+          </Button>
+        </div>
       }
     >
       {/* Thanh tiến trình tổng */}
-      <Card>
+      <Card className="no-print">
         <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:gap-4">
           <div className="text-sm font-medium text-foreground">
             Tiến độ: {completed.length}/{totalSections} phần
@@ -254,7 +265,7 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         {/* Danh sách lesson + section (gating) */}
-        <Card className="h-fit">
+        <Card className="no-print h-fit">
           <CardHeader>
             <CardTitle className="text-base">Nội dung khoá học</CardTitle>
             <CardDescription>Hoàn thành lần lượt để mở khoá.</CardDescription>
@@ -311,7 +322,7 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
         {/* Nội dung phần đang học */}
         {currentSection && (
           <div className="space-y-4">
-            <Card>
+            <Card className="print-content">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <BookOpen className="h-4.5 w-4.5 text-primary" />
@@ -320,17 +331,18 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
               </CardHeader>
               <CardContent className="space-y-4">
                 {currentSection.blocks.map((block) => (
-                  <BlockRenderer
-                    key={block.id}
-                    block={block}
-                    mode="learn"
-                    onQuizResult={(correct) => handleQuizResult(block.id, correct)}
-                  />
+                  <div key={block.id} className="print-block">
+                    <BlockRenderer
+                      block={block}
+                      mode="learn"
+                      onQuizResult={(correct) => handleQuizResult(block.id, correct)}
+                    />
+                  </div>
                 ))}
               </CardContent>
             </Card>
 
-            <div className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
+            <div className="no-print flex items-center justify-between rounded-lg border border-border bg-card p-4">
               <p className="text-sm text-muted-foreground">
                 {sectionPassed
                   ? "Bạn đã hoàn thành phần này — sẵn sàng sang phần kế tiếp."
