@@ -154,6 +154,7 @@ describe("course migrate is non-destructive", () => {
   it("tolerates empty/undefined persisted (fresh install)", () => {
     const out = courseMigrate(undefined, 2);
     expect(out.courseData).toEqual({});
+    expect(out.activeLessonId).toBeNull();
   });
 });
 

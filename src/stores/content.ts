@@ -127,6 +127,9 @@ export const useContent = create<ContentState>()(
     {
       name: "gk-content",
       version: 3,
+      // Lưu ý: khi bump version, persist chạy migrate RỒI merge — cả hai cùng gọi
+      // mergeContentItems. Điều này an toàn vì mergeContentItems idempotent (lọc id
+      // seed ra rồi nối seed lại → chạy 2 lần cho cùng kết quả, không nhân đôi).
       // Migrate KHÔNG hủy: giữ item người dùng, làm mới seed.
       migrate: (persisted) => {
         const items = (persisted as { items?: ContentItem[] } | undefined)?.items ?? [];
