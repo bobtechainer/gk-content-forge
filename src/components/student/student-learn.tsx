@@ -96,11 +96,17 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
   useEffect(() => {
     const saved = loadProgress(contentId);
     setCompleted(saved.completed);
-    setCurrentLessonIdx(
-      Math.min(saved.currentLessonIdx, Math.max(0, lessonsWithSections.length - 1)),
+    const clampedLessonIdx = Math.min(
+      saved.currentLessonIdx,
+      Math.max(0, lessonsWithSections.length - 1),
     );
-    setCurrentSectionIdx(saved.currentSectionIdx);
-  }, [contentId, lessonsWithSections.length]);
+    setCurrentLessonIdx(clampedLessonIdx);
+    // Clamp currentSectionIdx theo số sections của lesson được khôi phục
+    const lesson = lessonsWithSections[clampedLessonIdx];
+    const maxSectionIdx = lesson ? lesson.sections.length - 1 : 0;
+    const clampedSectionIdx = Math.min(Math.max(0, saved.currentSectionIdx), maxSectionIdx);
+    setCurrentSectionIdx(clampedSectionIdx);
+  }, [contentId, lessonsWithSections.length, lessonsWithSections]);
 
   // Lưu tiến độ
   useEffect(() => {
