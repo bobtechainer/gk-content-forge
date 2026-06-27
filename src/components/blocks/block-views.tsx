@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw } from "lucide-react";
 import type { CourseBlock, BlockLayout } from "@/stores/course";
+import type { BlockRendererProps } from "./block-renderer";
 import { VideoEmbed } from "@/components/course/block-media";
 import { CodeHighlight, MathPreview } from "@/components/course/block-render";
 import { HtmlEmbed } from "@/components/course/html-embed";
@@ -189,13 +190,13 @@ export function QuizView({ block, onResult }: { block: CourseBlock; onResult?: (
 // Note: BlockRenderer is imported lazily to avoid circular dependency.
 // ColumnsView delegates per-child rendering to BlockRenderer.
 
-import type { BlockRendererProps } from "./block-renderer";
-
 export function ColumnsView({
   block,
+  mode,
   BlockRenderer,
 }: {
   block: CourseBlock;
+  mode: "preview" | "learn";
   BlockRenderer: (props: BlockRendererProps) => React.ReactElement | null;
 }) {
   const count = block.columnCount ?? 2;
@@ -205,7 +206,7 @@ export function ColumnsView({
       {Array.from({ length: count }).map((_, colIdx) => (
         <div key={colIdx} className="space-y-4">
           {(children[colIdx] ?? []).map((child) => (
-            <BlockRenderer key={child.id} block={child} mode="preview" />
+            <BlockRenderer key={child.id} block={child} mode={mode} />
           ))}
         </div>
       ))}

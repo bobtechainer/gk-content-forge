@@ -20,7 +20,7 @@ export interface BlockRendererProps {
   onQuizResult?: (correct: boolean) => void;
 }
 
-export function BlockRenderer({ block, mode: _mode, onQuizResult }: BlockRendererProps): React.ReactElement | null {
+export function BlockRenderer({ block, mode, onQuizResult }: BlockRendererProps): React.ReactElement | null {
   // Section markers are consumed by the journey stepper, never rendered inline.
   if (block.type === "section") return null;
 
@@ -30,7 +30,7 @@ export function BlockRenderer({ block, mode: _mode, onQuizResult }: BlockRendere
 
   if (block.type === "columns") {
     return (
-      <ColumnsView block={block} BlockRenderer={BlockRenderer} />
+      <ColumnsView block={block} mode={mode} BlockRenderer={BlockRenderer} />
     );
   }
 
