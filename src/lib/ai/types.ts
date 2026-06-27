@@ -23,6 +23,7 @@ export interface StoryboardRequest {
   topic: string;
   objectives?: string;
   durationMin?: number;
+  sourceText?: string;
 }
 
 export interface FillRequest {

@@ -49,6 +49,7 @@ const BLOCK_TYPE_LABELS: Record<string, string> = {
 export function CourseAiPanel({ courseId, lessonId }: CourseAiPanelProps) {
   const [topic, setTopic] = useState("");
   const [objectives, setObjectives] = useState("");
+  const [sourceText, setSourceText] = useState("");
   const [progress, setProgress] = useState("");
 
   const setStoryboard = useStoryboard((s) => s.setStoryboard);
@@ -78,6 +79,7 @@ export function CourseAiPanel({ courseId, lessonId }: CourseAiPanelProps) {
         grade,
         topic: topic.trim(),
         objectives: objectives.trim() || undefined,
+        sourceText: sourceText.trim() || undefined,
       });
       setStoryboard(lessonId, sb);
       setStatus(lessonId, "ready");
@@ -160,6 +162,22 @@ export function CourseAiPanel({ courseId, lessonId }: CourseAiPanelProps) {
               onChange={(e) => setObjectives(e.target.value)}
               placeholder="Học sinh sẽ làm được gì sau bài học này?"
               className="min-h-[60px] text-xs"
+              disabled={isPlanning || isFilling}
+            />
+          </div>
+
+          {/* Dán văn bản */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">
+              Dán văn bản{" "}
+              <span className="text-muted-foreground">(tuỳ chọn)</span>
+            </label>
+            <Textarea
+              value={sourceText}
+              onChange={(e) => setSourceText(e.target.value)}
+              aria-label="Dán văn bản nguồn để tạo dàn ý"
+              placeholder="Dán nội dung bài học, tài liệu... AI sẽ tạo dàn ý từ văn bản này thay vì chủ đề."
+              className="min-h-[80px] text-xs"
               disabled={isPlanning || isFilling}
             />
           </div>

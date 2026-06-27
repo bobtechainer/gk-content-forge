@@ -90,9 +90,96 @@ const quizItemSchema = z.object({
   quizExplanation: z.string(),
 });
 
+/* ─── Storyboard from source text ───────────────────────────────── */
+
+const MAX_SOURCE_SECTIONS = 6;
+
+/**
+ * Split sourceText into paragraphs. Splits on blank lines or markdown headings
+ * (lines starting with #). Trims each chunk. Caps at MAX_SOURCE_SECTIONS.
+ */
+function splitIntoParagraphs(text: string): string[] {
+  const lines = text.split("\n");
+  const chunks: string[] = [];
+  let current: string[] = [];
+
+  for (const line of lines) {
+    const isHeading = /^#{1,6}\s/.test(line.trim());
+    const isBlank = line.trim() === "";
+
+    if (isBlank || isHeading) {
+      if (current.length > 0) {
+        chunks.push(current.join("\n").trim());
+        current = [];
+      }
+      if (isHeading) {
+        current.push(line);
+      }
+    } else {
+      current.push(line);
+    }
+  }
+
+  if (current.length > 0) {
+    chunks.push(current.join("\n").trim());
+  }
+
+  return chunks.filter(Boolean).slice(0, MAX_SOURCE_SECTIONS);
+}
+
+/** Extract a short title from the first sentence / line of a paragraph. Max 60 chars. */
+function titleFromParagraph(para: string): string {
+  const firstLine = para.split("\n")[0].replace(/^#{1,6}\s*/, "").trim();
+  const firstSentence = firstLine.split(/[.!?。]/)[0].trim();
+  const raw = firstSentence || firstLine;
+  return raw.length > 60 ? raw.slice(0, 57) + "..." : raw;
+}
+
+function buildStoryboardFromText(req: StoryboardRequest): Storyboard {
+  const paragraphs = splitIntoParagraphs(req.sourceText!);
+  const seed = `${req.subject}|${req.grade}|${req.topic}|${req.sourceText}`;
+
+  const sections = paragraphs.map((para, secIdx) => {
+    const title = titleFromParagraph(para);
+    const firstSentence = para.split(/[.!?。\n]/)[0].trim();
+
+    const items: StoryboardItem[] = [
+      {
+        id: stableId("item", secIdx * 2, seed),
+        blockType: "text" as CourseBlockType,
+        intent: `Trình bày nội dung: "${firstSentence}"`,
+        learningGoal: `Học sinh nắm được ý chính của đoạn: ${firstSentence.slice(0, 60)}`,
+      },
+    ];
+
+    // Every other section gets an additional quiz item
+    if (secIdx % 2 === 1) {
+      items.push({
+        id: stableId("item", secIdx * 2 + 1, seed),
+        blockType: "quiz" as CourseBlockType,
+        intent: `Kiểm tra hiểu bài đoạn: "${firstSentence.slice(0, 40)}"`,
+        learningGoal: `Học sinh trả lời đúng câu hỏi về nội dung đoạn ${secIdx + 1}`,
+      });
+    }
+
+    return {
+      id: stableId("sec", secIdx, seed),
+      title,
+      items,
+    };
+  });
+
+  const storyboard: Storyboard = { sections };
+  return storyboardSchema.parse(storyboard);
+}
+
 /* ─── Storyboard generator ───────────────────────────────────────── */
 
 function buildStoryboard(req: StoryboardRequest): Storyboard {
+  if (req.sourceText && req.sourceText.trim().length > 0) {
+    return buildStoryboardFromText(req);
+  }
+
   const seed = `${req.subject}|${req.grade}|${req.topic}`;
   const topic = req.topic;
   const subject = req.subject;

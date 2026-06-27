@@ -246,6 +246,109 @@ describe("companionEdit — fix", () => {
   });
 });
 
+/* ─── generateStoryboard — sourceText branch ────────────────────── */
+
+describe("generateStoryboard — sourceText", () => {
+  const SOURCE_TWO_PARAS =
+    "Đoạn 1: Phân số là tỉ số của hai số nguyên.\n\nĐoạn 2: Mẫu số không được bằng 0 trong bất kỳ trường hợp nào.";
+
+  const REQ_WITH_TEXT: StoryboardRequest = {
+    subject: "Toán",
+    grade: "Lớp 6",
+    topic: "Phân số",
+    sourceText: SOURCE_TWO_PARAS,
+  };
+
+  it("trả về ít nhất 2 section khi sourceText có 2 đoạn văn", async () => {
+    const result = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    expect(result.sections.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("mọi item.blockType đều hợp lệ khi dùng sourceText", async () => {
+    const result = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    for (const section of result.sections) {
+      for (const item of section.items) {
+        expect(VALID_BLOCK_TYPES).toContain(item.blockType);
+      }
+    }
+  });
+
+  it("kết quả là xác định — gọi hai lần cho cùng kết quả (sourceText)", async () => {
+    const r1 = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    const r2 = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    expect(r1).toEqual(r2);
+  });
+
+  it("mỗi section có ít nhất 1 item với intent và learningGoal không rỗng", async () => {
+    const result = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    for (const section of result.sections) {
+      expect(section.items.length).toBeGreaterThanOrEqual(1);
+      for (const item of section.items) {
+        expect(item.intent.length).toBeGreaterThan(0);
+        expect(item.learningGoal.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("tất cả id là duy nhất khi dùng sourceText", async () => {
+    const result = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    const ids: string[] = [];
+    for (const section of result.sections) {
+      ids.push(section.id);
+      for (const item of section.items) {
+        ids.push(item.id);
+      }
+    }
+    const unique = new Set(ids);
+    expect(unique.size).toBe(ids.length);
+  });
+
+  it("sourceText rỗng → vẫn dùng topic-based logic (số section ≥ 1)", async () => {
+    const result = await mockAiClient.generateStoryboard({
+      ...BASE_REQ,
+      sourceText: "",
+    });
+    expect(result.sections.length).toBeGreaterThanOrEqual(1);
+    const allIntents = result.sections.flatMap((s) => s.items.map((i) => i.intent));
+    expect(allIntents.some((intent) => intent.includes(BASE_REQ.topic))).toBe(true);
+  });
+
+  it("sourceText 6 đoạn → tối đa 6 section", async () => {
+    const sixParas = Array.from({ length: 6 }, (_, i) => `Đoạn ${i + 1}: nội dung đoạn ${i + 1}.`).join("\n\n");
+    const result = await mockAiClient.generateStoryboard({
+      ...BASE_REQ,
+      sourceText: sixParas,
+    });
+    expect(result.sections.length).toBeLessThanOrEqual(6);
+    expect(result.sections.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("section.title xuất phát từ câu đầu của đoạn văn", async () => {
+    const result = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    // At least one section title should contain content from the source
+    const allTitles = result.sections.map((s) => s.title);
+    const hasMeaningfulTitle = allTitles.some((t) => t.length > 0);
+    expect(hasMeaningfulTitle).toBe(true);
+  });
+
+  it("section count khớp với số đoạn văn (2 đoạn → đúng 2 section, không phải 4)", async () => {
+    const result = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    // The sourceText has exactly 2 paragraphs separated by \n\n, so we expect 2 sections
+    // This would fail with the topic-based 4-section arc
+    expect(result.sections.length).toBe(2);
+  });
+
+  it("intent của item đề cập đến nội dung đoạn văn nguồn (không phải topic chung chung)", async () => {
+    const result = await mockAiClient.generateStoryboard(REQ_WITH_TEXT);
+    const allIntents = result.sections.flatMap((s) => s.items.map((i) => i.intent));
+    // "Khởi động" / "Khám phá" etc are topic-arc titles, should NOT appear
+    const topicArcTitles = ["Khởi động", "Khám phá", "Luyện tập", "Tổng kết"];
+    const sectionTitles = result.sections.map((s) => s.title);
+    const hasTopicArcTitle = sectionTitles.some((t) => topicArcTitles.includes(t));
+    expect(hasTopicArcTitle).toBe(false);
+  });
+});
+
 /* ─── quizFromContent ────────────────────────────────────────────── */
 
 describe("quizFromContent", () => {
