@@ -23,12 +23,20 @@
   /* Lớp scope per-course — Phase 0 chỉ định nghĩa biến, default = global */
   --course-accent: var(--bg-brand-solid);
   --course-accent-soft: var(--bg-brand-primary);
+  --course-accent-fg: var(--text-on-brand);
   --course-surface: var(--bg-primary);
   --course-ink: var(--text-primary);
   --course-radius: var(--radius);
+  --course-font-heading: inherit;
+  --course-font-body: inherit;
 }
 
 /* Scope theme per-course; Phase 3 sẽ override các biến này per courseId. */
 [data-course-theme] {
-  /* Phase 0: kế thừa, chưa override gì — placeholder cho Phase 3. */
+  background-color: var(--course-surface);
+  font-family: var(--course-font-body);
+}
+
+[data-course-theme] :is(h1, h2, h3) {
+  font-family: var(--course-font-heading);
 }

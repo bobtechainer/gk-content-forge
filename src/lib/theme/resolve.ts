@@ -1,4 +1,5 @@
 import { ramp, accessibleInk, mix } from "./color";
+import { FONT_PAIRS } from "./system-themes";
 
 export type CourseThemeVars = Record<string, string>;
 
@@ -27,7 +28,11 @@ export function getResolvedThemeVars(theme?: CourseTheme): CourseThemeVars {
 
   const r = ramp(theme.accentSeed);
 
+  // Resolve font pair (fallback to first pair when fontPairId not found)
+  const pair = FONT_PAIRS.find((p) => p.id === theme.fontPairId) ?? FONT_PAIRS[0]!;
+
   // Surface and ink depend on mode
+  // NOTE: mode:"auto" currently resolves as light (pending media-query support)
   let surface: string;
   let ink: string;
 
@@ -48,6 +53,8 @@ export function getResolvedThemeVars(theme?: CourseTheme): CourseThemeVars {
     "--course-surface": surface,
     "--course-ink": ink,
     "--course-radius": `${theme.radiusStep}px`,
+    "--course-font-heading": pair.heading,
+    "--course-font-body": pair.body,
   };
 
   return vars;

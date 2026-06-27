@@ -61,4 +61,19 @@ describe("getResolvedThemeVars", () => {
     const ratio = contrastRatio(vars["--course-accent"]!, vars["--course-accent-fg"]!);
     expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
+
+  it("emits --course-font-heading and --course-font-body as non-empty strings", () => {
+    const vars = getResolvedThemeVars(lightTheme);
+    expect(typeof vars["--course-font-heading"]).toBe("string");
+    expect(vars["--course-font-heading"]!.length).toBeGreaterThan(0);
+    expect(typeof vars["--course-font-body"]).toBe("string");
+    expect(vars["--course-font-body"]!.length).toBeGreaterThan(0);
+  });
+
+  it("falls back to first font pair when fontPairId is unknown", () => {
+    const unknownFontTheme: CourseTheme = { ...lightTheme, fontPairId: "nonexistent-id" };
+    const vars = getResolvedThemeVars(unknownFontTheme);
+    expect(vars["--course-font-heading"]).toBeTruthy();
+    expect(vars["--course-font-body"]).toBeTruthy();
+  });
 });

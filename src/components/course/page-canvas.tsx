@@ -73,7 +73,7 @@ function PreviewJourney({ blocks, lessonTitle, viewport, themeVars }: { blocks: 
   const hasGate = sections.length > 1;
 
   return (
-    <div className="min-h-full bg-white" data-course-theme style={themeVars}>
+    <div className="min-h-full bg-[var(--course-surface)]" data-course-theme style={themeVars}>
       <div className={cn("mx-auto w-full px-4 py-10 sm:px-6 lg:px-10", viewport ? viewportMaxWidth(viewport) : "max-w-6xl")}>
         <div className="mx-auto mb-8 max-w-2xl">
           <h1 className="text-2xl font-bold text-foreground">{lessonTitle}</h1>
