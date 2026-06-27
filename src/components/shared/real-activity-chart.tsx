@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -17,6 +17,8 @@ const TOOLTIP_STYLE = {
   borderRadius: 8,
   border: "1px solid var(--border)",
   fontSize: 12,
+  background: "var(--card)",
+  color: "var(--card-foreground)",
 } as const;
 
 /**
@@ -28,7 +30,15 @@ export function RealActivityChart() {
   useEffect(() => setMounted(true), []);
 
   const events = useAnalyticsEvents((s) => s.events);
-  const summary = useAnalyticsEvents((s) => s.summary)();
+  const summary = useMemo(() => {
+    let opens = 0, answers = 0, correct = 0, completes = 0;
+    for (const ev of events) {
+      if (ev.type === "lesson_open") opens++;
+      else if (ev.type === "quiz_answer") { answers++; if (ev.correct) correct++; }
+      else if (ev.type === "lesson_complete") completes++;
+    }
+    return { opens, answers, correct, completes };
+  }, [events]);
   const data = opensPerDay(events, Date.now(), 14);
 
   // Format ngày thành dạng ngắn "dd/MM" cho trục X
