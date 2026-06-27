@@ -132,7 +132,8 @@ function titleFromParagraph(para: string): string {
   const firstLine = para.split("\n")[0].replace(/^#{1,6}\s*/, "").trim();
   const firstSentence = firstLine.split(/[.!?。]/)[0].trim();
   const raw = firstSentence || firstLine;
-  return raw.length > 60 ? raw.slice(0, 57) + "..." : raw;
+  const safe = raw.trim() || "Đoạn văn";
+  return safe.length > 60 ? safe.slice(0, 57) + "..." : safe;
 }
 
 function buildStoryboardFromText(req: StoryboardRequest): Storyboard {
