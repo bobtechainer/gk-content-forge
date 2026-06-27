@@ -75,12 +75,12 @@ function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (corr
             <button key={i} type="button" disabled={answered} onClick={() => pick(i)}
               className={cn("flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition",
                 state === "idle" && "border-border hover:border-primary hover:bg-accent",
-                state === "correct" && "border-emerald-400 bg-emerald-50 text-emerald-800",
-                state === "wrong" && "border-red-400 bg-red-50 text-red-800",
+                state === "correct" && "border-callout-tip-line bg-callout-tip text-callout-tip-fg",
+                state === "wrong" && "border-callout-danger-line bg-callout-danger text-callout-danger-fg",
                 state === "muted" && "border-border opacity-60")}>
               <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
-                state === "correct" && "border-emerald-500 bg-emerald-500 text-white",
-                state === "wrong" && "border-red-500 bg-red-500 text-white",
+                state === "correct" && "border-callout-tip-line bg-callout-tip-line text-white",
+                state === "wrong" && "border-callout-danger-line bg-callout-danger-line text-white",
                 (state === "idle" || state === "muted") && "border-border text-muted-foreground")}>
                 {state === "correct" ? "✓" : state === "wrong" ? "✕" : String.fromCharCode(65 + i)}
               </span>
@@ -93,7 +93,7 @@ function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (corr
         {answered && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className={cn("mt-3 rounded-xl border p-3 text-sm",
-              picked === correct ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800")}>
+              picked === correct ? "border-callout-tip-line bg-callout-tip text-callout-tip-fg" : "border-callout-warn-line bg-callout-warn text-callout-warn-fg")}>
             <p className="font-semibold">{picked === correct ? "🎉 Chính xác!" : "💡 Chưa đúng — cùng xem lại nhé"}</p>
             {block.quizExplanation && <p className="mt-1 text-[13px] leading-relaxed">{block.quizExplanation}</p>}
             <button type="button" onClick={retry}
@@ -151,16 +151,16 @@ function PreviewBlock({ block, onQuizResult }: { block: CourseBlock; onQuizResul
       case "callout": {
         const variant = block.calloutVariant ?? "info";
         const styles: Record<string, string> = {
-          info: "border-blue-200 bg-blue-50 text-blue-800",
-          tip: "border-emerald-200 bg-emerald-50 text-emerald-800",
-          warning: "border-amber-200 bg-amber-50 text-amber-800",
-          danger: "border-red-200 bg-red-50 text-red-800",
+          info: "border-callout-info-line bg-callout-info text-callout-info-fg",
+          tip: "border-callout-tip-line bg-callout-tip text-callout-tip-fg",
+          warning: "border-callout-warn-line bg-callout-warn text-callout-warn-fg",
+          danger: "border-callout-danger-line bg-callout-danger text-callout-danger-fg",
         };
         return <div className={cn("rounded-xl border p-4 text-sm", styles[variant])}>{block.content || "..."}</div>;
       }
       case "embed":
         return (
-          <div className="flex items-center gap-3 rounded-lg border bg-emerald-50/30 p-4">
+          <div className="flex items-center gap-3 rounded-lg border bg-callout-tip/30 p-4">
             <span className="text-xl">📎</span>
             <div>
               <p className="font-medium text-foreground">{block.embedTitle || "Học liệu"}</p>
@@ -263,7 +263,7 @@ function PreviewJourney({ blocks, lessonTitle }: { blocks: CourseBlock[]; lesson
               </div>
 
               {hasGate && !isCurrent && (
-                <div className="mx-auto mt-6 flex max-w-2xl items-center gap-1.5 text-xs font-medium text-emerald-600">
+                <div className="mx-auto mt-6 flex max-w-2xl items-center gap-1.5 text-xs font-medium text-callout-tip-fg">
                   <CheckCircle2 className="h-4 w-4" /> Đã hoàn thành phần này
                 </div>
               )}
@@ -278,9 +278,9 @@ function PreviewJourney({ blocks, lessonTitle }: { blocks: CourseBlock[]; lesson
                 </div>
               )}
               {hasGate && isCurrent && isLast && complete && (
-                <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
-                  <p className="text-base font-bold text-emerald-800">Hoàn thành bài học</p>
-                  <p className="mt-1 text-sm text-emerald-700">
+                <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-callout-tip-line bg-callout-tip p-5 text-center">
+                  <p className="text-base font-bold text-callout-tip-fg">Hoàn thành bài học</p>
+                  <p className="mt-1 text-sm text-callout-tip-fg">
                     Em đã đi hết hành trình và trả lời đúng các câu hỏi. Làm tốt lắm!
                   </p>
                 </div>

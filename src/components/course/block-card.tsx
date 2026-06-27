@@ -42,10 +42,10 @@ const BLOCK_META: Record<CourseBlockType, { icon: typeof Type; color: string; la
 };
 
 const CALLOUT_STYLES: Record<CalloutVariant, { icon: typeof Info; bg: string; border: string; text: string; label: string }> = {
-  info: { icon: Info, bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-800", label: "Thông tin" },
-  tip: { icon: Lightbulb, bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-800", label: "Mẹo" },
-  warning: { icon: AlertTriangle, bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-800", label: "Cảnh báo" },
-  danger: { icon: ShieldAlert, bg: "bg-red-50", border: "border-red-200", text: "text-red-800", label: "Nguy hiểm" },
+  info: { icon: Info, bg: "bg-callout-info", border: "border-callout-info-line", text: "text-callout-info-fg", label: "Thông tin" },
+  tip: { icon: Lightbulb, bg: "bg-callout-tip", border: "border-callout-tip-line", text: "text-callout-tip-fg", label: "Mẹo" },
+  warning: { icon: AlertTriangle, bg: "bg-callout-warn", border: "border-callout-warn-line", text: "text-callout-warn-fg", label: "Cảnh báo" },
+  danger: { icon: ShieldAlert, bg: "bg-callout-danger", border: "border-callout-danger-line", text: "text-callout-danger-fg", label: "Nguy hiểm" },
 };
 
 const ANIM_OPTIONS: { value: BlockAnimation; label: string }[] = [
@@ -163,7 +163,7 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
         <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="p-1 text-muted-foreground hover:text-foreground" title="Nhân đôi">
           <Copy className="h-3 w-3" />
         </button>
-        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1 text-muted-foreground hover:text-red-500" title="Xóa">
+        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1 text-muted-foreground hover:text-destructive" title="Xóa">
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
@@ -292,24 +292,24 @@ function EmbedBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (
   return (
     <div className="space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
       {hasMaterial ? (
-        <div className="flex items-center gap-2.5 rounded-lg border bg-emerald-50/30 p-2.5">
+        <div className="flex items-center gap-2.5 rounded-lg border bg-callout-tip/30 p-2.5">
           <span className="text-xl">📎</span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">{block.embedTitle || "Học liệu đính kèm"}</p>
             <p className="text-[10px] text-muted-foreground">{typeLabel}</p>
           </div>
           <button onClick={() => setPicking((v) => !v)}
-            className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-medium text-success transition hover:bg-emerald-50">
+            className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-medium text-success transition hover:bg-callout-tip">
             Đổi
           </button>
           <button onClick={detach}
-            className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:border-red-300 hover:text-red-500">
+            className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:border-destructive/40 hover:text-destructive">
             Gỡ
           </button>
         </div>
       ) : (
         <button onClick={() => setPicking((v) => !v)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-success/40 py-3 text-xs font-medium text-success transition hover:bg-emerald-50">
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-success/40 py-3 text-xs font-medium text-success transition hover:bg-callout-tip">
           <Link2 className="h-3.5 w-3.5" /> Chọn học liệu từ kho
         </button>
       )}
@@ -350,7 +350,7 @@ function EmbedMaterialPicker({ onPick }: { onPick: (m: ContentItem) => void }) {
             <button
               key={m.id}
               onClick={() => onPick(m)}
-              className="flex w-full items-center gap-2 rounded-md border border-transparent p-1.5 text-left transition hover:border-success/40 hover:bg-emerald-50"
+              className="flex w-full items-center gap-2 rounded-md border border-transparent p-1.5 text-left transition hover:border-success/40 hover:bg-callout-tip"
             >
               <span className="text-base">📄</span>
               <span className="min-w-0 flex-1">
@@ -377,7 +377,7 @@ function CodeBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
       </select>
       <textarea value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
         placeholder="// Code..." rows={4} onClick={(e) => e.stopPropagation()}
-        className="w-full resize-none rounded-lg bg-[#1e1e2e] p-3 font-mono text-xs text-emerald-300 outline-none" />
+        className="w-full resize-none rounded-lg bg-code-surface p-3 font-mono text-xs text-code-ink outline-none" />
       {block.content && <CodeHighlight code={block.content} language={block.codeLanguage} />}
     </div>
   );
@@ -422,14 +422,14 @@ function QuizBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
           <div key={i} className="flex items-center gap-2">
             <button type="button" onClick={() => onUpdate({ quizCorrect: i })} title="Đánh dấu đáp án đúng"
               className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition",
-                i === correct ? "border-emerald-500 bg-emerald-500 text-white" : "border-border text-transparent hover:border-emerald-400")}>
+                i === correct ? "border-callout-tip-line bg-callout-tip-line text-white" : "border-border text-transparent hover:border-callout-tip-line")}>
               <Check className="h-3 w-3" />
             </button>
             <input value={opt} onChange={(e) => setOption(i, e.target.value)} placeholder={`Lựa chọn ${i + 1}`}
               className={cn("w-full rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs outline-none focus:border-warning",
-                i === correct && "border-emerald-300")} />
+                i === correct && "border-callout-tip-line/50")} />
             <button type="button" onClick={() => removeOption(i)} disabled={options.length <= 2}
-              className="shrink-0 rounded p-1 text-muted-foreground transition hover:text-red-500 disabled:opacity-30">
+              className="shrink-0 rounded p-1 text-muted-foreground transition hover:text-destructive disabled:opacity-30">
               <Trash2 className="h-3 w-3" />
             </button>
           </div>
@@ -476,7 +476,7 @@ function HtmlBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
       </div>
       <textarea value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
         placeholder="<div>Dán HTML tương tác…</div>" rows={5} spellCheck={false}
-        className="w-full resize-y rounded-lg bg-[#1e1e2e] p-3 font-mono text-[11px] leading-relaxed text-emerald-200 outline-none" />
+        className="w-full resize-y rounded-lg bg-code-surface p-3 font-mono text-[11px] leading-relaxed text-code-ink outline-none" />
       <div>
         <p className="mb-1 text-[10px] font-medium text-muted-foreground">Xem trước trực tiếp</p>
         <HtmlEmbed html={block.content || ""} minHeight={160} />
@@ -490,8 +490,8 @@ function HtmlBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
 function SectionBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
   return (
     <div className="p-3" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-2 rounded-lg border border-dashed border-blue-light-500/50 bg-blue-light-500/5 px-3 py-2.5">
-        <SplitSquareVertical className="h-4 w-4 shrink-0 text-blue-light-500" />
+      <div className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-2.5">
+        <SplitSquareVertical className="h-4 w-4 shrink-0 text-primary" />
         <input value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
           placeholder="Tên phần (vd: Chặng 1 · Cảm nhận thời gian)"
           className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground" />
@@ -560,9 +560,9 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
             <button key={n} onClick={(e) => { e.stopPropagation(); setCount(n); }}
               title={`${n} cột`} aria-pressed={count === n}
               className={cn("flex h-7 items-center gap-[2px] rounded-md border px-1.5 transition",
-                count === n ? "border-violet-600 bg-violet-600/10" : "border-border hover:border-violet-600/40")}>
+                count === n ? "border-primary bg-primary/10" : "border-border hover:border-primary/40")}>
               {Array.from({ length: n }).map((_, i) => (
-                <span key={i} className={cn("h-4 w-1.5 rounded-[1px]", count === n ? "bg-violet-600" : "bg-muted-foreground/30")} />
+                <span key={i} className={cn("h-4 w-1.5 rounded-[1px]", count === n ? "bg-primary" : "bg-muted-foreground/30")} />
               ))}
             </button>
           ))}
@@ -592,8 +592,8 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
               }}
               onDrop={(e) => { e.preventDefault(); doMove(); dragRef.current = null; setDropIndicator(null); }}
               className={cn("min-h-[60px] rounded-lg border border-dashed p-1.5 transition-all",
-                isOverCol && dragRef.current ? "border-violet-600 bg-violet-600/5" : "border-violet-600/30 bg-violet-600/[0.02]")}>
-              <div className="mb-1 text-center text-[8px] font-semibold text-violet-600/40">Cột {ci + 1}</div>
+                isOverCol && dragRef.current ? "border-primary bg-primary/5" : "border-primary/30 bg-primary/[0.02]")}>
+              <div className="mb-1 text-center text-[8px] font-semibold text-primary/40">Cột {ci + 1}</div>
               {items.map((child, bi) => {
                 const M = BLOCK_META[child.type];
                 const CI = M.icon;
@@ -635,7 +635,7 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
                           <CI className="h-2.5 w-2.5" style={{ color: M.color }} />
                           <span className="flex-1 truncate font-medium">{M.label}</span>
                           <button onClick={(e) => { e.stopPropagation(); deleteChild(ci, bi); }}
-                            className="hidden text-muted-foreground hover:text-red-500 group-hover/child:block">
+                            className="hidden text-muted-foreground hover:text-destructive group-hover/child:block">
                             <Trash2 className="h-2.5 w-2.5" />
                           </button>
                         </div>
@@ -657,12 +657,12 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
               {items.length === 0 && isOverCol && dragRef.current && <InsertLine />}
               {items.length === 0 && !dragRef.current && (
                 <div className="py-4 text-center">
-                  <MoveVertical className="mx-auto h-3.5 w-3.5 text-violet-600/25" />
-                  <p className="text-[9px] mt-0.5 text-violet-600/35">Kéo block vào</p>
+                  <MoveVertical className="mx-auto h-3.5 w-3.5 text-primary/25" />
+                  <p className="text-[9px] mt-0.5 text-primary/35">Kéo block vào</p>
                 </div>
               )}
               <button onClick={() => addChild(ci)}
-                className="mt-1 flex w-full items-center justify-center gap-1 rounded border border-dashed border-violet-600/20 py-1 text-[9px] text-violet-600/50 transition hover:border-violet-600/40 hover:text-violet-600">
+                className="mt-1 flex w-full items-center justify-center gap-1 rounded border border-dashed border-primary/20 py-1 text-[9px] text-primary/50 transition hover:border-primary/40 hover:text-primary">
                 <Plus className="h-2.5 w-2.5" /> Thêm block
               </button>
             </div>
@@ -676,9 +676,9 @@ function ColumnsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate:
 function InsertLine() {
   return (
     <div className="flex items-center gap-1 py-0.5">
-      <div className="h-[2px] flex-1 rounded-full bg-violet-600" />
-      <div className="h-2 w-2 rounded-full bg-violet-600" />
-      <div className="h-[2px] flex-1 rounded-full bg-violet-600" />
+      <div className="h-[2px] flex-1 rounded-full bg-primary" />
+      <div className="h-2 w-2 rounded-full bg-primary" />
+      <div className="h-[2px] flex-1 rounded-full bg-primary" />
     </div>
   );
 }
