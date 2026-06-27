@@ -70,6 +70,19 @@ const fillPatchBaseSchema = z.object({
   type: courseBlockTypeSchema,
 });
 
+const quizFillSchema = z
+  .object({
+    type: z.literal("quiz"),
+    content: z.string().min(1),
+    quizOptions: z.array(z.string()).min(2),
+    quizCorrect: z.number().int().nonnegative(),
+    quizExplanation: z.string(),
+  })
+  .refine((q) => q.quizCorrect < q.quizOptions.length, {
+    message: "quizCorrect out of range",
+    path: ["quizCorrect"],
+  });
+
 const quizItemSchema = z.object({
   content: z.string().min(1),
   quizOptions: z.array(z.string()).min(2),
@@ -181,19 +194,22 @@ function buildFillPatch(req: FillRequest): Partial<CourseBlock> {
       };
       break;
 
-    case "quiz":
+    case "quiz": {
+      const quizOptions = [
+        `${topic} là khái niệm cơ bản trong ${req.subject}`,
+        `${topic} không liên quan đến ${req.subject}`,
+        `${topic} chỉ áp dụng trong điều kiện đặc biệt`,
+      ];
       patch = {
         type: "quiz",
         content: `Câu nào sau đây mô tả đúng nhất về ${topic}?`,
-        quizOptions: [
-          `${topic} là khái niệm cơ bản trong ${req.subject}`,
-          `${topic} không liên quan đến ${req.subject}`,
-          `${topic} chỉ áp dụng trong điều kiện đặc biệt`,
-        ],
-        quizCorrect: 0,
+        quizOptions,
+        quizCorrect: djb2(req.item.id + req.topic) % quizOptions.length,
         quizExplanation: `Đúng! ${topic} là một khái niệm cơ bản và quan trọng trong môn ${req.subject} ${req.grade}.`,
       };
+      quizFillSchema.parse(patch);
       break;
+    }
 
     case "flashcards":
       patch = {
