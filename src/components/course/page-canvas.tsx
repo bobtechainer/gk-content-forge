@@ -2,15 +2,14 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { Plus, Move, Lock, CheckCircle2, ArrowRight, RotateCcw } from "lucide-react";
-import type { CourseBlock, CourseBlockType, BlockLayout, LessonSection } from "@/stores/course";
+import { Plus, Move, Lock, CheckCircle2, ArrowRight } from "lucide-react";
+import type { CourseBlock, CourseBlockType, LessonSection } from "@/stores/course";
 import { partitionSections } from "@/stores/course";
 import { viewportMaxWidth, type Viewport } from "@/lib/preview/viewport";
 import { BlockCard } from "./block-card";
-import { VideoEmbed } from "./block-media";
-import { CodeHighlight, MathPreview } from "./block-render";
-import { HtmlEmbed } from "./html-embed";
 import { BLOCK_TYPES } from "./course-palette";
+import { LayoutWrapper } from "@/components/blocks/block-views";
+import { BlockRenderer } from "@/components/blocks/block-renderer";
 import { cn } from "@/lib/utils";
 
 /* ─── Scroll-reveal wrapper ────────────────────────────────────── */
@@ -40,152 +39,6 @@ function ScrollReveal({ children, animation, disabled }: { children: React.React
     >
       {children}
     </motion.div>
-  );
-}
-
-/* ─── Layout wrapper ───────────────────────────────────────────── */
-
-function LayoutWrapper({ layout, children }: { layout?: BlockLayout; children: React.ReactNode }) {
-  switch (layout) {
-    case "full":
-      return <div className="w-full">{children}</div>;
-    case "centered":
-    default:
-      return <div className="mx-auto max-w-2xl">{children}</div>;
-  }
-}
-
-/* ─── Interactive preview blocks (Brilliant-style) ─────────────── */
-
-function QuizPreview({ block, onResult }: { block: CourseBlock; onResult?: (correct: boolean) => void }) {
-  const options = block.quizOptions ?? [];
-  const correct = block.quizCorrect ?? 0;
-  const [picked, setPicked] = useState<number | null>(null);
-  const answered = picked !== null;
-
-  const pick = (i: number) => { setPicked(i); onResult?.(i === correct); };
-  const retry = () => { setPicked(null); onResult?.(false); };
-
-  return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <p className="mb-3 text-base font-semibold text-foreground">{block.content || "Câu hỏi"}</p>
-      <div className="space-y-2">
-        {options.map((opt, i) => {
-          const state = !answered ? "idle" : i === correct ? "correct" : i === picked ? "wrong" : "muted";
-          return (
-            <button key={i} type="button" disabled={answered} onClick={() => pick(i)}
-              className={cn("flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition",
-                state === "idle" && "border-border hover:border-primary hover:bg-accent",
-                state === "correct" && "border-callout-tip-line bg-callout-tip text-callout-tip-fg",
-                state === "wrong" && "border-callout-danger-line bg-callout-danger text-callout-danger-fg",
-                state === "muted" && "border-border opacity-60")}>
-              <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
-                state === "correct" && "border-callout-tip-line bg-success text-white",
-                state === "wrong" && "border-callout-danger-line bg-destructive text-white",
-                (state === "idle" || state === "muted") && "border-border text-muted-foreground")}>
-                {state === "correct" ? "✓" : state === "wrong" ? "✕" : String.fromCharCode(65 + i)}
-              </span>
-              <span className="flex-1">{opt}</span>
-            </button>
-          );
-        })}
-      </div>
-      <AnimatePresence>
-        {answered && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className={cn("mt-3 rounded-xl border p-3 text-sm",
-              picked === correct ? "border-callout-tip-line bg-callout-tip text-callout-tip-fg" : "border-callout-warn-line bg-callout-warn text-callout-warn-fg")}>
-            <p className="font-semibold">{picked === correct ? "🎉 Chính xác!" : "💡 Chưa đúng — cùng xem lại nhé"}</p>
-            {block.quizExplanation && <p className="mt-1 text-[13px] leading-relaxed">{block.quizExplanation}</p>}
-            <button type="button" onClick={retry}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:bg-muted/40 hover:shadow active:scale-95">
-              <RotateCcw className="h-3.5 w-3.5" /> Thử lại
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* ─── Preview Block Renderer ───────────────────────────────────── */
-
-function PreviewBlock({ block, onQuizResult }: { block: CourseBlock; onQuizResult?: (correct: boolean) => void }) {
-  const layout = block.layout ?? "centered";
-
-  // Section markers are consumed by the journey stepper, never rendered inline.
-  if (block.type === "section") return null;
-
-  if (block.type === "divider") {
-    return <hr className="my-6 border-border/30" />;
-  }
-
-  if (block.type === "columns") {
-    const count = block.columnCount ?? 2;
-    const children = block.columnChildren ?? [];
-    return (
-      <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${count}, 1fr)` }}>
-        {Array.from({ length: count }).map((_, colIdx) => (
-          <div key={colIdx} className="space-y-4">
-            {(children[colIdx] ?? []).map((child) => (
-              <PreviewBlock key={child.id} block={child} />
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  const inner = (() => {
-    switch (block.type) {
-      case "text":
-        return <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: block.content || "<p class='text-muted-foreground italic'>Chưa có nội dung</p>" }} />;
-      case "image":
-        return block.content ? (
-          <figure>
-            <img src={block.content} alt={block.caption || ""} className="w-full rounded-lg" />
-            {block.caption && <figcaption className="mt-2 text-center text-xs text-muted-foreground">{block.caption}</figcaption>}
-          </figure>
-        ) : <div className="rounded-lg bg-muted/30 py-12 text-center text-sm text-muted-foreground">📷 Ảnh chưa có</div>;
-      case "video":
-        return <VideoEmbed src={block.content} />;
-      case "callout": {
-        const variant = block.calloutVariant ?? "info";
-        const styles: Record<string, string> = {
-          info: "border-callout-info-line bg-callout-info text-callout-info-fg",
-          tip: "border-callout-tip-line bg-callout-tip text-callout-tip-fg",
-          warning: "border-callout-warn-line bg-callout-warn text-callout-warn-fg",
-          danger: "border-callout-danger-line bg-callout-danger text-callout-danger-fg",
-        };
-        return <div className={cn("rounded-xl border p-4 text-sm", styles[variant])}>{block.content || "..."}</div>;
-      }
-      case "embed":
-        return (
-          <div className="flex items-center gap-3 rounded-lg border bg-callout-tip/30 p-4">
-            <span className="text-xl">📎</span>
-            <div>
-              <p className="font-medium text-foreground">{block.embedTitle || "Học liệu"}</p>
-              <p className="text-xs text-muted-foreground">{block.embedType}</p>
-            </div>
-          </div>
-        );
-      case "code":
-        return <CodeHighlight code={block.content} language={block.codeLanguage} />;
-      case "math":
-        return <MathPreview content={block.content} />;
-      case "quiz":
-        return <QuizPreview block={block} onResult={onQuizResult} />;
-      case "html":
-        return <HtmlEmbed html={block.content} minHeight={360} />;
-      default:
-        return <div className="text-sm text-muted-foreground">{block.content}</div>;
-    }
-  })();
-
-  return (
-    <LayoutWrapper layout={layout}>
-      {inner}
-    </LayoutWrapper>
   );
 }
 
@@ -251,8 +104,9 @@ function PreviewJourney({ blocks, lessonTitle, viewport }: { blocks: CourseBlock
               <div className="space-y-6">
                 {section.blocks.map((block) => (
                   <ScrollReveal key={block.id} animation={block.animation}>
-                    <PreviewBlock
+                    <BlockRenderer
                       block={block}
+                      mode="preview"
                       onQuizResult={
                         block.type === "quiz"
                           ? (correct) => setResults((r) => ({ ...r, [block.id]: correct }))
