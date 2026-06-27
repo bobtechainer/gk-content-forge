@@ -316,6 +316,11 @@ function CustomEditor({ courseId, onClose }: CustomEditorProps) {
             Màu này không đạt chuẩn tương phản WCAG AA. Vui lòng chọn màu khác.
           </p>
         )}
+        {!applyBlocked && resolvedAccent !== accentSeed && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Đã tự chỉnh sang {resolvedAccent} để đủ tương phản
+          </p>
+        )}
         {/* Ramp preview swatches */}
         <div className="mt-2 flex gap-1">
           {([
@@ -461,7 +466,7 @@ export function ThemePanel({ courseId }: ThemePanelProps) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[380px] overflow-y-auto sm:max-w-[380px] @media(prefers-reduced-motion:reduce):transition-none"
+        className="w-[380px] overflow-y-auto sm:max-w-[380px] motion-reduce:transition-none"
       >
         <SheetHeader className="mb-4">
           <SheetTitle>Giao diện khoá học</SheetTitle>
