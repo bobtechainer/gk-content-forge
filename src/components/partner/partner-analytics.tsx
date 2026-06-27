@@ -29,6 +29,7 @@ import { useContent } from "@/stores/content";
 import { PageFrame } from "../shared/page-frame";
 import { PageSkeleton } from "../shared/page-skeleton";
 import { StatCard } from "../shared/stat-card";
+import { RealActivityChart } from "../shared/real-activity-chart";
 
 // ---- Dữ liệu mock cho dashboard đối tác (prototype) ----
 
@@ -137,6 +138,9 @@ export function PartnerAnalyticsPage() {
 
         {/* --- Tab 1: Độ phủ & khai thác --- */}
         <TabsContent value="reach" className="space-y-4">
+          {/* Biểu đồ hoạt động học thật — dữ liệu cục bộ từ trình duyệt */}
+          <RealActivityChart />
+
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <StatCard
               label="Cơ sở giáo dục sử dụng"
@@ -162,6 +166,9 @@ export function PartnerAnalyticsPage() {
             <CardHeader>
               <CardTitle>Lượt mở học liệu theo thời gian</CardTitle>
               <CardDescription>Biến động khai thác trên toàn hệ thống.</CardDescription>
+              <span className="mt-1 inline-block rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                Dữ liệu mẫu (demo)
+              </span>
             </CardHeader>
             <CardContent>
               <div className="h-64 w-full">

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useContent } from "@/stores/content";
 import { partitionSections } from "@/stores/course";
 import { useAttempts } from "@/stores/attempts";
+import { useAnalyticsEvents } from "@/stores/analytics-events";
 import type { LessonSection } from "@/stores/course";
 import type { PublishedLesson } from "@/lib/publish/snapshot";
 import { BlockRenderer } from "@/components/blocks/block-renderer";
@@ -120,6 +121,12 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
     saveProgress(contentId, { completed, currentSectionIdx, currentLessonIdx });
   }, [contentId, completed, currentSectionIdx, currentLessonIdx]);
 
+  // Ghi nhận sự kiện mở bài học (lesson_open) một lần khi mount
+  useEffect(() => {
+    useAnalyticsEvents.getState().record({ type: "lesson_open", courseId: contentId, at: Date.now() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentId]);
+
   const overallPct = totalSections > 0 ? Math.round((completed.length / totalSections) * 100) : 0;
   const courseTheme = useCourseTheme((s) => s.byCourse[contentId]);
   const themeVars = getResolvedThemeVars(courseTheme) as React.CSSProperties;
@@ -138,8 +145,9 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
       if (lessonId) {
         useAttempts.getState().record(lessonId, blockId, correct);
       }
+      useAnalyticsEvents.getState().record({ type: "quiz_answer", courseId: contentId, at: Date.now(), correct });
     },
-    [currentLessonData],
+    [currentLessonData, contentId],
   );
 
   // Kiểm tra section hiện tại đã "pass" chưa:
@@ -190,6 +198,7 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
         setQuizResults({});
         toast.success("Đã hoàn thành bài học, chuyển sang bài tiếp theo.");
       } else {
+        useAnalyticsEvents.getState().record({ type: "lesson_complete", courseId: contentId, at: Date.now() });
         toast.success("Bạn đã hoàn thành toàn bộ khoá học!");
         setShowCertificate(true);
       }

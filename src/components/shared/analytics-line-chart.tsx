@@ -40,6 +40,9 @@ export function AnalyticsLineChart() {
         <div>
           <CardTitle>Lượt xem theo thời gian</CardTitle>
           <CardDescription>Biến động lưu lượng học liệu của bạn.</CardDescription>
+          <span className="mt-1 inline-block rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            Dữ liệu mẫu (demo)
+          </span>
         </div>
         <div className="flex rounded-lg border border-border p-0.5">
           {RANGES.map((r) => (
