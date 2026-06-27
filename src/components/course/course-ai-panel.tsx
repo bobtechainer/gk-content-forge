@@ -1,103 +1,284 @@
 import { useState } from "react";
-import { Sparkles, Send, Plus, Loader2, BookOpen, Wand2 } from "lucide-react";
+import {
+  Sparkles,
+  Wand2,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { aiClient } from "@/lib/ai";
+import { useStoryboard } from "@/stores/storyboard";
+import { useContent } from "@/stores/content";
 
-export function CourseAiPanel({ courseId: _courseId }: { courseId?: string }) {
-  const [prompt, setPrompt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
+/* ─── Props ─────────────────────────────────────────────────────── */
 
-  const handleSend = () => {
-    if (!prompt.trim()) return;
-    setMessages((prev) => [...prev, { role: "user", text: prompt }]);
-    setIsLoading(true);
-    setPrompt("");
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "Tôi đã tạo 3 block nội dung cho bài học này: 1 đoạn giới thiệu, 1 hình ảnh minh họa, và 1 callout tóm tắt. Bạn có thể chỉnh sửa trực tiếp trên canvas.",
-        },
-      ]);
-      setIsLoading(false);
-    }, 1500);
-  };
+interface CourseAiPanelProps {
+  courseId?: string;
+  lessonId?: string;
+}
+
+/* ─── Block type label map ──────────────────────────────────────── */
+
+const BLOCK_TYPE_LABELS: Record<string, string> = {
+  text: "Văn bản",
+  image: "Hình ảnh",
+  video: "Video",
+  callout: "Callout",
+  divider: "Ngăn cách",
+  embed: "Nhúng",
+  code: "Code",
+  math: "Toán",
+  columns: "Cột",
+  quiz: "Câu hỏi",
+  html: "HTML",
+  section: "Phần",
+  accordion: "Accordion",
+  process: "Quy trình",
+  flashcards: "Thẻ nhớ",
+};
+
+/* ─── Component ─────────────────────────────────────────────────── */
+
+export function CourseAiPanel({ courseId, lessonId }: CourseAiPanelProps) {
+  const [topic, setTopic] = useState("");
+  const [objectives, setObjectives] = useState("");
+
+  const setStoryboard = useStoryboard((s) => s.setStoryboard);
+  const updateItem = useStoryboard((s) => s.updateItem);
+  const removeItem = useStoryboard((s) => s.removeItem);
+  const moveItem = useStoryboard((s) => s.moveItem);
+  const setStatus = useStoryboard((s) => s.setStatus);
+  const storyboard = useStoryboard((s) => (lessonId ? s.byLesson[lessonId] : undefined));
+  const status = useStoryboard((s) => (lessonId ? (s.status[lessonId] ?? "idle") : "idle"));
+
+  const contentItem = useContent((s) => s.items.find((x) => x.id === courseId));
+  const subject = contentItem?.subject ?? "";
+  const grade = contentItem?.grade ?? "";
+
+  const isPlanning = status === "planning";
+  const isReady = status === "ready" || status === "done";
+  const isFilling = status === "filling";
+
+  /* ─── Tạo dàn ý ─────────────────────────────────────────────── */
+
+  async function handleGenerateStoryboard() {
+    if (!lessonId || !topic.trim()) return;
+    setStatus(lessonId, "planning");
+    try {
+      const sb = await aiClient.generateStoryboard({
+        subject,
+        grade,
+        topic: topic.trim(),
+        objectives: objectives.trim() || undefined,
+      });
+      setStoryboard(lessonId, sb);
+      setStatus(lessonId, "ready");
+    } catch {
+      setStatus(lessonId, "idle");
+    }
+  }
+
+  /* ─── Tạo nội dung từ dàn ý (seam for Task 3) ───────────────── */
+
+  // TODO Task 3: replace with real fill loop using aiClient.fillBlock per item
+  async function handleFill() {
+    if (!lessonId) return;
+    setStatus(lessonId, "filling");
+    // Placeholder: signal done without real fill — Task 3 implements the loop
+    setStatus(lessonId, "done");
+  }
 
   return (
     <div className="flex h-full flex-col">
+      {/* ─── Header ──────────────────────────────────────────── */}
       <div className="flex items-center gap-2 border-b px-3 py-3">
         <Sparkles className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">AI Soạn bài</h3>
       </div>
 
-      {/* Quick actions */}
-      <div className="space-y-1.5 border-b p-3">
-        <Button variant="outline" size="sm" className="w-full justify-start gap-2 text-xs font-medium text-primary hover:bg-brand-50">
-          <Wand2 className="h-3.5 w-3.5" />
-          Tạo dàn ý bài học
-        </Button>
-        <Button variant="outline" size="sm" className="w-full justify-start gap-2 text-xs font-medium text-callout-tip-fg hover:bg-callout-tip">
-          <BookOpen className="h-3.5 w-3.5" />
-          Soạn nội dung từ chủ đề
-        </Button>
-      </div>
+      <div className="flex-1 overflow-y-auto">
+        {/* ─── Intake form ─────────────────────────────────── */}
+        <div className="space-y-3 border-b p-3">
+          {/* Subject / Grade — read-only prefill */}
+          {(subject || grade) && (
+            <div className="flex gap-1.5">
+              {subject && (
+                <Badge variant="secondary" className="text-xs font-normal">
+                  {subject}
+                </Badge>
+              )}
+              {grade && (
+                <Badge variant="secondary" className="text-xs font-normal">
+                  {grade}
+                </Badge>
+              )}
+            </div>
+          )}
 
-      {/* Messages */}
-      <div className="flex-1 space-y-3 overflow-y-auto p-3">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+          {/* Topic */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">
+              Chủ đề bài học <span className="text-destructive">*</span>
+            </label>
+            <Input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Vd: Phân số, Quang hợp, Cách mạng tháng Tám..."
+              className="h-8 text-xs"
+              disabled={isPlanning || isFilling}
+            />
+          </div>
+
+          {/* Objectives */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">
+              Mục tiêu học tập{" "}
+              <span className="text-muted-foreground">(không bắt buộc)</span>
+            </label>
+            <Textarea
+              value={objectives}
+              onChange={(e) => setObjectives(e.target.value)}
+              placeholder="Học sinh sẽ làm được gì sau bài học này?"
+              className="min-h-[60px] text-xs"
+              disabled={isPlanning || isFilling}
+            />
+          </div>
+
+          {/* Tạo dàn ý */}
+          <Button
+            size="sm"
+            className="w-full gap-2 text-xs"
+            onClick={handleGenerateStoryboard}
+            disabled={!topic.trim() || isPlanning || isFilling || !lessonId}
+          >
+            {isPlanning ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Đang tạo dàn ý...
+              </>
+            ) : (
+              <>
+                <Wand2 className="h-3.5 w-3.5" />
+                Tạo dàn ý
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* ─── Storyboard list ─────────────────────────────── */}
+        {storyboard && isReady && (
+          <div className="space-y-3 p-3">
+            {storyboard.sections.map((section) => (
+              <div key={section.id} className="space-y-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {section.title}
+                </p>
+                {section.items.map((item, itemIdx) => (
+                  <div
+                    key={item.id}
+                    className="rounded-md border bg-card p-2 space-y-1.5"
+                  >
+                    {/* Block type chip + move/remove controls */}
+                    <div className="flex items-center gap-1.5">
+                      <Badge className="shrink-0 text-[10px] font-medium">
+                        {BLOCK_TYPE_LABELS[item.blockType] ?? item.blockType}
+                      </Badge>
+                      <div className="ml-auto flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          aria-label="Di chuyển lên"
+                          disabled={itemIdx === 0}
+                          onClick={() => moveItem(lessonId!, section.id, item.id, "up")}
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30"
+                        >
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Di chuyển xuống"
+                          disabled={itemIdx === section.items.length - 1}
+                          onClick={() => moveItem(lessonId!, section.id, item.id, "down")}
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30"
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Xóa mục"
+                          onClick={() => removeItem(lessonId!, section.id, item.id)}
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Intent — editable */}
+                    <Input
+                      value={item.intent}
+                      onChange={(e) =>
+                        updateItem(lessonId!, section.id, item.id, {
+                          intent: e.target.value,
+                        })
+                      }
+                      aria-label={`Ý định của mục ${item.id}`}
+                      placeholder="Ý định của block..."
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state when no lesson selected */}
+        {!lessonId && (
+          <div className="flex flex-col items-center justify-center py-8 text-center px-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Mô tả nội dung bài học để AI tạo blocks tự động
+              Chọn bài học để bắt đầu dùng AI soạn nội dung
             </p>
           </div>
         )}
-        {messages.map((msg, i) => (
-          <div key={i} className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}>
-            <div className={msg.role === "user"
-              ? "max-w-[90%] rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground"
-              : "max-w-[90%] rounded-lg border bg-muted/50 px-3 py-2 text-xs text-foreground"
-            }>
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Đang tạo...
-            </div>
+
+        {/* Empty state when lesson selected but no storyboard yet */}
+        {lessonId && !storyboard && status === "idle" && (
+          <div className="flex flex-col items-center justify-center py-6 text-center px-3">
+            <p className="text-xs text-muted-foreground">
+              Nhập chủ đề và bấm <strong>Tạo dàn ý</strong> để bắt đầu
+            </p>
           </div>
         )}
       </div>
 
-      {/* Input */}
+      {/* ─── Footer: Tạo nội dung từ dàn ý ──────────────────────── */}
       <div className="border-t p-3">
-        <div className="flex items-center gap-1.5">
-          <button type="button" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-muted-foreground hover:bg-muted">
-            <Plus className="h-4 w-4" />
-          </button>
-          <Input
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Mô tả nội dung bài học..."
-            className="h-8 text-xs"
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          />
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!prompt.trim() || isLoading}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary-hover disabled:opacity-50"
-          >
-            <Sparkles className="h-4 w-4" />
-          </button>
-        </div>
+        <Button
+          size="sm"
+          className="w-full gap-2 bg-primary text-xs text-primary-foreground hover:bg-primary-hover"
+          disabled={!isReady || isFilling || !lessonId}
+          onClick={handleFill}
+        >
+          {isFilling ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Đang tạo nội dung...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-3.5 w-3.5" />
+              Tạo nội dung từ dàn ý
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

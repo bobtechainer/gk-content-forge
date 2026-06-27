@@ -376,7 +376,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
             <div className="relative hidden shrink-0 lg:flex">
             {showRightPanel && (
               <div className="w-[280px] border-l border-border">
-                <CourseAiPanel courseId={id} />
+                <CourseAiPanel courseId={id} lessonId={activeLessonId ?? undefined} />
               </div>
             )}
             {/* Toggle tab gắn vào cạnh trái của panel */}
