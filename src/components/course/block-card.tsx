@@ -20,6 +20,7 @@ import { useSession } from "@/stores/session";
 import { MATERIAL_TYPE_LABELS } from "@/lib/taxonomy";
 import { MediaUploadField, VideoEmbed } from "./block-media";
 import { CodeHighlight, MathPreview } from "./block-render";
+import { BubbleToolbar } from "@/components/blocks/bubble-toolbar";
 import { HtmlEmbed } from "./html-embed";
 import { WIDGET_TEMPLATES } from "@/lib/widgets";
 import { cn } from "@/lib/utils";
@@ -213,7 +214,12 @@ function TextBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
     onUpdate: ({ editor: e }) => onUpdate({ content: e.getHTML() }),
     editorProps: { attributes: { class: "prose prose-sm max-w-none px-4 py-3 outline-none min-h-[60px] text-foreground" } },
   });
-  return <EditorContent editor={editor} onClick={(e) => e.stopPropagation()} />;
+  return (
+    <>
+      <BubbleToolbar editor={editor} />
+      <EditorContent editor={editor} onClick={(e) => e.stopPropagation()} />
+    </>
+  );
 }
 
 function ImageBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
