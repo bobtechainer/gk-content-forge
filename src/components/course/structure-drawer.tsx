@@ -223,6 +223,7 @@ function LessonNode({
       <BookOpen className={cn("h-3 w-3 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
       {/* Publish state dot */}
       <span
+        role="img"
         className={cn("h-2 w-2 shrink-0 rounded-full", PUBLISH_DOT[publishState].className)}
         aria-label={PUBLISH_DOT[publishState].label}
         title={PUBLISH_DOT[publishState].label}

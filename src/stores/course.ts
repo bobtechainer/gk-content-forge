@@ -443,27 +443,26 @@ export const useCourse = create<CourseState>()(
       setActiveLesson: (lessonId) => set({ activeLessonId: lessonId }),
 
       // ─── Publish state per lesson ─────────────────
-      publishLesson: (courseId, lessonId) => {
-        const data = get().courseData[courseId];
-        if (!data) return;
-        const lesson = data.lessons.find((l) => l.id === lessonId);
-        if (!lesson) return;
-        const now = Date.now();
-        const hash = hashBlocks(lesson.blocks);
-        set({
-          courseData: {
-            ...get().courseData,
-            [courseId]: {
-              ...data,
-              lessons: data.lessons.map((l) =>
-                l.id === lessonId
-                  ? { ...l, publishedAt: now, publishedHash: hash }
-                  : l,
-              ),
+      publishLesson: (courseId, lessonId) =>
+        set((state) => {
+          const data = state.courseData[courseId];
+          if (!data) return {};
+          const lesson = data.lessons.find((l) => l.id === lessonId);
+          if (!lesson) return {};
+          const now = Date.now();
+          const hash = hashBlocks(lesson.blocks);
+          return {
+            courseData: {
+              ...state.courseData,
+              [courseId]: {
+                ...data,
+                lessons: data.lessons.map((l) =>
+                  l.id === lessonId ? { ...l, publishedAt: now, publishedHash: hash } : l,
+                ),
+              },
             },
-          },
-        });
-      },
+          };
+        }),
 
       getLessonPublishState: (courseId, lessonId) => {
         const data = get().courseData[courseId];

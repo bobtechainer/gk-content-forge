@@ -214,6 +214,7 @@ function SortableLessonItem({
 
       {/* Publish state dot */}
       <span
+        role="img"
         className={cn("absolute top-1 right-1 h-2 w-2 rounded-full", PUBLISH_DOT[publishState].className)}
         aria-label={PUBLISH_DOT[publishState].label}
         title={PUBLISH_DOT[publishState].label}

@@ -291,7 +291,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 onClick={() => publishLesson(id, activeLessonId)}
                 title="Xuất bản nội dung hiện tại của bài này"
               >
-                Xuất bản thay đổi
+                {activeLessonPublishState === "never" ? "Xuất bản bài" : "Xuất bản thay đổi"}
               </Button>
             )}
             <Button size="sm" className="h-8 bg-primary text-xs text-white hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>
