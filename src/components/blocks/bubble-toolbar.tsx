@@ -105,10 +105,11 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
     <BubbleMenu
       editor={editor}
       className="flex items-center gap-0.5 rounded-lg border bg-card px-1 py-0.5 shadow-md"
+      shouldShow={({ state }) => !state.selection.empty}
     >
-      {buttons.map((btn, idx) => (
+      {buttons.map((btn) => (
         <ToolbarButton
-          key={idx}
+          key={btn.label}
           isActive={btn.isActive}
           onClick={btn.onClick}
           label={btn.label}

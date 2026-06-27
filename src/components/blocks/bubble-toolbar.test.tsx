@@ -2,13 +2,14 @@
 import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 
 // BubbleMenu from @tiptap/react/menus uses a portal and real ProseMirror editor
 // to position itself. In jsdom there is no selection API, so we mock BubbleMenu
 // to render its children directly, allowing us to assert button labels.
 vi.mock("@tiptap/react/menus", () => ({
-  BubbleMenu: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  BubbleMenu: ({ children, className }: { children: ReactNode; className?: string }) => (
     <div data-testid="bubble-menu" className={className}>
       {children}
     </div>
