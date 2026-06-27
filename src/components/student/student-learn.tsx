@@ -272,7 +272,7 @@ export function StudentLearnPage({ contentId }: { contentId: string }) {
 
       {/* Chứng nhận hoàn thành khoá học */}
       {showCertificate && (
-        <Certificate courseTitle={lessonTitle} theme={courseTheme} />
+        <Certificate courseTitle={item?.title ?? ""} theme={courseTheme} />
       )}
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">

@@ -21,9 +21,10 @@ export function Certificate({
   return (
     <div data-course-theme style={themeVars}>
       {/* In chứng nhận button — ẩn khi in */}
-      <div className="no-print mb-4 flex justify-end">
+      <div className="mb-4 flex justify-end">
         <Button
           variant="outline"
+          className="no-print"
           onClick={() => window.print()}
           aria-label="In chứng nhận"
         >
