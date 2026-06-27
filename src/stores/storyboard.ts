@@ -128,11 +128,8 @@ export const useStoryboard = create<StoryboardState>()(
       },
 
       clear: (lessonId) => {
-        const { byLesson, status } = get();
-        const nextByLesson = { ...byLesson };
-        const nextStatus = { ...status };
-        delete nextByLesson[lessonId];
-        delete nextStatus[lessonId];
+        const { [lessonId]: _bl, ...nextByLesson } = get().byLesson;
+        const { [lessonId]: _st, ...nextStatus } = get().status;
         set({ byLesson: nextByLesson, status: nextStatus });
       },
     }),

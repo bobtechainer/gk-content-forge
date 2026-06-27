@@ -176,6 +176,11 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
       <div className="flex items-center gap-2 px-3 py-1.5">
         <Icon className="h-3 w-3" style={{ color: meta.color }} />
         <span className="text-[10px] font-medium text-muted-foreground">{meta.label}</span>
+        {block.aiGenerated && (
+          <span className="ml-1 rounded px-1 py-0.5 text-[9px] font-medium bg-brand-50 text-primary">
+            AI (demo)
+          </span>
+        )}
         {block.type !== "columns" && block.type !== "divider" && block.type !== "section" && (
           <span className="ml-auto text-[9px] text-muted-foreground/50">{layout === "full" ? "Rộng" : "Giữa"}</span>
         )}

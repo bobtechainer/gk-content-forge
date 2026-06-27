@@ -71,6 +71,8 @@ export interface CourseBlock {
   embedUrl?: string;
   /** Embed: aspect ratio for the iframe */
   embedAspect?: "16:9" | "4:3" | "auto";
+  /** Marks this block as AI-generated (for display badge) */
+  aiGenerated?: boolean;
 }
 
 /* ─── Lesson / Chapter / Course ────────────────────────────────── */

@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { aiClient } from "@/lib/ai";
 import { useStoryboard } from "@/stores/storyboard";
 import { useContent } from "@/stores/content";
+import { useCourse } from "@/stores/course";
+import { fillStoryboard } from "@/lib/ai/fill-orchestrator";
 
 /* ─── Props ─────────────────────────────────────────────────────── */
 
@@ -47,6 +49,7 @@ const BLOCK_TYPE_LABELS: Record<string, string> = {
 export function CourseAiPanel({ courseId, lessonId }: CourseAiPanelProps) {
   const [topic, setTopic] = useState("");
   const [objectives, setObjectives] = useState("");
+  const [progress, setProgress] = useState("");
 
   const setStoryboard = useStoryboard((s) => s.setStoryboard);
   const updateItem = useStoryboard((s) => s.updateItem);
@@ -83,14 +86,26 @@ export function CourseAiPanel({ courseId, lessonId }: CourseAiPanelProps) {
     }
   }
 
-  /* ─── Tạo nội dung từ dàn ý (seam for Task 3) ───────────────── */
+  /* ─── Tạo nội dung từ dàn ý ─────────────────────────────────── */
 
-  // TODO Task 3: replace with real fill loop using aiClient.fillBlock per item
   async function handleFill() {
-    if (!lessonId) return;
+    if (!lessonId || !storyboard || status === "filling" || status === "done") return;
     setStatus(lessonId, "filling");
-    // Placeholder: signal done without real fill — Task 3 implements the loop
-    setStatus(lessonId, "done");
+    setProgress("");
+    try {
+      await fillStoryboard({
+        storyboard,
+        meta: { subject, grade, topic },
+        addBlock: (type) => useCourse.getState().addBlock(courseId!, lessonId!, type),
+        updateBlock: (id, patch) => useCourse.getState().updateBlock(courseId!, lessonId!, id, patch),
+        onProgress: (done, total) => {
+          setProgress(`${done}/${total}`);
+        },
+      });
+      setStatus(lessonId, "done");
+    } catch {
+      setStatus(lessonId, "ready");
+    }
   }
 
   return (
@@ -264,13 +279,13 @@ export function CourseAiPanel({ courseId, lessonId }: CourseAiPanelProps) {
         <Button
           size="sm"
           className="w-full gap-2 bg-primary text-xs text-primary-foreground hover:bg-primary-hover"
-          disabled={!isReady || isFilling || !lessonId}
+          disabled={!isReady || isFilling || status === "done" || !lessonId}
           onClick={handleFill}
         >
           {isFilling ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Đang tạo nội dung...
+              {progress ? `Đang tạo ${progress}...` : "Đang tạo nội dung..."}
             </>
           ) : (
             <>
