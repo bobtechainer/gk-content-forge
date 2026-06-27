@@ -11,6 +11,9 @@ import {
   HtmlView,
   QuizView,
   ColumnsView,
+  AccordionView,
+  ProcessView,
+  FlashcardsView,
 } from "./block-views";
 
 export interface BlockRendererProps {
@@ -56,6 +59,12 @@ export function BlockRenderer({ block, mode, onQuizResult }: BlockRendererProps)
         return <QuizView block={block} onResult={onQuizResult} />;
       case "html":
         return <HtmlView block={block} />;
+      case "accordion":
+        return <AccordionView block={block} />;
+      case "process":
+        return <ProcessView block={block} />;
+      case "flashcards":
+        return <FlashcardsView block={block} />;
       default:
         return <div className="text-sm text-muted-foreground">{block.content}</div>;
     }

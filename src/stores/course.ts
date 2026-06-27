@@ -16,7 +16,10 @@ export type CourseBlockType =
   | "columns"
   | "quiz"
   | "html"
-  | "section";
+  | "section"
+  | "accordion"
+  | "process"
+  | "flashcards";
 
 export type CalloutVariant = "info" | "tip" | "warning" | "danger";
 export type BlockLayout = "centered" | "full";
@@ -56,6 +59,17 @@ export interface CourseBlock {
   quizExplanation?: string;
   /* html block: `content` holds raw HTML rendered inside a sandboxed iframe. */
   /* section block: `content` holds the section/part title (gates progression). */
+
+  /** Accordion block: list of collapsible items */
+  accordionItems?: { id: string; title: string; body: string }[];
+  /** Process block: ordered steps */
+  processSteps?: { id: string; title: string; body: string }[];
+  /** Flashcards block: front/back card pairs */
+  flashcards?: { id: string; front: string; back: string }[];
+  /** Embed: direct URL for PDF or web page (bypasses material picker) */
+  embedUrl?: string;
+  /** Embed: aspect ratio for the iframe */
+  embedAspect?: "16:9" | "4:3" | "auto";
 }
 
 /* ─── Lesson / Chapter / Course ────────────────────────────────── */
@@ -151,6 +165,12 @@ function defaultBlock(type: CourseBlockType): CourseBlock {
       };
     case "section":
       return { ...base, animation: "none", content: "Phần mới" };
+    case "accordion":
+      return { ...base, accordionItems: [{ id: `item_${Date.now()}`, title: "Mục 1", body: "" }] };
+    case "process":
+      return { ...base, processSteps: [{ id: `step_${Date.now()}`, title: "Bước 1", body: "" }] };
+    case "flashcards":
+      return { ...base, flashcards: [{ id: `card_${Date.now()}`, front: "Mặt trước", back: "Mặt sau" }] };
     default:
       return base;
   }
@@ -175,6 +195,9 @@ export function cloneBlockDeep(block: CourseBlock): CourseBlock {
     id: makeId("blk"),
     columnChildren: block.columnChildren?.map((col) => col.map((child) => cloneBlockDeep(child))),
     quizOptions: block.quizOptions ? [...block.quizOptions] : undefined,
+    accordionItems: block.accordionItems ? block.accordionItems.map((item) => ({ ...item })) : undefined,
+    processSteps: block.processSteps ? block.processSteps.map((step) => ({ ...step })) : undefined,
+    flashcards: block.flashcards ? block.flashcards.map((card) => ({ ...card })) : undefined,
   };
 }
 

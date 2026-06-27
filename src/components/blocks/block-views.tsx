@@ -7,6 +7,12 @@ import { VideoEmbed } from "@/components/course/block-media";
 import { CodeHighlight, MathPreview } from "@/components/course/block-render";
 import { HtmlEmbed } from "@/components/course/html-embed";
 import { cn } from "@/lib/utils";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 /* ─── Layout wrapper ───────────────────────────────────────────── */
 
@@ -80,6 +86,25 @@ export function CalloutView({ block }: { block: CourseBlock }) {
 /* ─── Embed view ───────────────────────────────────────────────── */
 
 export function EmbedView({ block }: { block: CourseBlock }) {
+  if (block.embedUrl) {
+    const aspect = block.embedAspect ?? "16:9";
+    const paddingTop = aspect === "16:9" ? "56.25%" : aspect === "4:3" ? "75%" : undefined;
+    const height = aspect === "auto" ? "600px" : undefined;
+    return (
+      <div
+        className="w-full overflow-hidden rounded-xl border border-border bg-muted/20"
+        style={paddingTop ? { position: "relative", paddingTop } : { height }}
+      >
+        <iframe
+          src={block.embedUrl}
+          title={block.embedTitle || "Embed"}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          className="h-full w-full border-0"
+          style={paddingTop ? { position: "absolute", inset: 0, width: "100%", height: "100%" } : {}}
+        />
+      </div>
+    );
+  }
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-callout-tip/30 p-4">
       <span className="text-xl">📎</span>
@@ -210,6 +235,113 @@ export function ColumnsView({
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ─── Accordion view ───────────────────────────────────────────── */
+
+export function AccordionView({ block }: { block: CourseBlock }) {
+  const items = block.accordionItems ?? [];
+  if (items.length === 0) {
+    return <div className="rounded-lg bg-muted/30 py-8 text-center text-sm text-muted-foreground">Accordion trống</div>;
+  }
+  return (
+    <Accordion type="multiple" className="w-full rounded-xl border border-border overflow-hidden">
+      {items.map((item) => (
+        <AccordionItem key={item.id} value={item.id} className="border-b border-border last:border-b-0">
+          <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted/30">
+            {item.title || "Tiêu đề"}
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 text-sm text-foreground">
+            {item.body || <span className="text-muted-foreground italic">Chưa có nội dung</span>}
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
+  );
+}
+
+/* ─── Process (step-by-step) view ─────────────────────────────── */
+
+export function ProcessView({ block }: { block: CourseBlock }) {
+  const steps = block.processSteps ?? [];
+  if (steps.length === 0) {
+    return <div className="rounded-lg bg-muted/30 py-8 text-center text-sm text-muted-foreground">Quy trình trống</div>;
+  }
+  return (
+    <div className="space-y-0">
+      {steps.map((step, idx) => (
+        <div key={step.id} className="flex gap-4">
+          <div className="flex flex-col items-center">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-sm">
+              {idx + 1}
+            </div>
+            {idx < steps.length - 1 && (
+              <div className="mt-1 w-px flex-1 bg-border" style={{ minHeight: "24px" }} />
+            )}
+          </div>
+          <div className="pb-6 flex-1 min-w-0">
+            <p className="font-semibold text-foreground">{step.title || `Bước ${idx + 1}`}</p>
+            {step.body && <p className="mt-1 text-sm text-muted-foreground">{step.body}</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Flashcards view (flip on click) ─────────────────────────── */
+
+export function FlashcardsView({ block }: { block: CourseBlock }) {
+  const cards = block.flashcards ?? [];
+  const [current, setCurrent] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+
+  if (cards.length === 0) {
+    return <div className="rounded-lg bg-muted/30 py-8 text-center text-sm text-muted-foreground">Flashcards trống</div>;
+  }
+
+  const card = cards[current];
+  const goTo = (i: number) => { setCurrent(i); setFlipped(false); };
+
+  return (
+    <div className="space-y-3">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setFlipped((v) => !v)}
+        onKeyDown={(e) => e.key === "Enter" && setFlipped((v) => !v)}
+        className="relative min-h-[160px] cursor-pointer rounded-2xl border bg-card p-6 shadow-sm transition hover:shadow-md flex items-center justify-center"
+        aria-label={flipped ? "Mặt sau — bấm để lật" : "Mặt trước — bấm để lật"}
+      >
+        <div className="text-center space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {flipped ? "Mặt sau" : "Mặt trước"}
+          </p>
+          <p className="text-base font-medium text-foreground">{flipped ? card.back : card.front}</p>
+        </div>
+        <span className="absolute bottom-3 right-4 text-[10px] text-muted-foreground/60">Bấm để lật</span>
+      </div>
+      {cards.length > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => goTo((current - 1 + cards.length) % cards.length)}
+            className="rounded-lg border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary hover:text-primary"
+          >
+            ← Trước
+          </button>
+          <span className="text-xs text-muted-foreground">{current + 1} / {cards.length}</span>
+          <button
+            type="button"
+            onClick={() => goTo((current + 1) % cards.length)}
+            className="rounded-lg border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary hover:text-primary"
+          >
+            Tiếp →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

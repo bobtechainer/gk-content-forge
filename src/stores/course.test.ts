@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useCourse, partitionSections, courseMigrate } from "./course";
+import { useCourse, partitionSections, courseMigrate, cloneBlockDeep } from "./course";
 import type { CourseBlock } from "./course";
 import { builderHref } from "@/lib/builder-url";
 
@@ -104,6 +104,46 @@ describe("course store", () => {
     expect(types.has("slider" as never)).toBe(false);
     // The journey is split into several gated parts.
     expect(partitionSections(blocks).length).toBeGreaterThan(1);
+  });
+
+  it("cloneBlockDeep deep-copies accordionItems so mutations don't alias", () => {
+    const orig: CourseBlock = {
+      id: "blk_1",
+      type: "accordion",
+      content: "",
+      accordionItems: [{ id: "item_1", title: "T1", body: "B1" }],
+    };
+    const cloned = cloneBlockDeep(orig);
+    expect(cloned.accordionItems).not.toBe(orig.accordionItems);
+    // Mutate the clone — original must be unaffected
+    cloned.accordionItems![0].title = "changed";
+    expect(orig.accordionItems![0].title).toBe("T1");
+  });
+
+  it("cloneBlockDeep deep-copies processSteps so mutations don't alias", () => {
+    const orig: CourseBlock = {
+      id: "blk_2",
+      type: "process",
+      content: "",
+      processSteps: [{ id: "step_1", title: "S1", body: "B1" }],
+    };
+    const cloned = cloneBlockDeep(orig);
+    expect(cloned.processSteps).not.toBe(orig.processSteps);
+    cloned.processSteps![0].title = "changed";
+    expect(orig.processSteps![0].title).toBe("S1");
+  });
+
+  it("cloneBlockDeep deep-copies flashcards so mutations don't alias", () => {
+    const orig: CourseBlock = {
+      id: "blk_3",
+      type: "flashcards",
+      content: "",
+      flashcards: [{ id: "card_1", front: "F1", back: "Bk1" }],
+    };
+    const cloned = cloneBlockDeep(orig);
+    expect(cloned.flashcards).not.toBe(orig.flashcards);
+    cloned.flashcards![0].front = "changed";
+    expect(orig.flashcards![0].front).toBe("F1");
   });
 });
 

@@ -8,6 +8,7 @@ import {
   ListChecks, Boxes, SplitSquareVertical, Check,
   Info, Lightbulb, AlertTriangle, ShieldAlert,
   AlignCenter, Maximize2, LayoutGrid, Plus, MoveVertical,
+  ChevronsUpDown, ListOrdered, Layers,
 } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -40,6 +41,9 @@ const BLOCK_META: Record<CourseBlockType, { icon: typeof Type; color: string; la
   quiz: { icon: ListChecks, color: "var(--colors-warning-500)", label: "Câu hỏi" },
   html: { icon: Boxes, color: "var(--colors-pink-600)", label: "HTML / Tương tác" },
   section: { icon: SplitSquareVertical, color: "var(--colors-blue-light-500)", label: "Phần mới" },
+  accordion: { icon: ChevronsUpDown, color: "var(--colors-indigo-600)", label: "Accordion" },
+  process: { icon: ListOrdered, color: "var(--colors-orange-600)", label: "Quy trình" },
+  flashcards: { icon: Layers, color: "var(--colors-violet-600)", label: "Flashcards" },
 };
 
 const CALLOUT_STYLES: Record<CalloutVariant, { icon: typeof Info; bg: string; border: string; text: string; label: string }> = {
@@ -196,6 +200,9 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
         {block.type === "quiz" && <QuizBlockEditor block={block} onUpdate={onUpdate} />}
         {block.type === "html" && <HtmlBlockEditor block={block} onUpdate={onUpdate} />}
         {block.type === "section" && <SectionBlockEditor block={block} onUpdate={onUpdate} />}
+        {block.type === "accordion" && <AccordionBlockEditor block={block} onUpdate={onUpdate} />}
+        {block.type === "process" && <ProcessBlockEditor block={block} onUpdate={onUpdate} />}
+        {block.type === "flashcards" && <FlashcardsBlockEditor block={block} onUpdate={onUpdate} />}
       </motion.div>
     </div>
   );
@@ -320,6 +327,25 @@ function EmbedBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (
         </button>
       )}
       {picking && <EmbedMaterialPicker onPick={attach} />}
+      <div className="border-t border-border/30 pt-2 space-y-1.5">
+        <label className="text-[10px] font-medium text-muted-foreground">URL PDF / trang web (tùy chọn)</label>
+        <input
+          type="url"
+          value={block.embedUrl ?? ""}
+          onChange={(e) => onUpdate({ embedUrl: e.target.value })}
+          placeholder="https://example.com/file.pdf"
+          className="w-full rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs outline-none focus:border-primary"
+        />
+        <select
+          value={block.embedAspect ?? "16:9"}
+          onChange={(e) => onUpdate({ embedAspect: e.target.value as "16:9" | "4:3" | "auto" })}
+          className="rounded bg-muted px-2 py-1 text-[10px] outline-none"
+        >
+          <option value="16:9">16:9</option>
+          <option value="4:3">4:3</option>
+          <option value="auto">Tự động (600px)</option>
+        </select>
+      </div>
     </div>
   );
 }
@@ -685,6 +711,173 @@ function InsertLine() {
       <div className="h-[2px] flex-1 rounded-full bg-primary" />
       <div className="h-2 w-2 rounded-full bg-primary" />
       <div className="h-[2px] flex-1 rounded-full bg-primary" />
+    </div>
+  );
+}
+
+/* ─── Accordion Block Editor ───────────────────────────────────── */
+
+function AccordionBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
+  const items = block.accordionItems ?? [];
+  const makeItemId = () => `item_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+  const setItem = (idx: number, patch: Partial<{ title: string; body: string }>) =>
+    onUpdate({ accordionItems: items.map((it, i) => i === idx ? { ...it, ...patch } : it) });
+  const addItem = () =>
+    onUpdate({ accordionItems: [...items, { id: makeItemId(), title: `Mục ${items.length + 1}`, body: "" }] });
+  const removeItem = (idx: number) =>
+    onUpdate({ accordionItems: items.filter((_, i) => i !== idx) });
+
+  return (
+    <div className="space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
+      {items.map((it, idx) => (
+        <div key={it.id} className="rounded-lg border border-border bg-muted/20 p-2 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <input
+              value={it.title}
+              onChange={(e) => setItem(idx, { title: e.target.value })}
+              placeholder="Tiêu đề mục..."
+              className="flex-1 rounded-md border bg-card px-2.5 py-1.5 text-xs font-medium outline-none focus:border-primary"
+            />
+            <button
+              type="button"
+              onClick={() => removeItem(idx)}
+              disabled={items.length <= 1}
+              className="shrink-0 rounded p-1 text-muted-foreground transition hover:text-destructive disabled:opacity-30"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+          <textarea
+            value={it.body}
+            onChange={(e) => setItem(idx, { body: e.target.value })}
+            placeholder="Nội dung mở rộng..."
+            rows={2}
+            className="w-full resize-none rounded-md border bg-card px-2.5 py-1.5 text-[11px] outline-none focus:border-primary"
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addItem}
+        className="flex items-center gap-1 rounded-md border border-dashed px-2 py-1 text-[11px] text-muted-foreground transition hover:border-primary hover:text-primary"
+      >
+        <Plus className="h-3 w-3" /> Thêm mục
+      </button>
+    </div>
+  );
+}
+
+/* ─── Process Block Editor ─────────────────────────────────────── */
+
+function ProcessBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
+  const steps = block.processSteps ?? [];
+  const makeStepId = () => `step_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+  const setStep = (idx: number, patch: Partial<{ title: string; body: string }>) =>
+    onUpdate({ processSteps: steps.map((s, i) => i === idx ? { ...s, ...patch } : s) });
+  const addStep = () =>
+    onUpdate({ processSteps: [...steps, { id: makeStepId(), title: `Bước ${steps.length + 1}`, body: "" }] });
+  const removeStep = (idx: number) =>
+    onUpdate({ processSteps: steps.filter((_, i) => i !== idx) });
+
+  return (
+    <div className="space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
+      {steps.map((step, idx) => (
+        <div key={step.id} className="flex gap-2">
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {idx + 1}
+            </div>
+            {idx < steps.length - 1 && <div className="w-px flex-1 bg-border" />}
+          </div>
+          <div className="flex-1 space-y-1.5 pb-2">
+            <div className="flex items-center gap-2">
+              <input
+                value={step.title}
+                onChange={(e) => setStep(idx, { title: e.target.value })}
+                placeholder="Tên bước..."
+                className="flex-1 rounded-md border bg-card px-2.5 py-1.5 text-xs font-medium outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                onClick={() => removeStep(idx)}
+                disabled={steps.length <= 1}
+                className="shrink-0 rounded p-1 text-muted-foreground transition hover:text-destructive disabled:opacity-30"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+            <textarea
+              value={step.body}
+              onChange={(e) => setStep(idx, { body: e.target.value })}
+              placeholder="Mô tả bước..."
+              rows={2}
+              className="w-full resize-none rounded-md border bg-card px-2.5 py-1.5 text-[11px] outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addStep}
+        className="flex items-center gap-1 rounded-md border border-dashed px-2 py-1 text-[11px] text-muted-foreground transition hover:border-primary hover:text-primary"
+      >
+        <Plus className="h-3 w-3" /> Thêm bước
+      </button>
+    </div>
+  );
+}
+
+/* ─── Flashcards Block Editor ──────────────────────────────────── */
+
+function FlashcardsBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
+  const cards = block.flashcards ?? [];
+  const makeCardId = () => `card_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+  const setCard = (idx: number, patch: Partial<{ front: string; back: string }>) =>
+    onUpdate({ flashcards: cards.map((c, i) => i === idx ? { ...c, ...patch } : c) });
+  const addCard = () =>
+    onUpdate({ flashcards: [...cards, { id: makeCardId(), front: "Mặt trước", back: "Mặt sau" }] });
+  const removeCard = (idx: number) =>
+    onUpdate({ flashcards: cards.filter((_, i) => i !== idx) });
+
+  return (
+    <div className="space-y-2 p-3" onClick={(e) => e.stopPropagation()}>
+      {cards.map((card, idx) => (
+        <div key={card.id} className="rounded-lg border border-border bg-muted/20 p-2 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-muted-foreground">Thẻ {idx + 1}</span>
+            <button
+              type="button"
+              onClick={() => removeCard(idx)}
+              disabled={cards.length <= 1}
+              className="rounded p-1 text-muted-foreground transition hover:text-destructive disabled:opacity-30"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+          <input
+            value={card.front}
+            onChange={(e) => setCard(idx, { front: e.target.value })}
+            placeholder="Mặt trước (câu hỏi)..."
+            className="w-full rounded-md border bg-primary/5 px-2.5 py-1.5 text-xs font-medium outline-none focus:border-primary"
+          />
+          <input
+            value={card.back}
+            onChange={(e) => setCard(idx, { back: e.target.value })}
+            placeholder="Mặt sau (đáp án)..."
+            className="w-full rounded-md border bg-card px-2.5 py-1.5 text-xs outline-none focus:border-primary"
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addCard}
+        className="flex items-center gap-1 rounded-md border border-dashed px-2 py-1 text-[11px] text-muted-foreground transition hover:border-primary hover:text-primary"
+      >
+        <Plus className="h-3 w-3" /> Thêm thẻ
+      </button>
     </div>
   );
 }
