@@ -7,6 +7,14 @@ import {
 import type { CourseChapter, CourseLesson } from "@/stores/course";
 import { cn } from "@/lib/utils";
 
+type PublishState = "never" | "published" | "dirty";
+
+const PUBLISH_DOT: Record<PublishState, { className: string; label: string }> = {
+  never: { className: "bg-muted-foreground/40", label: "Chưa xuất bản" },
+  published: { className: "bg-success", label: "Đã xuất bản" },
+  dirty: { className: "bg-warning", label: "Có thay đổi chưa xuất bản" },
+};
+
 interface StructureDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -20,12 +28,14 @@ interface StructureDrawerProps {
   onRenameLesson: (lessonId: string, title: string) => void;
   onDeleteChapter: (chapterId: string) => void;
   onDeleteLesson: (lessonId: string) => void;
+  getPublishState?: (lessonId: string) => PublishState;
 }
 
 export function StructureDrawer({
   open, onClose, chapters, lessons, activeLessonId,
   onSelectLesson, onAddChapter, onAddLesson,
   onRenameChapter, onRenameLesson, onDeleteChapter, onDeleteLesson,
+  getPublishState,
 }: StructureDrawerProps) {
   return (
     <AnimatePresence>
@@ -77,6 +87,7 @@ export function StructureDrawer({
                     onDelete={() => onDeleteChapter(ch.id)}
                     onRenameLesson={onRenameLesson}
                     onDeleteLesson={onDeleteLesson}
+                    getPublishState={getPublishState}
                   />
                 ))
               )}
@@ -104,6 +115,7 @@ export function StructureDrawer({
 function ChapterNode({
   chapter, lessons, activeLessonId, onSelectLesson,
   onAddLesson, onRename, onDelete, onRenameLesson, onDeleteLesson,
+  getPublishState,
 }: {
   chapter: CourseChapter;
   lessons: CourseLesson[];
@@ -114,6 +126,7 @@ function ChapterNode({
   onDelete: () => void;
   onRenameLesson: (lessonId: string, title: string) => void;
   onDeleteLesson: (lessonId: string) => void;
+  getPublishState?: (lessonId: string) => PublishState;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -163,6 +176,7 @@ function ChapterNode({
               onSelect={() => onSelectLesson(ls.id)}
               onRename={(t) => onRenameLesson(ls.id, t)}
               onDelete={() => onDeleteLesson(ls.id)}
+              publishState={getPublishState?.(ls.id) ?? "never"}
             />
           ))}
           <button
@@ -181,13 +195,14 @@ function ChapterNode({
 /* ─── Lesson node ──────────────────────────────────────────────── */
 
 function LessonNode({
-  lesson, isActive, onSelect, onRename, onDelete,
+  lesson, isActive, onSelect, onRename, onDelete, publishState,
 }: {
   lesson: CourseLesson;
   isActive: boolean;
   onSelect: () => void;
   onRename: (title: string) => void;
   onDelete: () => void;
+  publishState: PublishState;
 }) {
   const [editing, setEditing] = useState(false);
   const [editVal, setEditVal] = useState(lesson.title);
@@ -206,6 +221,12 @@ function LessonNode({
       )}
     >
       <BookOpen className={cn("h-3 w-3 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
+      {/* Publish state dot */}
+      <span
+        className={cn("h-2 w-2 shrink-0 rounded-full", PUBLISH_DOT[publishState].className)}
+        aria-label={PUBLISH_DOT[publishState].label}
+        title={PUBLISH_DOT[publishState].label}
+      />
       {editing ? (
         <div className="flex min-w-0 flex-1 items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <input value={editVal} onChange={(e) => setEditVal(e.target.value)} onBlur={handleSave}

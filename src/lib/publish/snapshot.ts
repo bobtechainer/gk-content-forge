@@ -2,6 +2,21 @@ import type { CourseData } from "@/stores/course";
 import { cloneBlockDeep } from "@/stores/course";
 import type { CourseBlock } from "@/stores/course";
 
+/**
+ * Tạo một hash ngắn ổn định từ danh sách blocks — dùng để phát hiện thay đổi
+ * sau khi xuất bản. Cùng một mảng blocks (cùng thứ tự, cùng nội dung) luôn
+ * cho cùng kết quả; bất kỳ thay đổi nào cũng trả về chuỗi khác.
+ */
+export function hashBlocks(blocks: CourseBlock[]): string {
+  const str = JSON.stringify(blocks);
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  // Trả về chuỗi hex dương, độ dài cố định 8 ký tự
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
 export interface PublishedLesson {
   id: string;
   title: string;

@@ -46,6 +46,8 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
   const deleteBlock = useCourse((s) => s.deleteBlock);
   const duplicateBlock = useCourse((s) => s.duplicateBlock);
   const moveBlockToIndex = useCourse((s) => s.moveBlockToIndex);
+  const publishLesson = useCourse((s) => s.publishLesson);
+  const getLessonPublishState = useCourse((s) => s.getLessonPublishState);
 
   const item = useContent((s) => s.items.find((x) => x.id === id));
   const updateItem = useContent((s) => s.updateItem);
@@ -83,6 +85,13 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
   const lessons = courseData?.lessons ?? [];
   const activeLesson = lessons.find((l) => l.id === activeLessonId);
   const activeBlocks = activeLesson?.blocks ?? [];
+
+  const activeLessonPublishState = activeLessonId
+    ? getLessonPublishState(id, activeLessonId)
+    : "never";
+  const showPublishLessonBtn = activeLessonPublishState === "dirty" || activeLessonPublishState === "never";
+
+  const getPublishState = (lessonId: string) => getLessonPublishState(id, lessonId);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
@@ -274,6 +283,17 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 ))}
               </div>
             )}
+            {showPublishLessonBtn && activeLessonId && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 border-warning text-xs text-warning hover:bg-warning/10"
+                onClick={() => publishLesson(id, activeLessonId)}
+                title="Xuất bản nội dung hiện tại của bài này"
+              >
+                Xuất bản thay đổi
+              </Button>
+            )}
             <Button size="sm" className="h-8 bg-primary text-xs text-white hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>
               Xuất bản
             </Button>
@@ -346,6 +366,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
               onRenameChapter={(chId, t) => renameChapter(id, chId, t)}
               onRenameLesson={(lsId, t) => renameLesson(id, lsId, t)}
               onOpenStructure={() => setDrawerOpen(true)}
+              getPublishState={getPublishState}
             />
             )}
           </div>
@@ -418,6 +439,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
         onRenameLesson={(lsId, t) => renameLesson(id, lsId, t)}
         onDeleteChapter={(chId) => deleteChapter(id, chId)}
         onDeleteLesson={(lsId) => deleteLesson(id, lsId)}
+        getPublishState={getPublishState}
       />
 
       <PublishSheet open={publishOpen} onOpenChange={setPublishOpen} contentId={id} title={title}

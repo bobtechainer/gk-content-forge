@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { useCourse, partitionSections, courseMigrate, cloneBlockDeep } from "./course";
 import type { CourseBlock } from "./course";
 import { builderHref } from "@/lib/builder-url";
@@ -144,6 +144,67 @@ describe("course store", () => {
     expect(cloned.flashcards).not.toBe(orig.flashcards);
     cloned.flashcards![0].front = "changed";
     expect(orig.flashcards![0].front).toBe("F1");
+  });
+});
+
+describe("lesson publish state", () => {
+  beforeEach(() => {
+    useCourse.setState({ courseData: {}, activeLessonId: null });
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function getFirstLesson() {
+    useCourse.getState().init(CID);
+    return useCourse.getState().courseData[CID].lessons[0];
+  }
+
+  it("trả về 'never' khi bài chưa từng xuất bản", () => {
+    const lesson = getFirstLesson();
+    expect(useCourse.getState().getLessonPublishState(CID, lesson.id)).toBe("never");
+  });
+
+  it("trả về 'published' ngay sau khi publishLesson", () => {
+    const lesson = getFirstLesson();
+    vi.setSystemTime(1000);
+    useCourse.getState().publishLesson(CID, lesson.id);
+    expect(useCourse.getState().getLessonPublishState(CID, lesson.id)).toBe("published");
+  });
+
+  it("trả về 'dirty' sau khi chỉnh sửa block kể từ lần xuất bản cuối", () => {
+    const lesson = getFirstLesson();
+    vi.setSystemTime(1000);
+    useCourse.getState().publishLesson(CID, lesson.id);
+
+    const blockId = lesson.blocks[0]?.id;
+    if (!blockId) {
+      // Thêm block nếu bài chưa có
+      useCourse.getState().addBlock(CID, lesson.id, "text");
+    } else {
+      useCourse.getState().updateBlock(CID, lesson.id, blockId, { content: "nội dung thay đổi" });
+    }
+
+    expect(useCourse.getState().getLessonPublishState(CID, lesson.id)).toBe("dirty");
+  });
+
+  it("trở về 'published' sau khi publishLesson lần hai", () => {
+    const lesson = getFirstLesson();
+    vi.setSystemTime(1000);
+    useCourse.getState().publishLesson(CID, lesson.id);
+
+    const blockId = lesson.blocks[0]?.id;
+    if (blockId) {
+      useCourse.getState().updateBlock(CID, lesson.id, blockId, { content: "changed" });
+    } else {
+      useCourse.getState().addBlock(CID, lesson.id, "text");
+    }
+
+    vi.setSystemTime(2000);
+    useCourse.getState().publishLesson(CID, lesson.id);
+    expect(useCourse.getState().getLessonPublishState(CID, lesson.id)).toBe("published");
   });
 });
 

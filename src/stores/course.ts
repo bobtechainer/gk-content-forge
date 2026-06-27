@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SAMPLE_COURSE } from "./course-sample";
+import { hashBlocks } from "@/lib/publish/snapshot";
 
 /* ─── Block Types ──────────────────────────────────────────────── */
 
@@ -79,6 +80,10 @@ export interface CourseLesson {
   title: string;
   chapterId: string;
   blocks: CourseBlock[];
+  /** Thời điểm xuất bản gần nhất (timestamp ms). Không có = chưa xuất bản. */
+  publishedAt?: number;
+  /** Hash của blocks tại lần xuất bản gần nhất. */
+  publishedHash?: string;
 }
 
 export interface CourseChapter {
@@ -112,6 +117,10 @@ interface CourseState {
   deleteLesson: (courseId: string, lessonId: string) => void;
   reorderLessons: (courseId: string, fromId: string, toId: string) => void;
   setActiveLesson: (lessonId: string | null) => void;
+
+  // Publish state per lesson
+  publishLesson: (courseId: string, lessonId: string) => void;
+  getLessonPublishState: (courseId: string, lessonId: string) => "never" | "published" | "dirty";
 
   // Block CRUD
   addBlock: (courseId: string, lessonId: string, type: CourseBlockType, atIndex?: number) => string;
@@ -432,6 +441,39 @@ export const useCourse = create<CourseState>()(
       },
 
       setActiveLesson: (lessonId) => set({ activeLessonId: lessonId }),
+
+      // ─── Publish state per lesson ─────────────────
+      publishLesson: (courseId, lessonId) => {
+        const data = get().courseData[courseId];
+        if (!data) return;
+        const lesson = data.lessons.find((l) => l.id === lessonId);
+        if (!lesson) return;
+        const now = Date.now();
+        const hash = hashBlocks(lesson.blocks);
+        set({
+          courseData: {
+            ...get().courseData,
+            [courseId]: {
+              ...data,
+              lessons: data.lessons.map((l) =>
+                l.id === lessonId
+                  ? { ...l, publishedAt: now, publishedHash: hash }
+                  : l,
+              ),
+            },
+          },
+        });
+      },
+
+      getLessonPublishState: (courseId, lessonId) => {
+        const data = get().courseData[courseId];
+        if (!data) return "never";
+        const lesson = data.lessons.find((l) => l.id === lessonId);
+        if (!lesson) return "never";
+        if (!lesson.publishedAt) return "never";
+        const currentHash = hashBlocks(lesson.blocks);
+        return currentHash === lesson.publishedHash ? "published" : "dirty";
+      },
 
       // ─── Block CRUD ──────────────────────────────
       addBlock: (courseId, lessonId, type, atIndex) => {

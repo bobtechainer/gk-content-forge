@@ -5,6 +5,8 @@ import { GripVertical, Plus, BookOpen, FolderOpen, FolderTree, ChevronUp, Chevro
 import type { CourseChapter, CourseLesson } from "@/stores/course";
 import { cn } from "@/lib/utils";
 
+type PublishState = "never" | "published" | "dirty";
+
 /* ─── Main strip ───────────────────────────────────────────────── */
 
 interface LessonStripProps {
@@ -19,12 +21,14 @@ interface LessonStripProps {
   onRenameChapter: (chapterId: string, title: string) => void;
   onRenameLesson: (lessonId: string, title: string) => void;
   onOpenStructure: () => void;
+  getPublishState?: (lessonId: string) => PublishState;
 }
 
 export function LessonStrip({
   chapters, lessons, activeLessonId, collapsed, onToggleCollapse,
   onSelectLesson, onAddLesson, onAddChapter,
   onRenameChapter, onRenameLesson, onOpenStructure,
+  getPublishState,
 }: LessonStripProps) {
   const items: { type: "chapter" | "lesson" | "add-lesson" | "add-chapter"; chapter?: CourseChapter; lesson?: CourseLesson; chapterId?: string }[] = [];
 
@@ -83,6 +87,7 @@ export function LessonStrip({
                     isActive={activeLessonId === item.lesson!.id}
                     onSelect={() => onSelectLesson(item.lesson!.id)}
                     onRename={(t) => onRenameLesson(item.lesson!.id, t)}
+                    publishState={getPublishState?.(item.lesson!.id) ?? "never"}
                   />
                 );
               }
@@ -158,13 +163,20 @@ function EditableChapterBadge({
 
 /* ─── Sortable lesson item ─────────────────────────────────────── */
 
+const PUBLISH_DOT: Record<PublishState, { className: string; label: string }> = {
+  never: { className: "bg-muted-foreground/40", label: "Chưa xuất bản" },
+  published: { className: "bg-success", label: "Đã xuất bản" },
+  dirty: { className: "bg-warning", label: "Có thay đổi chưa xuất bản" },
+};
+
 function SortableLessonItem({
-  lesson, isActive, onSelect, onRename,
+  lesson, isActive, onSelect, onRename, publishState,
 }: {
   lesson: CourseLesson;
   isActive: boolean;
   onSelect: () => void;
   onRename: (title: string) => void;
+  publishState: PublishState;
 }) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(lesson.title);
@@ -199,6 +211,13 @@ function SortableLessonItem({
       </div>
 
       <BookOpen className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
+
+      {/* Publish state dot */}
+      <span
+        className={cn("absolute top-1 right-1 h-2 w-2 rounded-full", PUBLISH_DOT[publishState].className)}
+        aria-label={PUBLISH_DOT[publishState].label}
+        title={PUBLISH_DOT[publishState].label}
+      />
 
       {editing ? (
         <input value={val} onChange={(e) => setVal(e.target.value)} onBlur={save}
