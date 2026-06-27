@@ -158,21 +158,20 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
         />
       ))}
       <div className="mx-0.5 h-3 w-px bg-border" />
-      {aiLoading ? (
-        <span className="flex h-7 w-7 items-center justify-center text-muted-foreground">
+      {aiButtons.map((btn) => (
+        <ToolbarButton
+          key={btn.label}
+          isActive={false}
+          onClick={() => { void handleCompanion(btn.action); }}
+          label={btn.label}
+          icon={btn.icon}
+          disabled={noSelection || aiLoading}
+        />
+      ))}
+      {aiLoading && (
+        <span className="ml-1 flex h-5 w-5 items-center justify-center text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
         </span>
-      ) : (
-        aiButtons.map((btn) => (
-          <ToolbarButton
-            key={btn.label}
-            isActive={false}
-            onClick={() => { void handleCompanion(btn.action); }}
-            label={btn.label}
-            icon={btn.icon}
-            disabled={noSelection || aiLoading}
-          />
-        ))
       )}
     </BubbleMenu>
   );

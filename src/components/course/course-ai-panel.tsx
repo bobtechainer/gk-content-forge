@@ -89,7 +89,7 @@ export function CourseAiPanel({ courseId, lessonId }: CourseAiPanelProps) {
   /* ─── Tạo nội dung từ dàn ý ─────────────────────────────────── */
 
   async function handleFill() {
-    if (!lessonId || !storyboard || status === "filling" || status === "done") return;
+    if (!courseId || !lessonId || !storyboard || status === "filling" || status === "done") return;
     setStatus(lessonId, "filling");
     setProgress("");
     try {
