@@ -16,6 +16,21 @@ function reset() {
 describe("course store", () => {
   beforeEach(reset);
 
+  it("init({ empty: true }) creates 1 chapter, 1 lesson, 0 blocks", () => {
+    useCourse.getState().init("empty-course", { empty: true });
+    const data = useCourse.getState().courseData["empty-course"];
+    expect(data.chapters).toHaveLength(1);
+    expect(data.lessons).toHaveLength(1);
+    expect(data.lessons[0].blocks).toHaveLength(0);
+    expect(useCourse.getState().activeLessonId).toBe(data.lessons[0].id);
+  });
+
+  it("init() without options seeds demo content (lessons[0].blocks.length > 0)", () => {
+    useCourse.getState().init("seeded-course");
+    const data = useCourse.getState().courseData["seeded-course"];
+    expect(data.lessons[0].blocks.length).toBeGreaterThan(0);
+  });
+
   it("seeds each course with unique ids (no cross-course aliasing)", () => {
     useCourse.getState().init("a");
     useCourse.getState().init("b");

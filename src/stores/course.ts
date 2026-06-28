@@ -105,7 +105,7 @@ interface CourseState {
   courseData: Record<string, CourseData>;
   activeLessonId: string | null;
 
-  init: (courseId: string) => void;
+  init: (courseId: string, options?: { empty?: boolean }) => void;
 
   // Chapter CRUD
   addChapter: (courseId: string, title?: string) => string;
@@ -245,6 +245,15 @@ export function partitionSections(blocks: CourseBlock[]): LessonSection[] {
 }
 
 
+/** Build a blank course with 1 chapter, 1 empty lesson, and 0 blocks. */
+function emptyCourse(courseId: string): CourseData {
+  const chId = makeId("ch");
+  return {
+    chapters: [{ id: chId, title: "Chương 1", courseId }],
+    lessons: [{ id: makeId("ls"), title: "Bài 1", chapterId: chId, blocks: [] }],
+  };
+}
+
 /** Build a fresh copy of the sample course for a given courseId, with unique
  *  chapter/lesson/block ids so different courses never alias the same objects. */
 function cloneSampleCourse(courseId: string): CourseData {
@@ -281,11 +290,10 @@ export const useCourse = create<CourseState>()(
       courseData: {},
       activeLessonId: null,
 
-      init: (courseId) => {
+      init: (courseId, options) => {
         const existing = get().courseData[courseId];
         if (!existing) {
-          // Initialize with a fresh, fully-cloned copy of the sample data
-          const data = cloneSampleCourse(courseId);
+          const data = options?.empty ? emptyCourse(courseId) : cloneSampleCourse(courseId);
           set({
             courseData: { ...get().courseData, [courseId]: data },
             activeLessonId: data.lessons[0]?.id ?? null,

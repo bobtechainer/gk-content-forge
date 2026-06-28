@@ -43,11 +43,13 @@ import type { Capability } from "@/lib/org/capabilities";
 import { useActiveProfile } from "@/lib/org/use-active-profile";
 import { cn } from "@/lib/utils";
 import { useContent } from "@/stores/content";
+import { useCourse } from "@/stores/course";
 import { useSession, type Workspace } from "@/stores/session";
 import { useIdentity } from "@/stores/identity";
 import { useUi } from "@/stores/ui";
 import { RoleSwitcher } from "./role-switcher";
 import { ProfileSwitcher } from "./identity/profile-switcher";
+import { CourseStartDialog } from "./shared/course-start-dialog";
 import { MaterialTypePicker } from "./shared/material-type-picker";
 import { VerifiedBadge } from "./shared/verified-badge";
 
@@ -273,6 +275,7 @@ export function ContentStudioShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [courseStartOpen, setCourseStartOpen] = useState(false);
 
   // Only redirect once we know the persisted session is empty — never during
   // the rehydration window of a cold load (new tab / refresh / deep link).
@@ -337,8 +340,23 @@ export function ContentStudioShell() {
   // tab we open reads it back immediately.
   const handleCreateCategory = (category: CreationCategory) => {
     if (category === "learning_material") return;
+    if (category === "course") {
+      setCourseStartOpen(true);
+      return;
+    }
     const id = createDraft(category, createOwnerId, { category, ownerNodeId: activeNodeId });
     window.open(builderHref(scope, { id, category, materialSubtype: undefined }), "_blank", "noopener");
+  };
+
+  const handleContinueCourse = () => {
+    const id = createDraft("course", createOwnerId, { category: "course", ownerNodeId: activeNodeId });
+    window.open(builderHref(scope, { id, category: "course", materialSubtype: undefined }), "_blank", "noopener");
+  };
+
+  const handleNewBlankCourse = () => {
+    const id = createDraft("course", createOwnerId, { category: "course", ownerNodeId: activeNodeId });
+    useCourse.getState().init(id, { empty: true });
+    window.open(builderHref(scope, { id, category: "course", materialSubtype: undefined }), "_blank", "noopener");
   };
 
   const handleCreateMaterial = (materialSubtype: LearningMaterialSubtype) => {
@@ -489,6 +507,14 @@ export function ContentStudioShell() {
           onPickMaterial={handleCreateMaterial}
         />
       )}
+
+      {/* Course start dialog — choose between continuing demo or blank canvas */}
+      <CourseStartDialog
+        open={courseStartOpen}
+        onOpenChange={setCourseStartOpen}
+        onContinue={handleContinueCourse}
+        onNewBlank={handleNewBlankCourse}
+      />
     </div>
   );
 }
