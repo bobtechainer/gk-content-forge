@@ -11,7 +11,7 @@ export const localContentRepository: ContentRepository = {
 
 export const localCourseRepository: CourseRepository = {
   get: (courseId) => useCourse.getState().courseData[courseId],
-  ensureSeeded: (courseId) => useCourse.getState().init(courseId),
+  ensureSeeded: (courseId, options) => useCourse.getState().init(courseId, options),
 };
 
 export const localThemeRepository: ThemeRepository = {

@@ -9,7 +9,7 @@ export interface ContentRepository {
 
 export interface CourseRepository {
   get(courseId: string): CourseData | undefined;
-  ensureSeeded(courseId: string): void;
+  ensureSeeded(courseId: string, options?: { empty?: boolean }): void;
 }
 
 export interface ThemeRepository {

@@ -29,7 +29,7 @@ describe("CourseStartDialog", () => {
         onNewBlank={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục bài giảng đang dở" }));
+    fireEvent.click(screen.getByRole("button", { name: /Tiếp tục bài giảng đang dở/ }));
     expect(onContinue).toHaveBeenCalledOnce();
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
@@ -45,7 +45,7 @@ describe("CourseStartDialog", () => {
         onNewBlank={onNewBlank}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Tạo bài giảng mới hoàn toàn" }));
+    fireEvent.click(screen.getByRole("button", { name: /Tạo bài giảng mới hoàn toàn/ }));
     expect(onNewBlank).toHaveBeenCalledOnce();
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });

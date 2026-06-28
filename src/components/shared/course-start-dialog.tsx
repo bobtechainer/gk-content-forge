@@ -19,15 +19,13 @@ interface CardButtonProps {
   title: string;
   description: string;
   onClick: () => void;
-  ariaLabel: string;
 }
 
-function CardButton({ icon: Icon, title, description, onClick, ariaLabel }: CardButtonProps) {
+function CardButton({ icon: Icon, title, description, onClick }: CardButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={ariaLabel}
       className="flex items-center gap-4 rounded-xl border border-border bg-card p-5 text-left transition hover:border-primary hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -60,7 +58,6 @@ export function CourseStartDialog({
             icon={PenLine}
             title="Tiếp tục bài giảng đang dở"
             description="Mở bài đang soạn dở (nội dung mẫu)"
-            ariaLabel="Tiếp tục bài giảng đang dở"
             onClick={() => {
               onContinue();
               onOpenChange(false);
@@ -70,7 +67,6 @@ export function CourseStartDialog({
             icon={FilePlus2}
             title="Tạo bài giảng mới hoàn toàn"
             description="Bắt đầu với trang trắng"
-            ariaLabel="Tạo bài giảng mới hoàn toàn"
             onClick={() => {
               onNewBlank();
               onOpenChange(false);
