@@ -257,6 +257,8 @@ interface PageCanvasProps {
   onUpdateBlock: (blockId: string, patch: Partial<CourseBlock>) => void;
   onDeleteBlock: (blockId: string) => void;
   onDuplicateBlock: (blockId: string) => void;
+  /** Di chuyển khối lên/xuống một vị trí (cho pill ▲▼ kiểu TalentLMS). */
+  onMoveBlock: (blockId: string, dir: "up" | "down") => void;
   lessonTitle: string;
   previewMode?: boolean;
   /** Live insertion index while dragging (0..blocks.length), or null when not dragging over the canvas. */
@@ -268,7 +270,7 @@ interface PageCanvasProps {
 }
 
 export function PageCanvas({
-  blocks, activeBlockId, onSelectBlock, onAddBlock, onUpdateBlock, onDeleteBlock, onDuplicateBlock, lessonTitle, previewMode, dropIndex, viewport, courseId,
+  blocks, activeBlockId, onSelectBlock, onAddBlock, onUpdateBlock, onDeleteBlock, onDuplicateBlock, onMoveBlock, lessonTitle, previewMode, dropIndex, viewport, courseId,
 }: PageCanvasProps) {
   const { setNodeRef, isOver } = useDroppable({ id: "canvas-drop" });
   const [slashMenu, setSlashMenu] = useState<{ index: number } | null>(null);
@@ -333,15 +335,19 @@ export function PageCanvas({
                 <InsertButton onClick={() => handleSlashCommand(i)} />
                 <ScrollReveal animation={block.animation} disabled>
                   <LayoutWrapper layout={block.type === "columns" ? "full" : block.layout}>
-                    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.12 }}>
+                    <motion.div layout initial={{ opacity: 0, scale: 0.85, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96 }} transition={{ type: "spring", stiffness: 460, damping: 26 }}>
                       <BlockCard
                         block={block}
+                        index={i}
+                        total={blocks.length}
                         isActive={activeBlockId === block.id}
                         onSelect={() => onSelectBlock(block.id)}
                         onUpdate={(patch) => onUpdateBlock(block.id, patch)}
                         onDelete={() => onDeleteBlock(block.id)}
                         onDuplicate={() => onDuplicateBlock(block.id)}
+                        onMoveUp={() => onMoveBlock(block.id, "up")}
+                        onMoveDown={() => onMoveBlock(block.id, "down")}
                       />
                     </motion.div>
                   </LayoutWrapper>
@@ -373,12 +379,12 @@ function EmptyCanvasPlaceholder({ onAdd }: { onAdd: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className="mx-auto max-w-2xl flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/50 bg-card py-16 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50">
         <Move className="h-7 w-7 text-primary" />
       </div>
       <div className="mt-4 text-base font-semibold text-foreground">Bài học trống</div>
       <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-        Kéo block từ bên trái hoặc gõ <kbd className="rounded bg-muted px-1 font-mono text-[10px]">/</kbd>
+        Bấm <span className="font-semibold text-foreground">+</span> giữa các khối, gõ <kbd className="rounded bg-muted px-1 font-mono text-[10px]">/</kbd>, hoặc nhờ trợ lý AI bên phải soạn giúp bạn.
       </p>
       <button onClick={onAdd}
         className="mt-4 flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary-hover active:scale-[0.98]">

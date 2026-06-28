@@ -55,10 +55,14 @@ import { Route as OrgStudioNewRouteImport } from './routes/org.studio.new'
 import { Route as OrgChannelEditRouteImport } from './routes/org.channel.edit'
 import { Route as CreatorStudioNewRouteImport } from './routes/creator.studio.new'
 import { Route as CreatorChannelEditRouteImport } from './routes/creator.channel.edit'
+import { Route as OrgBuilderUiSystemIdRouteImport } from './routes/org.builder.ui-system.$id'
+import { Route as OrgBuilderStoryboardIdRouteImport } from './routes/org.builder.storyboard.$id'
 import { Route as OrgBuilderQuizIdRouteImport } from './routes/org.builder.quiz.$id'
 import { Route as OrgBuilderMaterialIdRouteImport } from './routes/org.builder.material.$id'
 import { Route as OrgBuilderCourseIdRouteImport } from './routes/org.builder.course.$id'
 import { Route as OrgBuilderBookIdRouteImport } from './routes/org.builder.book.$id'
+import { Route as CreatorBuilderUiSystemIdRouteImport } from './routes/creator.builder.ui-system.$id'
+import { Route as CreatorBuilderStoryboardIdRouteImport } from './routes/creator.builder.storyboard.$id'
 import { Route as CreatorBuilderQuizIdRouteImport } from './routes/creator.builder.quiz.$id'
 import { Route as CreatorBuilderMaterialIdRouteImport } from './routes/creator.builder.material.$id'
 import { Route as CreatorBuilderCourseIdRouteImport } from './routes/creator.builder.course.$id'
@@ -294,6 +298,16 @@ const CreatorChannelEditRoute = CreatorChannelEditRouteImport.update({
   path: '/edit',
   getParentRoute: () => CreatorChannelRoute,
 } as any)
+const OrgBuilderUiSystemIdRoute = OrgBuilderUiSystemIdRouteImport.update({
+  id: '/builder/ui-system/$id',
+  path: '/builder/ui-system/$id',
+  getParentRoute: () => OrgRoute,
+} as any)
+const OrgBuilderStoryboardIdRoute = OrgBuilderStoryboardIdRouteImport.update({
+  id: '/builder/storyboard/$id',
+  path: '/builder/storyboard/$id',
+  getParentRoute: () => OrgRoute,
+} as any)
 const OrgBuilderQuizIdRoute = OrgBuilderQuizIdRouteImport.update({
   id: '/builder/quiz/$id',
   path: '/builder/quiz/$id',
@@ -314,6 +328,18 @@ const OrgBuilderBookIdRoute = OrgBuilderBookIdRouteImport.update({
   path: '/builder/book/$id',
   getParentRoute: () => OrgRoute,
 } as any)
+const CreatorBuilderUiSystemIdRoute =
+  CreatorBuilderUiSystemIdRouteImport.update({
+    id: '/builder/ui-system/$id',
+    path: '/builder/ui-system/$id',
+    getParentRoute: () => CreatorRoute,
+  } as any)
+const CreatorBuilderStoryboardIdRoute =
+  CreatorBuilderStoryboardIdRouteImport.update({
+    id: '/builder/storyboard/$id',
+    path: '/builder/storyboard/$id',
+    getParentRoute: () => CreatorRoute,
+  } as any)
 const CreatorBuilderQuizIdRoute = CreatorBuilderQuizIdRouteImport.update({
   id: '/builder/quiz/$id',
   path: '/builder/quiz/$id',
@@ -387,10 +413,14 @@ export interface FileRoutesByFullPath {
   '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
   '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
   '/creator/builder/quiz/$id': typeof CreatorBuilderQuizIdRoute
+  '/creator/builder/storyboard/$id': typeof CreatorBuilderStoryboardIdRoute
+  '/creator/builder/ui-system/$id': typeof CreatorBuilderUiSystemIdRoute
   '/org/builder/book/$id': typeof OrgBuilderBookIdRoute
   '/org/builder/course/$id': typeof OrgBuilderCourseIdRoute
   '/org/builder/material/$id': typeof OrgBuilderMaterialIdRoute
   '/org/builder/quiz/$id': typeof OrgBuilderQuizIdRoute
+  '/org/builder/storyboard/$id': typeof OrgBuilderStoryboardIdRoute
+  '/org/builder/ui-system/$id': typeof OrgBuilderUiSystemIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -443,10 +473,14 @@ export interface FileRoutesByTo {
   '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
   '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
   '/creator/builder/quiz/$id': typeof CreatorBuilderQuizIdRoute
+  '/creator/builder/storyboard/$id': typeof CreatorBuilderStoryboardIdRoute
+  '/creator/builder/ui-system/$id': typeof CreatorBuilderUiSystemIdRoute
   '/org/builder/book/$id': typeof OrgBuilderBookIdRoute
   '/org/builder/course/$id': typeof OrgBuilderCourseIdRoute
   '/org/builder/material/$id': typeof OrgBuilderMaterialIdRoute
   '/org/builder/quiz/$id': typeof OrgBuilderQuizIdRoute
+  '/org/builder/storyboard/$id': typeof OrgBuilderStoryboardIdRoute
+  '/org/builder/ui-system/$id': typeof OrgBuilderUiSystemIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -500,10 +534,14 @@ export interface FileRoutesById {
   '/creator/builder/course/$id': typeof CreatorBuilderCourseIdRoute
   '/creator/builder/material/$id': typeof CreatorBuilderMaterialIdRoute
   '/creator/builder/quiz/$id': typeof CreatorBuilderQuizIdRoute
+  '/creator/builder/storyboard/$id': typeof CreatorBuilderStoryboardIdRoute
+  '/creator/builder/ui-system/$id': typeof CreatorBuilderUiSystemIdRoute
   '/org/builder/book/$id': typeof OrgBuilderBookIdRoute
   '/org/builder/course/$id': typeof OrgBuilderCourseIdRoute
   '/org/builder/material/$id': typeof OrgBuilderMaterialIdRoute
   '/org/builder/quiz/$id': typeof OrgBuilderQuizIdRoute
+  '/org/builder/storyboard/$id': typeof OrgBuilderStoryboardIdRoute
+  '/org/builder/ui-system/$id': typeof OrgBuilderUiSystemIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -558,10 +596,14 @@ export interface FileRouteTypes {
     | '/creator/builder/course/$id'
     | '/creator/builder/material/$id'
     | '/creator/builder/quiz/$id'
+    | '/creator/builder/storyboard/$id'
+    | '/creator/builder/ui-system/$id'
     | '/org/builder/book/$id'
     | '/org/builder/course/$id'
     | '/org/builder/material/$id'
     | '/org/builder/quiz/$id'
+    | '/org/builder/storyboard/$id'
+    | '/org/builder/ui-system/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -614,10 +656,14 @@ export interface FileRouteTypes {
     | '/creator/builder/course/$id'
     | '/creator/builder/material/$id'
     | '/creator/builder/quiz/$id'
+    | '/creator/builder/storyboard/$id'
+    | '/creator/builder/ui-system/$id'
     | '/org/builder/book/$id'
     | '/org/builder/course/$id'
     | '/org/builder/material/$id'
     | '/org/builder/quiz/$id'
+    | '/org/builder/storyboard/$id'
+    | '/org/builder/ui-system/$id'
   id:
     | '__root__'
     | '/'
@@ -670,10 +716,14 @@ export interface FileRouteTypes {
     | '/creator/builder/course/$id'
     | '/creator/builder/material/$id'
     | '/creator/builder/quiz/$id'
+    | '/creator/builder/storyboard/$id'
+    | '/creator/builder/ui-system/$id'
     | '/org/builder/book/$id'
     | '/org/builder/course/$id'
     | '/org/builder/material/$id'
     | '/org/builder/quiz/$id'
+    | '/org/builder/storyboard/$id'
+    | '/org/builder/ui-system/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1011,6 +1061,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorChannelEditRouteImport
       parentRoute: typeof CreatorChannelRoute
     }
+    '/org/builder/ui-system/$id': {
+      id: '/org/builder/ui-system/$id'
+      path: '/builder/ui-system/$id'
+      fullPath: '/org/builder/ui-system/$id'
+      preLoaderRoute: typeof OrgBuilderUiSystemIdRouteImport
+      parentRoute: typeof OrgRoute
+    }
+    '/org/builder/storyboard/$id': {
+      id: '/org/builder/storyboard/$id'
+      path: '/builder/storyboard/$id'
+      fullPath: '/org/builder/storyboard/$id'
+      preLoaderRoute: typeof OrgBuilderStoryboardIdRouteImport
+      parentRoute: typeof OrgRoute
+    }
     '/org/builder/quiz/$id': {
       id: '/org/builder/quiz/$id'
       path: '/builder/quiz/$id'
@@ -1038,6 +1102,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/org/builder/book/$id'
       preLoaderRoute: typeof OrgBuilderBookIdRouteImport
       parentRoute: typeof OrgRoute
+    }
+    '/creator/builder/ui-system/$id': {
+      id: '/creator/builder/ui-system/$id'
+      path: '/builder/ui-system/$id'
+      fullPath: '/creator/builder/ui-system/$id'
+      preLoaderRoute: typeof CreatorBuilderUiSystemIdRouteImport
+      parentRoute: typeof CreatorRoute
+    }
+    '/creator/builder/storyboard/$id': {
+      id: '/creator/builder/storyboard/$id'
+      path: '/builder/storyboard/$id'
+      fullPath: '/creator/builder/storyboard/$id'
+      preLoaderRoute: typeof CreatorBuilderStoryboardIdRouteImport
+      parentRoute: typeof CreatorRoute
     }
     '/creator/builder/quiz/$id': {
       id: '/creator/builder/quiz/$id'
@@ -1129,6 +1207,8 @@ interface CreatorRouteChildren {
   CreatorBuilderCourseIdRoute: typeof CreatorBuilderCourseIdRoute
   CreatorBuilderMaterialIdRoute: typeof CreatorBuilderMaterialIdRoute
   CreatorBuilderQuizIdRoute: typeof CreatorBuilderQuizIdRoute
+  CreatorBuilderStoryboardIdRoute: typeof CreatorBuilderStoryboardIdRoute
+  CreatorBuilderUiSystemIdRoute: typeof CreatorBuilderUiSystemIdRoute
 }
 
 const CreatorRouteChildren: CreatorRouteChildren = {
@@ -1144,6 +1224,8 @@ const CreatorRouteChildren: CreatorRouteChildren = {
   CreatorBuilderCourseIdRoute: CreatorBuilderCourseIdRoute,
   CreatorBuilderMaterialIdRoute: CreatorBuilderMaterialIdRoute,
   CreatorBuilderQuizIdRoute: CreatorBuilderQuizIdRoute,
+  CreatorBuilderStoryboardIdRoute: CreatorBuilderStoryboardIdRoute,
+  CreatorBuilderUiSystemIdRoute: CreatorBuilderUiSystemIdRoute,
 }
 
 const CreatorRouteWithChildren =
@@ -1188,6 +1270,8 @@ interface OrgRouteChildren {
   OrgBuilderCourseIdRoute: typeof OrgBuilderCourseIdRoute
   OrgBuilderMaterialIdRoute: typeof OrgBuilderMaterialIdRoute
   OrgBuilderQuizIdRoute: typeof OrgBuilderQuizIdRoute
+  OrgBuilderStoryboardIdRoute: typeof OrgBuilderStoryboardIdRoute
+  OrgBuilderUiSystemIdRoute: typeof OrgBuilderUiSystemIdRoute
 }
 
 const OrgRouteChildren: OrgRouteChildren = {
@@ -1205,6 +1289,8 @@ const OrgRouteChildren: OrgRouteChildren = {
   OrgBuilderCourseIdRoute: OrgBuilderCourseIdRoute,
   OrgBuilderMaterialIdRoute: OrgBuilderMaterialIdRoute,
   OrgBuilderQuizIdRoute: OrgBuilderQuizIdRoute,
+  OrgBuilderStoryboardIdRoute: OrgBuilderStoryboardIdRoute,
+  OrgBuilderUiSystemIdRoute: OrgBuilderUiSystemIdRoute,
 }
 
 const OrgRouteWithChildren = OrgRoute._addFileChildren(OrgRouteChildren)

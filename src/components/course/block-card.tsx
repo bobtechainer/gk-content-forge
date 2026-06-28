@@ -3,11 +3,11 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
 import {
-  GripVertical, Trash2, Copy,
+  Trash2, Copy, ChevronUp, ChevronDown, Settings,
   Type, ImageIcon, VideoIcon, MessageSquare, Minus, Link2, Code2, Sigma, Columns2,
   ListChecks, Boxes, SplitSquareVertical, Check,
   Info, Lightbulb, AlertTriangle, ShieldAlert,
-  AlignCenter, Maximize2, LayoutGrid, Plus, MoveVertical,
+  AlignCenter, Maximize2, Plus, MoveVertical,
   ChevronsUpDown, ListOrdered, Layers,
 } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -60,9 +60,15 @@ const ANIM_OPTIONS: { value: BlockAnimation; label: string }[] = [
   { value: "none", label: "Không" },
 ];
 
-/* ─── Visual Layout Dropdown ───────────────────────────────────── */
+/* ─── Block settings menu (gear: layout + scroll animation) ──────── */
 
-function LayoutDropdown({ layout, onChange }: { layout: BlockLayout; onChange: (l: BlockLayout) => void }) {
+function BlockSettingsMenu({
+  block, onUpdate, onAnimChange,
+}: {
+  block: CourseBlock;
+  onUpdate: (p: Partial<CourseBlock>) => void;
+  onAnimChange: (a: BlockAnimation) => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -73,36 +79,61 @@ function LayoutDropdown({ layout, onChange }: { layout: BlockLayout; onChange: (
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  const options: { value: BlockLayout; label: string; icon: typeof AlignCenter; desc: string }[] = [
-    { value: "centered", label: "Giữa", icon: AlignCenter, desc: "Nội dung ở giữa (~672px)" },
-    { value: "full", label: "Rộng", icon: Maximize2, desc: "Toàn bộ chiều ngang" },
-  ];
+  const layout = block.layout ?? "centered";
+  const anim = block.animation ?? "fade-up";
+  const showLayout = block.type !== "columns" && block.type !== "divider" && block.type !== "section";
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className="flex items-center gap-0.5 p-1 text-muted-foreground hover:text-foreground" title="Layout">
-        <LayoutGrid className="h-3 w-3" />
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        title="Cài đặt khối"
+        aria-label="Cài đặt khối"
+      >
+        <Settings className="h-3.5 w-3.5" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-[180px] rounded-xl border bg-card p-1.5 shadow-xl">
-          {options.map((opt) => {
-            const Icon = opt.icon;
-            return (
-              <button key={opt.value} onClick={(e) => { e.stopPropagation(); onChange(opt.value); setOpen(false); }}
-                className={cn("flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition",
-                  layout === opt.value ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground")}>
-                <div className={cn("flex h-7 w-10 items-center justify-center rounded border",
-                  layout === opt.value ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30")}>
-                  <Icon className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                  <div className="text-[11px] font-medium">{opt.label}</div>
-                  <div className="text-[9px] text-muted-foreground">{opt.desc}</div>
-                </div>
-              </button>
-            );
-          })}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute right-full top-0 z-50 mr-1.5 w-[212px] rounded-xl border bg-card p-2 text-left shadow-xl"
+        >
+          {showLayout && (
+            <div className="mb-2">
+              <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Bố cục</p>
+              <div className="flex gap-1">
+                {([["centered", "Giữa", AlignCenter], ["full", "Rộng", Maximize2]] as const).map(([val, label, LIcon]) => (
+                  <button
+                    key={val}
+                    onClick={() => onUpdate({ layout: val as BlockLayout })}
+                    className={cn(
+                      "flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-[11px] font-medium transition",
+                      layout === val ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    <LIcon className="h-3 w-3" /> {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div>
+            <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Hiệu ứng xuất hiện</p>
+            <div className="grid grid-cols-2 gap-1">
+              {ANIM_OPTIONS.map((a) => (
+                <button
+                  key={a.value}
+                  onClick={() => onAnimChange(a.value)}
+                  className={cn(
+                    "rounded-md border px-2 py-1 text-[11px] transition",
+                    anim === a.value ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -118,9 +149,15 @@ interface BlockCardProps {
   onUpdate: (patch: Partial<CourseBlock>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  /** Vị trí (0-based) của khối trong bài — hiển thị số thứ tự trên pill. */
+  index: number;
+  /** Tổng số khối — để khoá nút ▲/▼ ở hai đầu. */
+  total: number;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
 }
 
-export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDuplicate }: BlockCardProps) {
+export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDuplicate, index, total, onMoveUp, onMoveDown }: BlockCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
     data: { source: "block", blockId: block.id },
@@ -149,36 +186,47 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
       className={cn("group relative rounded-xl border bg-card transition-all",
         isActive ? "border-primary/40 ring-2 ring-primary/10 shadow-md" : "border-border/60 hover:border-border hover:shadow-sm",
         isDragging && "z-50 opacity-50 shadow-xl")}>
-      {/* Floating toolbar */}
-      <div className={cn("absolute -top-3 right-3 z-10 flex items-center gap-0.5 rounded-lg border bg-card px-1 py-0.5 shadow-md transition-opacity",
-        isActive || isDragging ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
-        <div {...listeners} {...attributes} className="cursor-grab p-1 text-muted-foreground hover:text-foreground" title="Kéo di chuyển">
-          <GripVertical className="h-3.5 w-3.5" />
+      {/* TalentLMS-style floating control pill (right edge): số thứ tự + ▲▼ + nhân đôi + xoá + cài đặt */}
+      <div className={cn(
+        "absolute -right-3.5 top-2 z-10 flex flex-col items-center gap-0.5 rounded-xl border bg-card p-1 shadow-md transition-opacity",
+        isActive || isDragging ? "opacity-100" : "opacity-0 group-hover:opacity-100")}
+      >
+        <div {...listeners} {...attributes}
+          className="flex h-6 w-6 cursor-grab items-center justify-center rounded-md bg-primary text-[11px] font-bold text-primary-foreground active:cursor-grabbing"
+          title={`Khối ${index + 1} — kéo để di chuyển`}
+          aria-label={`Khối ${index + 1}, kéo để di chuyển`}
+        >
+          {index + 1}
         </div>
-        <div className="mx-0.5 h-3 w-px bg-border" />
-        {block.type !== "columns" && block.type !== "divider" && block.type !== "section" && (
-          <LayoutDropdown layout={layout} onChange={(l) => onUpdate({ layout: l })} />
-        )}
-        <select value={anim} onChange={(e) => { e.stopPropagation(); handleAnimChange(e.target.value as BlockAnimation); }}
-          onClick={(e) => e.stopPropagation()}
-          className="h-5 rounded bg-transparent px-0.5 text-[9px] text-muted-foreground outline-none hover:text-foreground" title="Hiệu ứng scroll">
-          {ANIM_OPTIONS.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
-        </select>
-        <div className="mx-0.5 h-3 w-px bg-border" />
-        <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="p-1 text-muted-foreground hover:text-foreground" title="Nhân đôi">
-          <Copy className="h-3 w-3" />
+        <button onClick={(e) => { e.stopPropagation(); onMoveUp(); }} disabled={index === 0}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30"
+          title="Di chuyển lên" aria-label="Di chuyển lên">
+          <ChevronUp className="h-3.5 w-3.5" />
         </button>
-        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1 text-muted-foreground hover:text-destructive" title="Xóa">
-          <Trash2 className="h-3 w-3" />
+        <button onClick={(e) => { e.stopPropagation(); onMoveDown(); }} disabled={index === total - 1}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30"
+          title="Di chuyển xuống" aria-label="Di chuyển xuống">
+          <ChevronDown className="h-3.5 w-3.5" />
         </button>
+        <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          title="Nhân đôi" aria-label="Nhân đôi khối">
+          <Copy className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-error-50 hover:text-destructive"
+          title="Xoá" aria-label="Xoá khối">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+        <BlockSettingsMenu block={block} onUpdate={onUpdate} onAnimChange={handleAnimChange} />
       </div>
-      {/* Block header */}
+      {/* Block header (nhãn loại block, cạnh trái) */}
       <div className="flex items-center gap-2 px-3 py-1.5">
         <Icon className="h-3 w-3" style={{ color: meta.color }} />
         <span className="text-[10px] font-medium text-muted-foreground">{meta.label}</span>
         {block.aiGenerated && (
           <span className="ml-1 rounded px-1 py-0.5 text-[9px] font-medium bg-brand-50 text-primary">
-            AI (demo)
+            AI
           </span>
         )}
         {block.type !== "columns" && block.type !== "divider" && block.type !== "section" && (

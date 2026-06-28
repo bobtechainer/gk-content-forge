@@ -1,13 +1,22 @@
 import { z } from "zod";
 import type { CourseBlock, CourseBlockType } from "@/stores/course";
+import type { LearningMaterialSubtype } from "@/lib/types";
+import type { CourseTheme } from "@/lib/theme/resolve";
+import { SYSTEM_THEMES } from "@/lib/theme/system-themes";
+import { ramp } from "@/lib/theme/color";
 import type {
   AiClient,
+  ChatReplyRequest,
   CompanionRequest,
   FillRequest,
+  GeneratedMaterial,
+  GenerateMaterialRequest,
   QuizFromContentRequest,
   Storyboard,
   StoryboardItem,
   StoryboardRequest,
+  UiSystemRequest,
+  UiSystemResult,
 } from "./types";
 
 /* ─── Deterministic hash ──────────────────────────────────────────── */
@@ -474,6 +483,141 @@ function buildQuizFromContent(
   return results;
 }
 
+/* ─── GenerateMaterial (9 loại học liệu trong kho) ───────────────── */
+
+const MATERIAL_KIND_LABELS: Record<LearningMaterialSubtype, string> = {
+  quiz: "Bộ đề",
+  lesson: "Bài giảng",
+  advanced: "Học liệu nâng cao",
+  scorm: "Gói SCORM/xAPI",
+  document: "Tài liệu",
+  video: "Video",
+  image: "Hình ảnh",
+  audio: "Âm thanh",
+  "3d_vr": "Mô hình 3D/VR",
+};
+
+function buildMaterial(req: GenerateMaterialRequest): GeneratedMaterial {
+  const { kind, topic } = req;
+  const subject = req.subject?.trim() || "";
+  const grade = req.grade?.trim() || "";
+  const gradeSuffix = grade ? ` (${grade})` : "";
+
+  const byKind: Record<
+    LearningMaterialSubtype,
+    { title: string; description: string; highlights: string[] }
+  > = {
+    quiz: {
+      title: `Bộ đề: ${topic}`,
+      description: `Bộ câu hỏi trắc nghiệm bám sát chủ đề ${topic}${gradeSuffix}, phân tầng từ nhận biết đến vận dụng.`,
+      highlights: ["10 câu trắc nghiệm 4 đáp án", "Có lời giải cho từng câu", "Phân tầng nhận biết → vận dụng cao"],
+    },
+    lesson: {
+      title: `Bài giảng: ${topic}`,
+      description: `Bài giảng tương tác về ${topic}${gradeSuffix}, gồm dẫn nhập, kiến thức trọng tâm và luyện tập.`,
+      highlights: ["Dàn ý 4 phần theo tiến trình lên lớp", "Sơ đồ trực quan và ví dụ thực tế", "Câu hỏi củng cố cuối bài"],
+    },
+    advanced: {
+      title: `Học liệu tương tác: ${topic}`,
+      description: `Gói HTML tương tác mô phỏng ${topic}${gradeSuffix}, học sinh thao tác trực tiếp.`,
+      highlights: ["Mô phỏng kéo-thả trực quan", "Phản hồi tức thì khi thao tác", "Chạy được offline trong trình duyệt"],
+    },
+    scorm: {
+      title: `Gói SCORM: ${topic}`,
+      description: `Gói SCORM đóng gói bài ${topic}${gradeSuffix} để nhúng vào hệ thống LMS.`,
+      highlights: ["Chuẩn SCORM 1.2 / xAPI", "Theo dõi tiến độ và điểm số", "Nhúng được vào mọi LMS"],
+    },
+    document: {
+      title: `Tài liệu: ${topic}`,
+      description: `Tài liệu tóm tắt lý thuyết ${topic}${gradeSuffix} kèm công thức và ví dụ mẫu.`,
+      highlights: ["Tóm tắt lý thuyết trọng tâm", "Bảng công thức và ví dụ mẫu", "Tải xuống / in PDF được"],
+    },
+    video: {
+      title: `Video bài giảng: ${topic}`,
+      description: `Kịch bản video ${topic}${gradeSuffix} dài khoảng 6 phút, có phân cảnh và lời thoại.`,
+      highlights: ["Kịch bản 6 phút có phân cảnh", "Lời thoại kèm gợi ý hình ảnh", "Phụ đề tiếng Việt"],
+    },
+    image: {
+      title: `Hình minh hoạ: ${topic}`,
+      description: `Bộ sơ đồ và hình minh hoạ cho chủ đề ${topic}${gradeSuffix}.`,
+      highlights: ["Sơ đồ tư duy chủ đề", "Infographic tóm tắt", "Chú thích rõ ràng"],
+    },
+    audio: {
+      title: `Âm thanh: ${topic}`,
+      description: `Bản thu giọng đọc nội dung ${topic}${gradeSuffix}, phù hợp ôn tập.`,
+      highlights: ["Giọng đọc rõ ràng ~5 phút", "Nhạc nền nhẹ", "Nghe lại khi di chuyển"],
+    },
+    "3d_vr": {
+      title: `Mô hình 3D: ${topic}`,
+      description: `Mô hình 3D/VR tương tác giúp quan sát ${topic}${gradeSuffix} ở mọi góc nhìn.`,
+      highlights: ["Xoay / phóng to 360°", "Điểm nóng chú thích (hotspot)", "Xem được bằng kính VR"],
+    },
+  };
+
+  const c = byKind[kind];
+  return {
+    kind,
+    title: c.title,
+    description: c.description,
+    tags: [subject, topic, MATERIAL_KIND_LABELS[kind]].filter(Boolean),
+    highlights: c.highlights,
+  };
+}
+
+/* ─── GenerateUiSystem (giao diện khoá học) ──────────────────────── */
+
+const VIBE_ACCENTS: Record<string, string> = {
+  "Tươi sáng": "#15B79E",
+  "Trang trọng": "#1F3A8A",
+  "Tối giản": "#334155",
+  "Vui nhộn": "#F59E0B",
+};
+
+const DENSITY_LABELS: Record<string, string> = {
+  compact: "gọn gàng",
+  cozy: "cân đối",
+  spacious: "thoáng đãng",
+};
+
+function pickThemeBase(text: string): string {
+  const t = text.toLowerCase();
+  if (/(mầm non|mam non|vui nhộn|bé|trẻ|sắc màu|nhí)/.test(t)) return "mam-non";
+  if (/(stem|khoa học|hoá|hóa|vật l[ýy]|sinh học|toán|công nghệ|kỹ thuật|lab)/.test(t)) return "stem";
+  if (/(văn|sử|địa|nhân văn|trang trọng|cổ điển|lịch sử|triết)/.test(t)) return "humanities";
+  if (/(tối|dark|đêm|ban đêm)/.test(t)) return "dark";
+  if (/(trung học|thpt|thcs|năng động|tươi sáng|tươi)/.test(t)) return "trung-hoc";
+  return "mobifone-default";
+}
+
+function buildUiSystem(req: UiSystemRequest): UiSystemResult {
+  const base = pickThemeBase(`${req.description} ${req.subject ?? ""} ${req.vibe ?? ""}`);
+  const baseTheme = SYSTEM_THEMES[base];
+  const accent = (req.vibe && VIBE_ACCENTS[req.vibe]) || baseTheme.accentSeed;
+  const theme: CourseTheme = { ...baseTheme, base: "custom", accentSeed: accent };
+  const r = ramp(accent);
+  const name = req.vibe ? `${req.vibe} · ${req.subject || "khoá học"}` : `Giao diện cho ${req.subject || "khoá học"}`;
+  const density = DENSITY_LABELS[theme.density] ?? "cân đối";
+  const seed = (req.description || req.subject || "khoá học").trim();
+  const rationale = `Mình chọn tông màu này với bố cục ${density}, bo góc ${theme.radiusStep}px${theme.mode === "dark" ? " và nền tối" : ""} — hợp với "${seed}". Bạn có thể tinh chỉnh thêm bên trái rồi áp dụng.`;
+  return { name, theme, rationale, palette: [r.soft, r.accent, r.strong] };
+}
+
+/* ─── ChatReply (hội thoại ngắn) ─────────────────────────────────── */
+
+function buildChatReply(req: ChatReplyRequest): { text: string } {
+  const topic = req.topic?.trim();
+  const about = topic ? ` về "${topic}"` : "";
+  const byMode: Record<ChatReplyRequest["mode"], string> = {
+    content: `Được, mình viết nội dung${about} ngay. Bạn xem rồi chèn vào bài nhé.`,
+    "full-lesson": `Để mình dựng cả bài${about}: phác dàn ý, viết từng phần rồi đổ lên canvas giúp bạn.`,
+    quiz: `Mình tạo vài câu hỏi${about} bám nội dung bài để kiểm tra mức độ hiểu nhé.`,
+    flashcards: `Mình làm một bộ thẻ ghi nhớ${about} cho phần ôn tập.`,
+    material: `Mình tạo học liệu${about} rồi lưu vào kho để bạn dùng lại sau.`,
+    rewrite: `Mình soạn lại đoạn này cho rõ ràng và mạch lạc hơn nhé.`,
+  };
+  return { text: byMode[req.mode] };
+}
+
 /* ─── mockAiClient ───────────────────────────────────────────────── */
 
 export const mockAiClient: AiClient = {
@@ -505,5 +649,17 @@ export const mockAiClient: AiClient = {
 
   async quizFromContent(req: QuizFromContentRequest) {
     return buildQuizFromContent(req);
+  },
+
+  async generateMaterial(req: GenerateMaterialRequest) {
+    return buildMaterial(req);
+  },
+
+  async generateUiSystem(req: UiSystemRequest) {
+    return buildUiSystem(req);
+  },
+
+  async chatReply(req: ChatReplyRequest) {
+    return buildChatReply(req);
   },
 };

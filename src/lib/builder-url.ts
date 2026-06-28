@@ -29,3 +29,23 @@ export function builderHref(scope: BuilderScope, item: BuilderItem): string {
   const base = scope === "org" ? "/org" : "/creator";
   return `${base}/builder/${builderSegment(item)}/${item.id}`;
 }
+
+/* ─── Route patterns cho các trang chuyên dụng của course builder ───
+ * Trả về literal union (qua `as const`) để `<Link to=…>` / `navigate` của
+ * TanStack vẫn type-check sau khi route tree được sinh lại.
+ * ────────────────────────────────────────────────────────────────── */
+
+export function courseBuilderRoutePattern(scope: BuilderScope) {
+  if (scope === "org") return "/org/builder/course/$id" as const;
+  return "/creator/builder/course/$id" as const;
+}
+
+export function storyboardRoutePattern(scope: BuilderScope) {
+  if (scope === "org") return "/org/builder/storyboard/$id" as const;
+  return "/creator/builder/storyboard/$id" as const;
+}
+
+export function uiSystemRoutePattern(scope: BuilderScope) {
+  if (scope === "org") return "/org/builder/ui-system/$id" as const;
+  return "/creator/builder/ui-system/$id" as const;
+}

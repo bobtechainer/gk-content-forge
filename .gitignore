@@ -32,3 +32,6 @@ dist-ssr
 *.sw?
 
 .claude/worktrees/
+
+# Superpowers scratch (brainstorm mockups, sdd ledger) — không commit
+.superpowers/
