@@ -8,14 +8,14 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Eye, Edit3, Monitor, Tablet, Smartphone,
-  FolderTree, Sparkles, MessageSquare,
+  FolderTree, Sparkles, PanelRightOpen, PanelRightClose,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CoursePalette, BLOCK_TYPES } from "./course-palette";
 import { PageCanvas } from "./page-canvas";
 import { ActivityList } from "./activity-list";
 import { ActivityEditor } from "./activity-editor";
-import { AiCommandBar } from "./ai-command-bar";
+
 import { AiChatPanel } from "./ai-chat-panel";
 import { LessonStrip } from "./lesson-strip";
 import { StructureDrawer } from "./structure-drawer";
@@ -32,13 +32,7 @@ import { type Viewport } from "@/lib/preview/viewport";
 
 export type CourseBuilderBackTo = "/creator/dashboard" | "/org/dashboard";
 
-/* ─── Panel icon rail definitions ──────────────────────────────── */
-
-const RIGHT_RAIL = [
-  { id: "chat" as const, icon: MessageSquare, label: "AI Chat" },
-  { id: "sparkles" as const, icon: Sparkles, label: "AI Actions" },
-];
-type RightTab = (typeof RIGHT_RAIL)[number]["id"] | null;
+/* (No right rail — single panel toggle) */
 
 export function CourseBuilder({ courseId: id, backTo }: { courseId: string; backTo: CourseBuilderBackTo }) {
   const navigate = useNavigate();
@@ -77,7 +71,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
 
   // Panel visibility
   const [showLeftPanel, setShowLeftPanel] = useState(true);
-  const [rightTab, setRightTab] = useState<RightTab>("chat");
+  const [showRightPanel, setShowRightPanel] = useState(true);
   const [showBottomStrip, setShowBottomStrip] = useState(true);
   // Mở builder mặc định ở chế độ Preview (tiện trình diễn demo); bấm "Soạn" để chỉnh sửa.
   const [previewMode, setPreviewMode] = useState(true);
@@ -112,7 +106,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
   const showPublishLessonBtn = activeLessonPublishState === "dirty" || activeLessonPublishState === "never";
   const getPublishState = (lessonId: string) => getLessonPublishState(id, lessonId);
 
-  const showRightPanel = rightTab !== null;
+
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
@@ -311,6 +305,22 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 {activeLessonPublishState === "never" ? "Xuất bản bài" : "Xuất bản thay đổi"}
               </Button>
             )}
+            {!previewMode && (
+              <button
+                onClick={() => setShowRightPanel(!showRightPanel)}
+                className={cn(
+                  "flex h-8 items-center gap-1.5 rounded-[var(--builder-radius-sm)] border px-2.5 text-xs font-medium transition",
+                  showRightPanel
+                    ? "border-violet-300 bg-violet-50 text-violet-600"
+                    : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+                title={showRightPanel ? "Ẩn AI Chat" : "Mở AI Chat"}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">AI</span>
+                {showRightPanel ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
+              </button>
+            )}
             <ThemePanel courseId={id} />
             <Button size="sm" className="h-8 bg-primary text-xs text-white hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>
               Xuất bản
@@ -401,10 +411,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
               </AnimatePresence>
             </div>
 
-            {/* AI Command Bar — only in edit mode, below canvas */}
-            {!previewMode && !editingBlock && (
-              <AiCommandBar onSubmit={handleCommandBarSubmit} />
-            )}
+
 
             {/* Bottom strip — only in edit mode */}
             {!previewMode && (
@@ -427,43 +434,15 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
 
           {/* Right: AI Chat Panel with slide animation */}
           {!previewMode && (
-            <div className="relative hidden shrink-0 lg:flex">
-              {/* Icon rail — always visible */}
-              <div className="flex w-12 shrink-0 flex-col items-center gap-1.5 border-l border-border bg-sidebar py-3">
-                {RIGHT_RAIL.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = rightTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setRightTab((cur) => (cur === tab.id ? null : tab.id))}
-                      aria-label={tab.label}
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-[var(--builder-radius-sm)] transition",
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                      )}
-                    >
-                      <Icon className="h-4.5 w-4.5" />
-                    </button>
-                  );
-                })}
+            <motion.div
+              className="relative hidden shrink-0 overflow-hidden border-l border-border bg-card lg:block"
+              animate={{ width: showRightPanel ? 360 : 0 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <div className="h-full w-[360px]">
+                <AiChatPanel />
               </div>
-
-              {/* Expandable panel */}
-              <motion.div
-                className="shrink-0 overflow-hidden border-l border-border bg-card"
-                animate={{ width: showRightPanel ? 320 : 0 }}
-                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <div className="h-full w-[320px]">
-                  {rightTab === "chat" && <AiChatPanel />}
-                  {rightTab === "sparkles" && <AiChatPanel />}
-                </div>
-              </motion.div>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

@@ -2,12 +2,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
-  Send,
   Trash2,
   Bot,
   User,
   Lightbulb,
 } from "lucide-react";
+import { AiCommandBar } from "./ai-command-bar";
 import {
   type ChatMessage,
   type ChatAttachment,
@@ -231,38 +231,8 @@ export function AiChatPanel({ className }: AiChatPanelProps) {
         </AnimatePresence>
       </div>
 
-      {/* Input */}
-      <div className="border-t px-4 py-3">
-        <div className="flex items-center gap-2">
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder="Nhắn tin cho AI..."
-            disabled={isThinking}
-            className={cn(
-              "min-w-0 flex-1 rounded-[var(--builder-radius)] border bg-card px-3 py-2 text-xs outline-none transition",
-              "border-border placeholder:text-muted-foreground/50",
-              "focus:border-primary/50 focus:ring-2 focus:ring-primary/10",
-              isThinking && "opacity-50",
-            )}
-          />
-          <button
-            type="button"
-            onClick={() => handleSend()}
-            disabled={!input.trim() || isThinking}
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-[var(--builder-radius-sm)] transition",
-              input.trim() && !isThinking
-                ? "bg-primary text-white hover:bg-primary/90 active:scale-95"
-                : "bg-muted text-muted-foreground cursor-not-allowed",
-            )}
-          >
-            <Send className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
+      {/* Input — integrated AI Command Bar */}
+      <AiCommandBar onSubmit={handleCommandBarAction} disabled={isThinking} />
     </div>
   );
 }
