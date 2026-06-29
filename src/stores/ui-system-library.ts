@@ -36,6 +36,7 @@ export const UI_SYSTEM_PRESETS: UiSystemLibraryItem[] = Object.entries(SYSTEM_TH
 interface UiSystemLibraryState {
   items: UiSystemLibraryItem[];
   add: (item: { name: string; description?: string; theme: CourseTheme }) => string;
+  update: (id: string, patch: { name?: string; description?: string; theme?: CourseTheme }) => void;
   remove: (id: string) => void;
 }
 
@@ -48,6 +49,8 @@ export const useUiSystemLibrary = create<UiSystemLibraryState>()(
         set({ items: [{ id, name, description, theme, source: "user", createdAt: Date.now() }, ...get().items] });
         return id;
       },
+      update: (id, patch) =>
+        set({ items: get().items.map((i) => (i.id === id ? { ...i, ...patch } : i)) }),
       remove: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
     }),
     {
