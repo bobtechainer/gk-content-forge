@@ -17,7 +17,7 @@ import { ContentTable } from "./content-table";
 import { LIBRARY_TABS, MaterialTabs, StatusFilterChips } from "./material-tabs";
 import { PageFrame } from "./page-frame";
 import { PageSkeleton } from "./page-skeleton";
-import { ModuleLibrarySection } from "./module-library-section";
+import { ModuleGallery } from "./module-library-section";
 import type { BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
 
@@ -112,18 +112,22 @@ export function LibraryView({ scope }: { scope: StudioScope }) {
           </div>
         </div>
 
-        {/* Status filter chips */}
-        <StatusFilterChips value={status} onChange={setStatus} />
-
-        {/* Content display */}
-        {viewMode === "table" ? (
-          <ContentTable items={filtered} scope={scope} />
+        {tab.module ? (
+          /* Tab module riêng: Storyboard / UI System */
+          <ModuleGallery module={tab.module} scope={scope as BuilderScope} />
         ) : (
-          <ContentGrid items={filtered} scope={scope} />
-        )}
+          <>
+            {/* Status filter chips */}
+            <StatusFilterChips value={status} onChange={setStatus} />
 
-        {/* Module AI (Storyboard + UI System) — kho dùng lại, phần phụ thêm */}
-        <ModuleLibrarySection scope={scope as BuilderScope} />
+            {/* Content display */}
+            {viewMode === "table" ? (
+              <ContentTable items={filtered} scope={scope} />
+            ) : (
+              <ContentGrid items={filtered} scope={scope} />
+            )}
+          </>
+        )}
 
         {/* Version history & co-authors — additive panel, does not affect list/search */}
         {withHistory.length > 0 && (

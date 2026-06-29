@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Sparkles, Send, ChevronDown, Wand2, PenLine, ListChecks, Layers, Boxes,
   Check, Loader2, ArrowUpRight, LayoutList, Palette, Library, CircleDot,
@@ -18,6 +18,7 @@ import { useCourseTheme } from "@/stores/course-theme";
 import { useStoryboardLibrary, allStoryboardItems } from "@/stores/storyboard-library";
 import { useUiSystemLibrary, allUiSystemItems } from "@/stores/ui-system-library";
 import type { ContentItem, LearningMaterialSubtype } from "@/lib/types";
+import type { CourseTheme } from "@/lib/theme/resolve";
 import { LEARNING_MATERIAL_TYPES, MATERIAL_TYPE_LABELS, MATERIAL_TYPE_ICONS } from "@/lib/taxonomy";
 import { storyboardRoutePattern, uiSystemRoutePattern, type BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
@@ -90,7 +91,11 @@ interface ChatMessage {
   followups?: Followup[];
 }
 
-type Attachment = { kind: "storyboard" | "ui" | "material" | "file"; label: string };
+type Attachment =
+  | { kind: "storyboard"; label: string; storyboard: Storyboard }
+  | { kind: "ui"; label: string; theme: CourseTheme }
+  | { kind: "material"; label: string; material: ContentItem }
+  | { kind: "file"; label: string };
 type PickerKind = "storyboard" | "ui" | "material" | null;
 
 let msgSeq = 0;
@@ -179,15 +184,15 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     );
   }, [patchMessage, patchStep, insertBlock, subject, grade]);
 
-  /* ─── Chạy một chế độ ─────────────────────────────────────────── */
-  const runMode = useCallback(async (activeMode: AiChatMode, rawPrompt: string, materialKind?: LearningMaterialSubtype) => {
-    if (busy) return;
+  /* ─── Chạy một chế độ (không quản busy; pushUser=false khi gọi từ Gửi gộp) ─ */
+  const _run = useCallback(async (activeMode: AiChatMode, rawPrompt: string, materialKind?: LearningMaterialSubtype, pushUser = true) => {
     const topic = rawPrompt.trim() || contentItem?.subject || "chủ đề bài học";
-    setBusy(true);
-    const userText = activeMode === "material" && materialKind
-      ? `Tạo ${MATERIAL_TYPE_LABELS[materialKind].toLowerCase()}: ${topic}`
-      : rawPrompt.trim() || MODES.find((m) => m.id === activeMode)!.label;
-    setMessages((cur) => [...cur, { id: newId(), role: "user", text: userText }]);
+    if (pushUser) {
+      const userText = activeMode === "material" && materialKind
+        ? `Tạo ${MATERIAL_TYPE_LABELS[materialKind].toLowerCase()}: ${topic}`
+        : rawPrompt.trim() || MODES.find((m) => m.id === activeMode)!.label;
+      setMessages((cur) => [...cur, { id: newId(), role: "user", text: userText }]);
+    }
     const aid = newId();
     setMessages((cur) => [...cur, { id: aid, role: "assistant", text: "", streaming: true }]);
     try {
@@ -248,45 +253,33 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       patchMessage(aid, { followups: followupsFor(activeMode) });
     } catch {
       patchMessage(aid, { streaming: false, text: "Có lỗi nhỏ khi xử lý. Bạn thử lại giúp mình nhé." });
-    } finally {
-      setBusy(false);
     }
-  }, [busy, contentItem, lessonId, subject, grade, patchMessage, patchStep, insertBlock, lessonSourceText, runFill]);
+  }, [contentItem, lessonId, subject, grade, patchMessage, patchStep, insertBlock, lessonSourceText, runFill]);
 
-  /* ─── "+" actions ─────────────────────────────────────────────── */
-  const applyStoryboardItem = useCallback(async (item: { name: string; storyboard: Storyboard }) => {
+  const runMode = useCallback(async (activeMode: AiChatMode, rawPrompt: string, materialKind?: LearningMaterialSubtype) => {
     if (busy) return;
-    if (!lessonId) { pushAssistant("Hãy chọn một bài học bên trái trước khi áp dàn ý nhé."); return; }
     setBusy(true);
-    setAttachments((a) => [...a, { kind: "storyboard", label: item.name }]);
-    setMessages((c) => [...c, { id: newId(), role: "user", text: `Dùng dàn ý "${item.name}"` }]);
-    const aid = newId();
-    setMessages((c) => [...c, { id: aid, role: "assistant", text: `Đang áp dàn ý "${item.name}" vào bài…` }]);
-    try {
-      useStoryboard.getState().setStoryboard(lessonId, item.storyboard);
-      await runFill(aid, item.storyboard, subject || item.name);
-      patchMessage(aid, { text: `Đã áp dàn ý "${item.name}" — thêm ${item.storyboard.sections.flatMap((s) => s.items).length} khối vào bài.`, followups: followupsFor("full-lesson") });
-    } finally { setBusy(false); }
-  }, [busy, lessonId, subject, runFill, patchMessage]);
+    try { await _run(activeMode, rawPrompt, materialKind, true); }
+    finally { setBusy(false); }
+  }, [busy, _run]);
 
-  const onPickStoryboard = (item: { name: string; storyboard: Storyboard }) => { setPicker(null); void applyStoryboardItem(item); };
-  const onPickUiSystem = (item: { name: string; theme: import("@/lib/theme/resolve").CourseTheme }) => {
+  /* ─── "+" → chỉ ĐÍNH KÈM (tag), KHÔNG thực thi. Thực thi khi bấm Gửi. ─ */
+  const onPickStoryboard = (item: { name: string; storyboard: Storyboard }) => {
     setPicker(null);
-    useCourseTheme.getState().setTheme(courseId, item.theme);
-    setAttachments((a) => [...a, { kind: "ui", label: item.name }]);
-    pushAssistant(`Đã áp giao diện "${item.name}" cho khoá học. Bạn xem trên canvas hoặc Preview nhé.`);
+    setAttachments((a) => [...a, { kind: "storyboard", label: item.name, storyboard: item.storyboard }]);
+  };
+  const onPickUiSystem = (item: { name: string; theme: CourseTheme }) => {
+    setPicker(null);
+    setAttachments((a) => [...a, { kind: "ui", label: item.name, theme: item.theme }]);
   };
   const onPickMaterial = (mat: ContentItem) => {
     setPicker(null);
-    if (!lessonId) { pushAssistant("Hãy chọn một bài học trước khi chèn học liệu nhé."); return; }
-    insertBlock("embed", { embedMaterialId: mat.id, embedTitle: mat.title, embedType: mat.materialSubtype ?? "document" });
-    pushAssistant(`Đã chèn học liệu "${mat.title}" vào bài.`);
+    setAttachments((a) => [...a, { kind: "material", label: mat.title, material: mat }]);
   };
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setAttachments((a) => [...a, { kind: "file", label: f.name }]);
-    pushAssistant(`Đã đính kèm "${f.name}". Mình sẽ tham khảo tệp này khi soạn (mô phỏng).`);
     e.target.value = "";
   };
 
@@ -298,12 +291,46 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     patchMessage(id, { materialSaved: true });
   }, [roleId, subject, grade, patchMessage]);
 
-  const handleSend = () => {
-    if (busy || mode === "material") return;
-    if (!input.trim() && mode !== "full-lesson") return;
+  const handleSend = async () => {
+    if (busy) return;
+    const atts = attachments;
     const prompt = input;
+    const hasPrompt = prompt.trim().length > 0;
+    if (!hasPrompt && atts.length === 0 && mode !== "full-lesson") return;
     setInput("");
-    void runMode(mode, prompt);
+    setAttachments([]);
+    setBusy(true);
+    try {
+      // Bong bóng người dùng gộp (câu lệnh + các tag đính kèm)
+      const labels = atts.map((a) => a.label);
+      const userText = [prompt.trim(), labels.length ? `đính kèm: ${labels.join(", ")}` : ""].filter(Boolean).join("  ·  ") || MODES.find((m) => m.id === mode)!.label;
+      setMessages((c) => [...c, { id: newId(), role: "user", text: userText }]);
+
+      // 1) Giao diện
+      for (const a of atts) if (a.kind === "ui") {
+        useCourseTheme.getState().setTheme(courseId, a.theme);
+        pushAssistant(`Đã áp giao diện "${a.label}" cho khoá học.`);
+      }
+      // 2) Học liệu
+      for (const a of atts) if (a.kind === "material") {
+        if (!lessonId) pushAssistant("Hãy chọn một bài học trước khi chèn học liệu nhé.");
+        else { insertBlock("embed", { embedMaterialId: a.material.id, embedTitle: a.material.title, embedType: a.material.materialSubtype ?? "document" }); pushAssistant(`Đã chèn học liệu "${a.label}" vào bài.`); }
+      }
+      // 3) Tệp (mô phỏng)
+      for (const a of atts) if (a.kind === "file") pushAssistant(`Đã tham khảo tệp "${a.label}" (mô phỏng).`);
+      // 4) Dàn ý (agentic, có nhật ký bước)
+      for (const a of atts) if (a.kind === "storyboard") {
+        if (!lessonId) { pushAssistant("Hãy chọn một bài học trước khi áp dàn ý nhé."); continue; }
+        const aid = pushAssistant(`Đang áp dàn ý "${a.label}" vào bài…`);
+        useStoryboard.getState().setStoryboard(lessonId, a.storyboard);
+        await runFill(aid, a.storyboard, subject || a.label);
+        patchMessage(aid, { text: `Đã áp dàn ý "${a.label}" — thêm ${a.storyboard.sections.flatMap((s) => s.items).length} khối.`, followups: followupsFor("full-lesson") });
+      }
+      // 5) Câu lệnh chữ
+      if (hasPrompt || mode === "full-lesson") await _run(mode, prompt, undefined, false);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const suggestions = [
@@ -327,25 +354,6 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       <button type="button" onClick={() => setExpanded((v) => !v)} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground" title={expanded ? "Thu nhỏ" : "Mở rộng"} aria-label={expanded ? "Thu nhỏ" : "Mở rộng"}>
         {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
       </button>
-    </div>
-  );
-
-  const links = (
-    <div className="grid grid-cols-2 gap-2 border-b border-border p-2.5">
-      <Button asChild variant="outline" size="sm" className="h-auto justify-start gap-2 px-2.5 py-2 text-xs">
-        <Link to={storyboardRoutePattern(scope)} params={{ id: courseId }}>
-          <LayoutList className="h-4 w-4 text-primary" />
-          <span className="flex-1 text-left leading-tight">Dàn ý<br /><span className="text-[10px] text-muted-foreground">Mở kho Storyboard</span></span>
-          <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
-        </Link>
-      </Button>
-      <Button asChild variant="outline" size="sm" className="h-auto justify-start gap-2 px-2.5 py-2 text-xs">
-        <Link to={uiSystemRoutePattern(scope)} params={{ id: courseId }}>
-          <Palette className="h-4 w-4 text-primary" />
-          <span className="flex-1 text-left leading-tight">Giao diện<br /><span className="text-[10px] text-muted-foreground">Mở kho UI System</span></span>
-          <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
-        </Link>
-      </Button>
     </div>
   );
 
@@ -459,11 +467,9 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
 
           <span className="flex-1 truncate px-1 text-[10px] text-muted-foreground">Nội dung do AI tạo — bạn nên đọc lại trước khi xuất bản.</span>
 
-          {mode !== "material" && (
-            <Button size="icon" className="h-8 w-8 shrink-0 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={busy || (!input.trim() && mode !== "full-lesson")} onClick={handleSend} aria-label="Gửi">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          )}
+          <Button size="icon" className="h-8 w-8 shrink-0 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={busy || (!input.trim() && attachments.length === 0 && mode !== "full-lesson")} onClick={handleSend} aria-label="Gửi">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
       <input ref={fileRef} type="file" className="hidden" onChange={onFile} aria-hidden />
@@ -472,6 +478,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       {picker && (
         <LibraryPicker
           kind={picker}
+          scope={scope}
+          roleId={roleId}
           onClose={() => setPicker(null)}
           storyboards={allStoryboardItems(storyboardLib)}
           uiSystems={allUiSystemItems(uiSystemLib)}
@@ -487,7 +495,6 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   const inner = (
     <div className="flex h-full flex-col bg-card">
       {header}
-      {!expanded && links}
       {thread}
       {composer}
     </div>
@@ -517,64 +524,111 @@ function PlusItem({ icon: Icon, label, onClick }: { icon: typeof Plus; label: st
 }
 
 function LibraryPicker({
-  kind, onClose, storyboards, uiSystems, materials, onPickStoryboard, onPickUiSystem, onPickMaterial,
+  kind, scope, roleId, onClose, storyboards, uiSystems, materials, onPickStoryboard, onPickUiSystem, onPickMaterial,
 }: {
   kind: Exclude<PickerKind, null>;
+  scope: BuilderScope;
+  roleId: string | null;
   onClose: () => void;
   storyboards: { id: string; name: string; source: string; description?: string; storyboard: Storyboard }[];
-  uiSystems: { id: string; name: string; source: string; description?: string; theme: import("@/lib/theme/resolve").CourseTheme }[];
+  uiSystems: { id: string; name: string; source: string; description?: string; theme: CourseTheme }[];
   materials: ContentItem[];
   onPickStoryboard: (i: { name: string; storyboard: Storyboard }) => void;
-  onPickUiSystem: (i: { name: string; theme: import("@/lib/theme/resolve").CourseTheme }) => void;
+  onPickUiSystem: (i: { name: string; theme: CourseTheme }) => void;
   onPickMaterial: (m: ContentItem) => void;
 }) {
-  const title = kind === "storyboard" ? "Chọn dàn ý từ kho" : kind === "ui" ? "Chọn giao diện từ kho" : "Chọn học liệu từ kho";
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<"system" | "user">("system");
+  const [q, setQ] = useState("");
+  const sysTab = tab === "system";
+  const match = (s: string) => !q.trim() || s.toLowerCase().includes(q.trim().toLowerCase());
+
+  const sb = storyboards.filter((it) => (sysTab ? it.source === "system" : it.source === "user")).filter((it) => match(it.name));
+  const ui = uiSystems.filter((it) => (sysTab ? it.source === "system" : it.source === "user")).filter((it) => match(it.name));
+  const mat = materials.filter((m) => (sysTab ? m.ownerId !== roleId : m.ownerId === roleId)).filter((m) => match(m.title));
+  const empty = (kind === "storyboard" ? sb.length : kind === "ui" ? ui.length : mat.length) === 0;
+
+  const title = kind === "storyboard" ? "Chọn dàn ý" : kind === "ui" ? "Chọn giao diện" : "Chọn học liệu";
+  const TitleIcon = kind === "ui" ? Palette : kind === "material" ? BookOpen : LayoutList;
+
+  const openKho = () => {
+    const id = `mod_${Date.now()}`;
+    if (kind === "storyboard") navigate({ to: storyboardRoutePattern(scope), params: { id } });
+    else if (kind === "ui") navigate({ to: uiSystemRoutePattern(scope), params: { id } });
+    else navigate({ to: scope === "org" ? "/org/library" : "/creator/library" });
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-foreground/30 p-4" onClick={onClose}>
-      <div className="flex max-h-[70vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <p className="text-sm font-semibold text-foreground">{title}</p>
+      <div className="flex max-h-[74vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-primary"><TitleIcon className="h-4 w-4" /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">{title}</p>
+            <p className="truncate text-[11px] text-muted-foreground">Đính kèm — bấm Gửi mới thực thi</p>
+          </div>
           <button type="button" onClick={onClose} aria-label="Đóng"><X className="h-4 w-4 text-muted-foreground" /></button>
         </div>
-        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-3">
-          {kind === "storyboard" && storyboards.map((it) => (
+
+        {/* Tabs + search */}
+        <div className="flex items-center gap-1 border-b border-border px-3">
+          {([["system", "Kho hệ thống"], ["user", "Thư viện của tôi"]] as const).map(([id, label]) => (
+            <button key={id} type="button" onClick={() => setTab(id)}
+              className={cn("relative px-3 py-2.5 text-xs font-semibold transition", tab === id ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+              {label}{tab === id && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" />}
+            </button>
+          ))}
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm theo tên…"
+            className="ml-auto my-1.5 w-[150px] rounded-lg border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-primary" />
+        </div>
+
+        {/* List */}
+        <div className="min-h-[160px] flex-1 space-y-1.5 overflow-y-auto p-3">
+          {empty && <p className="px-1 py-10 text-center text-xs text-muted-foreground">Không tìm thấy mục nào ở đây.</p>}
+          {kind === "storyboard" && sb.map((it) => (
             <button key={it.id} type="button" onClick={() => onPickStoryboard(it)} className="flex w-full items-start gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
               <LayoutList className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">{it.name}{it.source === "system" && <SourceTag />}</span>
+                <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">{it.description ?? `${it.storyboard.sections.length} phần`}</span>
               </span>
+              <Plus className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </button>
           ))}
-          {kind === "ui" && uiSystems.map((it) => (
+          {kind === "ui" && ui.map((it) => (
             <button key={it.id} type="button" onClick={() => onPickUiSystem(it)} className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
               <span className="h-7 w-7 shrink-0 rounded-md border border-border" style={{ background: it.theme.accentSeed }} />
               <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">{it.name}{it.source === "system" && <SourceTag />}</span>
+                <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">{it.description ?? "Giao diện khoá học"}</span>
               </span>
+              <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </button>
           ))}
-          {kind === "material" && (materials.length === 0 ? (
-            <p className="px-1 py-6 text-center text-xs text-muted-foreground">Kho học liệu trống.</p>
-          ) : materials.map((m) => (
+          {kind === "material" && mat.map((m) => (
             <button key={m.id} type="button" onClick={() => onPickMaterial(m)} className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
               <BookOpen className="h-4 w-4 shrink-0 text-primary" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-xs font-medium text-foreground">{m.title}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">{MATERIAL_TYPE_LABELS[(m.materialSubtype ?? "document")]} · {m.subject}</span>
               </span>
+              <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </button>
-          )))}
+          ))}
+        </div>
+
+        {/* Footer: mở kho đầy đủ */}
+        <div className="flex items-center gap-2 border-t border-border px-4 py-3">
+          <button type="button" onClick={openKho} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+            {kind === "material" ? "Mở Thư viện đầy đủ" : kind === "ui" ? "Mở kho Giao diện" : "Mở kho Storyboard"}
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </button>
+          <Button variant="ghost" size="sm" className="ml-auto text-xs" onClick={onClose}>Đóng</Button>
         </div>
       </div>
     </div>,
     document.body,
   );
-}
-
-function SourceTag() {
-  return <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">Hệ thống</span>;
 }
 
 /* ─── Message bubble ────────────────────────────────────────────── */

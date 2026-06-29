@@ -9,6 +9,8 @@ export interface LibraryTab {
   types: MaterialType[];
   /** Whether to show subtype filter chips within this tab. */
   hasSubtypeFilter: boolean;
+  /** Tab này là một MODULE riêng (Storyboard / UI System) — render kho riêng, không lọc ContentItem. */
+  module?: "storyboard" | "ui_system";
 }
 
 export const LIBRARY_TABS: LibraryTab[] = [
@@ -26,6 +28,8 @@ export const LIBRARY_TABS: LibraryTab[] = [
     types: ["document", "video", "image", "audio", "3d_vr"],
     hasSubtypeFilter: true,
   },
+  { id: "storyboard", label: "Storyboard", types: [], hasSubtypeFilter: false, module: "storyboard" },
+  { id: "ui_system", label: "Giao diện (UI System)", types: [], hasSubtypeFilter: false, module: "ui_system" },
 ];
 
 /** Kept for backward-compat with old imports. */
