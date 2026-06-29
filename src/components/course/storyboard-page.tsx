@@ -1,37 +1,53 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners,
-  useDroppable, type DragEndEvent, type DragStartEvent,
+  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter,
+  type DragEndEvent, type DragStartEvent,
 } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, useSortable, rectSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { motion, useReducedMotion } from "framer-motion";
 import {
-  ArrowLeft, Plus, Trash2, Wand2, Loader2, GripVertical, ArrowRight, Sparkles, ChevronDown, Library,
+  ArrowLeft, Plus, Trash2, Wand2, Loader2, GripVertical, ArrowRight, Sparkles,
+  ChevronDown, Library, BookOpen, X, ImagePlus, Copy, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { aiClient } from "@/lib/ai";
 import { fillStoryboard } from "@/lib/ai/fill-orchestrator";
 import type { Storyboard, StoryboardItem } from "@/lib/ai/types";
 import { useCourse, type CourseBlockType } from "@/stores/course";
 import { useContent } from "@/stores/content";
 import { useStoryboard } from "@/stores/storyboard";
-import { useStoryboardLibrary } from "@/stores/storyboard-library";
+import {
+  useStoryboardLibrary, allStoryboardItems, type StoryboardLibraryItem,
+} from "@/stores/storyboard-library";
 import { BLOCK_TYPES } from "./course-palette";
-import { courseBuilderRoutePattern, type BuilderScope } from "@/lib/builder-url";
+import { sceneSrc, SCENE_KEYS, SCENE_LABELS, type SceneKey } from "@/lib/storyboard/scene-art";
+import { courseBuilderRoutePattern, storyboardRoutePattern, type BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const makeId = (p: string) => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
+/* ─── Khung phẳng: storyboard lưu trong 1 section "Khung cảnh" ─────── */
+const flatFrames = (b?: Storyboard): StoryboardItem[] => b?.sections.flatMap((s) => s.items) ?? [];
+const boardFromFrames = (frames: StoryboardItem[]): Storyboard => ({
+  sections: [{ id: "sec_main", title: "Khung cảnh", items: frames }],
+});
+
 interface StoryboardPageProps {
   courseId: string;
   scope: BuilderScope;
-  /** Module độc lập: không gắn khoá học/bài — chỉ soạn rồi lưu vào kho. */
+  /** Module độc lập (mở từ "Tạo mới"): không gắn khoá học. */
   standalone?: boolean;
 }
+
+type Reference = { id: string; title: string; label: string };
 
 export function StoryboardPage({ courseId, scope, standalone = false }: StoryboardPageProps) {
   const navigate = useNavigate();
@@ -40,166 +56,170 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
   const globalActiveLesson = useCourse((s) => s.activeLessonId);
   const contentItem = useContent((s) => s.items.find((x) => x.id === courseId));
 
-  useEffect(() => { if (!standalone) init(courseId); }, [courseId, init, standalone]);
+  // Module CRUD: nếu id trỏ tới một mục trong kho → đang Sửa/Xem mục đó.
+  const userItems = useStoryboardLibrary((s) => s.items);
+  const addToLibrary = useStoryboardLibrary((s) => s.add);
+  const updateLibrary = useStoryboardLibrary((s) => s.update);
+  const libItem = useMemo<StoryboardLibraryItem | undefined>(
+    () => allStoryboardItems(userItems).find((i) => i.id === courseId),
+    [userItems, courseId],
+  );
 
-  const lessons = standalone ? [] : (courseData?.lessons ?? []);
+  // Chế độ trang: new (tạo mới) · edit (sửa của tôi) · view (xem preset) · course.
+  const pageMode: "new" | "edit" | "view" | "course" =
+    standalone ? "new" : libItem ? (libItem.source === "system" ? "view" : "edit") : "course";
+  const moduleMode = pageMode !== "course"; // không gắn khoá học
+
+  useEffect(() => { if (!moduleMode) init(courseId); }, [courseId, init, moduleMode]);
+
+  const lessons = moduleMode ? [] : (courseData?.lessons ?? []);
   const [lessonId, setLessonId] = useState<string>(globalActiveLesson ?? lessons[0]?.id ?? "");
   const activeLesson = lessons.find((l) => l.id === lessonId) ?? lessons[0];
-  // Standalone: board sống trên slot khoá theo chính id nháp (không gắn lesson).
-  const effectiveLessonId = standalone ? courseId : (activeLesson?.id ?? "");
+  const effectiveLessonId = moduleMode ? courseId : (activeLesson?.id ?? "");
 
   const board = useStoryboard((s) => (effectiveLessonId ? s.byLesson[effectiveLessonId] : undefined));
   const setStoryboard = useStoryboard((s) => s.setStoryboard);
-  const saveToLibrary = useStoryboardLibrary((s) => s.add);
 
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useState(libItem?.name ?? "");
   const [objectives, setObjectives] = useState("");
   const [sourceText, setSourceText] = useState("");
+  const [refs, setRefs] = useState<Reference[]>([]);
+  const [refPickerOpen, setRefPickerOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-  const subject = contentItem?.subject ?? "";
+  const subject = contentItem?.subject ?? libItem?.subject ?? "";
   const grade = contentItem?.grade ?? "";
 
-  const setBoard = (next: Storyboard) => {
-    if (effectiveLessonId) setStoryboard(effectiveLessonId, next);
+  const frames = flatFrames(board);
+  const setFrames = (next: StoryboardItem[]) => {
+    if (effectiveLessonId) setStoryboard(effectiveLessonId, boardFromFrames(next));
   };
-  const cloneBoard = (b: Storyboard): Storyboard => ({
-    sections: b.sections.map((s) => ({ ...s, items: s.items.map((i) => ({ ...i })) })),
-  });
+
+  // Nạp dữ liệu mục đang sửa/xem vào slot làm việc (một lần).
+  useEffect(() => {
+    if (!libItem || !effectiveLessonId) return;
+    if (useStoryboard.getState().byLesson[effectiveLessonId]) return;
+    setStoryboard(effectiveLessonId, boardFromFrames(flatFrames(libItem.storyboard)));
+    setTopic(libItem.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [libItem?.id, effectiveLessonId]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const reduceMotion = useReducedMotion();
 
-  /* ─── AI generate ───────────────────────────────────────────── */
+  /* ─── AI generate ───────────────────────────────────────────────── */
   const handleGenerate = async () => {
     if (!effectiveLessonId || generating) return;
     setGenerating(true);
     try {
+      const refLine = refs.length
+        ? `Tài liệu tham chiếu: ${refs.map((r) => r.title).join("; ")}.`
+        : "";
+      const src = [sourceText.trim(), refLine].filter(Boolean).join("\n");
       const sb = await aiClient.generateStoryboard({
         subject, grade,
         topic: topic.trim() || activeLesson?.title || subject || "Chủ đề bài học",
         objectives: objectives.trim() || undefined,
-        sourceText: sourceText.trim() || undefined,
+        sourceText: src || undefined,
       });
-      setBoard(sb);
+      setFrames(flatFrames(sb));
+      toast.success("Đã dựng storyboard — bạn chỉnh lại từng khung nếu cần nhé.");
     } catch {
-      toast.error("Chưa tạo được dàn ý, bạn thử lại nhé.");
+      toast.error("Chưa dựng được storyboard, bạn thử lại nhé.");
     } finally {
       setGenerating(false);
     }
   };
 
-  /* ─── Apply onto the lesson ─────────────────────────────────── */
+  /* ─── Áp dụng vào bài (chỉ course mode) ─────────────────────────── */
   const handleApply = async () => {
-    if (!board || !effectiveLessonId || applying) return;
+    if (!frames.length || !effectiveLessonId || applying) return;
     setApplying(true);
     try {
       await fillStoryboard({
-        storyboard: board,
+        storyboard: boardFromFrames(frames),
         meta: { subject, grade, topic: topic.trim() || activeLesson?.title || subject },
         addBlock: (type) => useCourse.getState().addBlock(courseId, effectiveLessonId, type),
         updateBlock: (id, patch) => useCourse.getState().updateBlock(courseId, effectiveLessonId, id, patch),
       });
       useCourse.getState().setActiveLesson(effectiveLessonId);
-      toast.success("Đã áp dàn ý vào bài học");
+      toast.success("Đã áp storyboard vào bài học");
       navigate({ to: courseBuilderRoutePattern(scope), params: { id: courseId } });
     } catch {
-      toast.error("Có lỗi khi áp dàn ý.");
+      toast.error("Có lỗi khi áp storyboard.");
     } finally {
       setApplying(false);
     }
   };
 
-  const handleSaveLibrary = () => {
-    if (!board || board.sections.flatMap((s) => s.items).length === 0) return;
-    const name = topic.trim() || activeLesson?.title || "Dàn ý chưa đặt tên";
-    saveToLibrary({ name, subject, storyboard: board });
-    toast.success(`Đã lưu "${name}" vào kho dàn ý`);
-  };
-
-  /* ─── Board mutations ───────────────────────────────────────── */
-  const addSection = () => {
-    const base = board ?? { sections: [] };
-    const next = cloneBoard(base);
-    next.sections.push({ id: makeId("sec"), title: `Phần ${next.sections.length + 1}`, items: [] });
-    setBoard(next);
-  };
-  const renameSection = (sid: string, title: string) => {
-    if (!board) return;
-    const next = cloneBoard(board);
-    const sec = next.sections.find((s) => s.id === sid);
-    if (sec) sec.title = title;
-    setBoard(next);
-  };
-  const deleteSection = (sid: string) => {
-    if (!board) return;
-    setBoard({ sections: board.sections.filter((s) => s.id !== sid).map((s) => ({ ...s, items: s.items.map((i) => ({ ...i })) })) });
-  };
-  const addCard = (sid: string) => {
-    if (!board) return;
-    const next = cloneBoard(board);
-    const sec = next.sections.find((s) => s.id === sid);
-    if (sec) sec.items.push({ id: makeId("item"), blockType: "text", intent: "Mô tả nội dung khối…", learningGoal: "" });
-    setBoard(next);
-  };
-  const updateCard = (id: string, patch: Partial<StoryboardItem>) => {
-    if (!board) return;
-    const next = cloneBoard(board);
-    for (const sec of next.sections) {
-      const it = sec.items.find((i) => i.id === id);
-      if (it) { Object.assign(it, patch); break; }
+  /* ─── Lưu vào kho / cập nhật / nhân bản ─────────────────────────── */
+  const handleSave = () => {
+    if (!frames.length) {
+      toast.error("Storyboard đang trống — tạo vài khung trước đã nhé.");
+      return;
     }
-    setBoard(next);
-  };
-  const deleteCard = (id: string) => {
-    if (!board) return;
-    setBoard({ sections: board.sections.map((s) => ({ ...s, items: s.items.filter((i) => i.id !== id).map((i) => ({ ...i })) })) });
-  };
-
-  /* ─── DnD: move card across columns ─────────────────────────── */
-  const onDragStart = (e: DragStartEvent) => setActiveCardId(String(e.active.id));
-  const onDragEnd = (e: DragEndEvent) => {
-    setActiveCardId(null);
-    const { active, over } = e;
-    if (!over || !board) return;
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    if (activeId === overId) return;
-
-    const next = cloneBoard(board);
-    let moved: StoryboardItem | undefined;
-    for (const sec of next.sections) {
-      const idx = sec.items.findIndex((i) => i.id === activeId);
-      if (idx >= 0) { moved = sec.items.splice(idx, 1)[0]; break; }
-    }
-    if (!moved) return;
-
-    const overSection = next.sections.find((s) => s.id === overId);
-    if (overSection) {
-      overSection.items.push(moved);
+    const name = topic.trim() || libItem?.name || "Storyboard chưa đặt tên";
+    const storyboard = boardFromFrames(frames);
+    if (pageMode === "edit") {
+      updateLibrary(courseId, { name, subject, storyboard });
+      toast.success("Đã lưu thay đổi vào kho");
     } else {
-      let placed = false;
-      for (const sec of next.sections) {
-        const idx = sec.items.findIndex((i) => i.id === overId);
-        if (idx >= 0) { sec.items.splice(idx, 0, moved); placed = true; break; }
-      }
-      if (!placed) next.sections[0]?.items.push(moved);
+      addToLibrary({ name, subject, storyboard });
+      toast.success(`Đã lưu "${name}" vào kho storyboard`);
     }
-    setBoard(next);
   };
 
-  const allCardIds = (board?.sections ?? []).flatMap((s) => s.items.map((i) => i.id));
-  const activeCard = (board?.sections ?? []).flatMap((s) => s.items).find((i) => i.id === activeCardId);
+  const handleDuplicate = () => {
+    const name = `${libItem?.name ?? topic.trim() ?? "Storyboard"} (bản sao)`;
+    const id = addToLibrary({ name, subject, storyboard: boardFromFrames(frames) });
+    toast.success("Đã tạo bản sao — bạn chỉnh thoải mái nhé.");
+    navigate({ to: storyboardRoutePattern(scope), params: { id } });
+  };
+
+  /* ─── Frame mutations ───────────────────────────────────────────── */
+  const addFrame = () => {
+    setFrames([
+      ...frames,
+      { id: makeId("frame"), blockType: "text", title: `Cảnh ${frames.length + 1}`, intent: "Mô tả nội dung cảnh này…", learningGoal: "", image: "explain" },
+    ]);
+  };
+  const updateFrame = (id: string, patch: Partial<StoryboardItem>) =>
+    setFrames(frames.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+  const deleteFrame = (id: string) => setFrames(frames.filter((f) => f.id !== id));
+
+  const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
+  const onDragEnd = (e: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = frames.findIndex((f) => f.id === active.id);
+    const newIdx = frames.findIndex((f) => f.id === over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+    setFrames(arrayMove(frames, oldIdx, newIdx));
+  };
+
+  const activeFrame = frames.find((f) => f.id === activeId);
+  const readOnly = pageMode === "view";
+
+  const headerTitle =
+    pageMode === "new" ? "Trình tạo Storyboard"
+    : pageMode === "edit" ? "Chỉnh sửa storyboard"
+    : pageMode === "view" ? "Xem storyboard mẫu"
+    : "Storyboard bài học";
+  const headerSub =
+    moduleMode ? (pageMode === "view" ? "Mẫu hệ thống · nhân bản để chỉnh sửa" : "Module độc lập · lưu vào kho để dùng lại")
+    : (contentItem?.title ?? "Khoá học");
 
   return (
     <div className="flex h-screen flex-col bg-muted/30">
       {/* Header */}
       <header className="z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
         <Button variant="ghost" size="icon" className="h-8 w-8"
-          aria-label={standalone ? "Quay lại Thư viện" : "Quay lại bài"}
+          aria-label={moduleMode ? "Quay lại Thư viện" : "Quay lại bài"}
           onClick={() =>
-            standalone
+            moduleMode
               ? navigate({ to: scope === "org" ? "/org/library" : "/creator/library" })
               : navigate({ to: courseBuilderRoutePattern(scope), params: { id: courseId } })
           }>
@@ -209,22 +229,17 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
           <Sparkles className="h-4 w-4" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {standalone ? "Trình tạo Storyboard" : "Dàn ý bài học"}
-          </p>
-          <p className="truncate text-[11px] text-muted-foreground">
-            {standalone ? "Module độc lập · lưu vào kho để dùng lại" : (contentItem?.title ?? "Khoá học")}
-          </p>
+          <p className="truncate text-sm font-semibold text-foreground">{headerTitle}</p>
+          <p className="truncate text-[11px] text-muted-foreground">{headerSub}</p>
         </div>
 
-        {/* Lesson selector */}
         {lessons.length > 0 && (
           <div className="relative">
             <select
               value={effectiveLessonId}
               onChange={(e) => setLessonId(e.target.value)}
               className="h-8 appearance-none rounded-lg border border-border bg-card pl-3 pr-7 text-xs font-medium text-foreground outline-none focus:border-primary"
-              aria-label="Chọn bài học để dựng dàn ý"
+              aria-label="Chọn bài học"
             >
               {lessons.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}
             </select>
@@ -233,22 +248,26 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant={standalone ? "default" : "outline"}
-            size="sm"
-            className={cn("gap-2", standalone && "bg-primary text-primary-foreground hover:bg-primary-hover")}
-            disabled={!board || (board?.sections.flatMap((s) => s.items).length ?? 0) === 0}
-            onClick={handleSaveLibrary}
-          >
-            <Library className="h-4 w-4" /> Lưu vào kho
-          </Button>
-          {!standalone && (
+          <span className="hidden rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:inline">
+            {frames.length} khung
+          </span>
+          {readOnly ? (
+            <Button size="sm" className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleDuplicate} disabled={!frames.length}>
+              <Copy className="h-4 w-4" /> Nhân bản để chỉnh sửa
+            </Button>
+          ) : (
             <Button
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover"
+              variant={moduleMode ? "default" : "outline"}
               size="sm"
-              disabled={!board || applying || (board?.sections.flatMap((s) => s.items).length ?? 0) === 0}
-              onClick={handleApply}
+              className={cn("gap-2", moduleMode && "bg-primary text-primary-foreground hover:bg-primary-hover")}
+              disabled={!frames.length}
+              onClick={handleSave}
             >
+              <Library className="h-4 w-4" /> {pageMode === "edit" ? "Lưu thay đổi" : "Lưu vào kho"}
+            </Button>
+          )}
+          {!moduleMode && (
+            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" size="sm" disabled={!frames.length || applying} onClick={handleApply}>
               {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
               Áp dụng vào bài
             </Button>
@@ -256,203 +275,245 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
         </div>
       </header>
 
-      {/* Intake bar */}
-      <div className="shrink-0 border-b border-border bg-card/60 px-4 py-3">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-end gap-3">
-          <div className="min-w-[200px] flex-1">
-            <label className="mb-1 block text-[11px] font-medium text-foreground">Chủ đề bài học</label>
-            <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={activeLesson?.title || "Vd: Tốc độ phản ứng…"} className="h-9 text-sm" />
-          </div>
-          <div className="min-w-[200px] flex-1">
-            <label className="mb-1 block text-[11px] font-medium text-foreground">Mục tiêu <span className="text-muted-foreground">(tuỳ chọn)</span></label>
-            <Input value={objectives} onChange={(e) => setObjectives(e.target.value)} placeholder="Học sinh sẽ làm được gì?" className="h-9 text-sm" />
-          </div>
-          <details className="min-w-[180px] flex-1">
-            <summary className="mb-1 cursor-pointer text-[11px] font-medium text-foreground">Dán văn bản nguồn</summary>
-            <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="Dán nội dung… AI sẽ tách thành dàn ý." className="mt-1 min-h-[60px] text-xs" />
-          </details>
-          <Button className="h-9 gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={generating || !effectiveLessonId} onClick={handleGenerate}>
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            {board ? "Tạo lại dàn ý" : "Tạo dàn ý"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Board */}
-      <div className="min-h-0 flex-1 overflow-auto p-4">
-        {!board || board.sections.length === 0 ? (
-          <EmptyBoard generating={generating} onGenerate={handleGenerate} />
-        ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-            <div className="flex h-full items-start gap-3 overflow-x-auto pb-2">
-              {board.sections.map((section) => (
-                <BoardColumn
-                  key={section.id}
-                  id={section.id}
-                  title={section.title}
-                  itemIds={section.items.map((i) => i.id)}
-                  onRename={(t) => renameSection(section.id, t)}
-                  onAddCard={() => addCard(section.id)}
-                  onDelete={() => deleteSection(section.id)}
-                  canDelete={board.sections.length > 1}
-                >
-                  {section.items.map((item) => (
-                    <BoardCard key={item.id} item={item} onUpdate={(p) => updateCard(item.id, p)} onDelete={() => deleteCard(item.id)} />
-                  ))}
-                </BoardColumn>
-              ))}
-              <button
-                type="button"
-                onClick={addSection}
-                className="flex h-10 w-[180px] shrink-0 items-center justify-center gap-1.5 rounded-xl border border-dashed border-border text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
-              >
-                <Plus className="h-4 w-4" /> Thêm phần
-              </button>
+      <div className="flex min-h-0 flex-1">
+        {/* Left: intake + references */}
+        {!readOnly && (
+          <aside className="hidden w-[300px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-border bg-card p-4 lg:flex">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">Chủ đề</label>
+              <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={activeLesson?.title || "Vd: Tốc độ phản ứng…"} className="h-9 text-sm" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">Mục tiêu <span className="font-normal text-muted-foreground">(tuỳ chọn)</span></label>
+              <Input value={objectives} onChange={(e) => setObjectives(e.target.value)} placeholder="Học sinh sẽ làm được gì?" className="h-9 text-sm" />
             </div>
 
-            <DragOverlay>
-              {activeCard && (
-                <div className="w-[248px] rounded-lg border border-primary bg-card p-2.5 shadow-xl">
-                  <BlockTypeChip type={activeCard.blockType} />
-                  <p className="mt-1.5 text-xs text-foreground">{activeCard.intent}</p>
+            {/* Tài liệu tham chiếu */}
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground">Tài liệu tham chiếu</label>
+                <button type="button" onClick={() => setRefPickerOpen(true)} className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline">
+                  <Plus className="h-3 w-3" /> Thêm
+                </button>
+              </div>
+              {refs.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border px-2.5 py-2 text-[11px] text-muted-foreground">
+                  Thêm sách hoặc học liệu để AI bám theo khi dựng khung.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {refs.map((r) => (
+                    <span key={r.id} className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-1 text-[11px] font-medium text-primary">
+                      <BookOpen className="h-3 w-3" /> {r.title}
+                      <button type="button" onClick={() => setRefs((cur) => cur.filter((x) => x.id !== r.id))} aria-label="Bỏ tham chiếu"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
                 </div>
               )}
-            </DragOverlay>
-          </DndContext>
+            </div>
+
+            <details>
+              <summary className="cursor-pointer text-xs font-semibold text-foreground">Dán văn bản nguồn</summary>
+              <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="Dán nội dung… AI sẽ tách thành các khung cảnh." className="mt-1.5 min-h-[80px] text-xs" />
+            </details>
+
+            <Button className="mt-auto w-full gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={generating || !effectiveLessonId} onClick={handleGenerate}>
+              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+              {frames.length ? "Tạo lại storyboard" : "Tạo storyboard"}
+            </Button>
+          </aside>
         )}
+
+        {/* Main: scene grid */}
+        <main className="min-h-0 flex-1 overflow-auto p-5">
+          {frames.length === 0 ? (
+            <EmptyBoard generating={generating} onGenerate={handleGenerate} />
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+              <SortableContext items={frames.map((f) => f.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {frames.map((frame, i) => (
+                    <motion.div
+                      key={frame.id}
+                      initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.28, ease: "easeOut" }}
+                    >
+                      <SortableScene
+                        frame={frame}
+                        index={i}
+                        readOnly={readOnly}
+                        onUpdate={(p) => updateFrame(frame.id, p)}
+                        onDelete={() => deleteFrame(frame.id)}
+                      />
+                    </motion.div>
+                  ))}
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={addFrame}
+                      className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground transition hover:border-primary hover:bg-accent/40 hover:text-primary"
+                    >
+                      <Plus className="h-6 w-6" /> Thêm khung cảnh
+                    </button>
+                  )}
+                </div>
+              </SortableContext>
+              <DragOverlay>
+                {activeFrame && (
+                  <div className="w-[260px] overflow-hidden rounded-xl border border-primary bg-card shadow-xl">
+                    <div className="h-24 bg-cover bg-center" style={{ backgroundImage: `url("${sceneSrc(activeFrame.image)}")` }} />
+                    <p className="truncate px-3 py-2 text-sm font-medium text-foreground">{activeFrame.title || activeFrame.intent}</p>
+                  </div>
+                )}
+              </DragOverlay>
+            </DndContext>
+          )}
+        </main>
       </div>
+
+      <ReferencePicker open={refPickerOpen} onClose={() => setRefPickerOpen(false)} existing={refs} onPick={(r) => { setRefs((cur) => [...cur, r]); setRefPickerOpen(false); }} />
     </div>
   );
 }
 
-/* ─── Empty board ───────────────────────────────────────────────── */
+/* ─── Empty state ───────────────────────────────────────────────── */
 
 function EmptyBoard({ generating, onGenerate }: { generating: boolean; onGenerate: () => void }) {
   return (
     <div className="flex h-full flex-col items-center justify-center text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-primary">
-        <Wand2 className="h-7 w-7" />
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-primary">
+        <Wand2 className="h-8 w-8" />
       </div>
-      <p className="mt-4 text-base font-semibold text-foreground">Chưa có dàn ý</p>
+      <p className="mt-4 text-base font-semibold text-foreground">Bắt đầu một storyboard</p>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-        Nhập chủ đề ở trên rồi bấm <span className="font-medium text-foreground">Tạo dàn ý</span> để AI phác khung bài thành các phần và khối nội dung.
+        Nhập chủ đề bên trái rồi bấm <span className="font-medium text-foreground">Tạo storyboard</span> — AI sẽ phác các khung cảnh kèm ảnh minh hoạ sẵn.
       </p>
       <Button className="mt-4 gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={generating} onClick={onGenerate}>
         {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-        Tạo dàn ý
+        Tạo storyboard
       </Button>
     </div>
   );
 }
 
-/* ─── Column ────────────────────────────────────────────────────── */
+/* ─── Scene frame (sortable) ────────────────────────────────────── */
 
-function BoardColumn({
-  id, title, itemIds, onRename, onAddCard, onDelete, canDelete, children,
+function SortableScene({
+  frame, index, readOnly, onUpdate, onDelete,
 }: {
-  id: string;
-  title: string;
-  itemIds: string[];
-  onRename: (t: string) => void;
-  onAddCard: () => void;
+  frame: StoryboardItem;
+  index: number;
+  readOnly: boolean;
+  onUpdate: (p: Partial<StoryboardItem>) => void;
   onDelete: () => void;
-  canDelete: boolean;
-  children: React.ReactNode;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(title);
-
-  return (
-    <div className={cn("flex w-[270px] shrink-0 flex-col rounded-xl border border-border bg-muted/40 transition", isOver && "border-primary bg-accent/40")}>
-      <div className="flex items-center gap-1.5 px-3 py-2.5">
-        {editing ? (
-          <input
-            value={val}
-            onChange={(e) => setVal(e.target.value)}
-            onBlur={() => { if (val.trim()) onRename(val.trim()); setEditing(false); }}
-            onKeyDown={(e) => { if (e.key === "Enter") { if (val.trim()) onRename(val.trim()); setEditing(false); } }}
-            autoFocus
-            className="min-w-0 flex-1 rounded border border-primary bg-card px-1.5 py-0.5 text-sm font-semibold outline-none"
-          />
-        ) : (
-          <button type="button" onDoubleClick={() => { setVal(title); setEditing(true); }} className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-foreground" title="Double-click để đổi tên">
-            {title}
-          </button>
-        )}
-        <span className="rounded-full bg-card px-1.5 text-[10px] font-medium text-muted-foreground">{itemIds.length}</span>
-        {canDelete && (
-          <button type="button" onClick={onDelete} className="rounded p-1 text-muted-foreground transition hover:text-destructive" aria-label="Xoá phần">
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-      <div ref={setNodeRef} className="min-h-[60px] flex-1 space-y-2 px-2.5 pb-2">
-        <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-          {children}
-        </SortableContext>
-        <button
-          type="button"
-          onClick={onAddCard}
-          className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-border py-1.5 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
-        >
-          <Plus className="h-3.5 w-3.5" /> Thêm khối
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Card ──────────────────────────────────────────────────────── */
-
-function BoardCard({ item, onUpdate, onDelete }: { item: StoryboardItem; onUpdate: (p: Partial<StoryboardItem>) => void; onDelete: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: frame.id, disabled: readOnly });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const [imgOpen, setImgOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
 
   return (
-    <div ref={setNodeRef} style={style} className={cn("group rounded-lg border border-border bg-card p-2.5 shadow-sm transition", isDragging && "opacity-50")}>
-      <div className="flex items-center gap-1.5">
-        <span {...listeners} {...attributes} className="cursor-grab text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing" aria-label="Kéo">
-          <GripVertical className="h-3.5 w-3.5" />
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+        isDragging && "opacity-50",
+      )}
+    >
+      {/* Ảnh cảnh */}
+      <div className="relative h-32 bg-cover bg-center" style={{ backgroundImage: `url("${sceneSrc(frame.image)}")` }}>
+        <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground shadow">
+          {index + 1}
         </span>
-        <div className="relative">
-          <button type="button" onClick={() => setTypeOpen((v) => !v)} className="flex items-center gap-1">
-            <BlockTypeChip type={item.blockType} />
-            <ChevronDown className="h-3 w-3 text-muted-foreground" />
-          </button>
-          {typeOpen && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setTypeOpen(false)} />
-              <div className="absolute left-0 top-full z-50 mt-1 max-h-56 w-[170px] overflow-y-auto rounded-xl border border-border bg-card p-1.5 shadow-xl">
-                {BLOCK_TYPES.map((b) => {
-                  const Icon = b.icon;
-                  return (
+        {!readOnly && (
+          <span {...listeners} {...attributes} className="absolute right-2 top-2 cursor-grab rounded-md bg-card/85 p-1 text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100 active:cursor-grabbing" aria-label="Kéo để sắp xếp">
+            <GripVertical className="h-4 w-4" />
+          </span>
+        )}
+        {!readOnly && (
+          <div className="absolute bottom-2 right-2">
+            <button type="button" onClick={() => setImgOpen((v) => !v)} className="flex items-center gap-1 rounded-md bg-card/85 px-2 py-1 text-[10px] font-medium text-foreground opacity-0 shadow-sm transition hover:bg-card group-hover:opacity-100">
+              <ImagePlus className="h-3 w-3" /> Đổi ảnh
+            </button>
+            {imgOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setImgOpen(false)} />
+                <div className="absolute bottom-full right-0 z-50 mb-1.5 grid w-[232px] grid-cols-3 gap-1.5 rounded-xl border border-border bg-card p-2 shadow-xl">
+                  {SCENE_KEYS.map((k) => (
                     <button
-                      key={b.type}
+                      key={k}
                       type="button"
-                      onClick={() => { onUpdate({ blockType: b.type as CourseBlockType }); setTypeOpen(false); }}
-                      className={cn("flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] transition hover:bg-muted", item.blockType === b.type && "bg-accent text-primary")}
+                      onClick={() => { onUpdate({ image: k }); setImgOpen(false); }}
+                      className={cn("overflow-hidden rounded-md border bg-cover bg-center text-[0px]", frame.image === k ? "border-primary ring-2 ring-primary" : "border-border")}
+                      style={{ backgroundImage: `url("${sceneSrc(k)}")`, height: 40 }}
+                      title={SCENE_LABELS[k as SceneKey]}
+                      aria-label={SCENE_LABELS[k as SceneKey]}
                     >
-                      <Icon className="h-3.5 w-3.5" style={{ color: b.color }} /> {b.label}
+                      {SCENE_LABELS[k as SceneKey]}
                     </button>
-                  );
-                })}
-              </div>
-            </>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Nội dung cảnh */}
+      <div className="space-y-1.5 p-3">
+        <input
+          value={frame.title ?? ""}
+          onChange={(e) => onUpdate({ title: e.target.value })}
+          readOnly={readOnly}
+          placeholder="Tiêu đề cảnh"
+          className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground/60"
+          aria-label="Tiêu đề cảnh"
+        />
+        <textarea
+          value={frame.intent}
+          onChange={(e) => onUpdate({ intent: e.target.value })}
+          readOnly={readOnly}
+          rows={2}
+          placeholder="Mô tả nội dung / lời dẫn của cảnh…"
+          className="w-full resize-none bg-transparent text-xs text-muted-foreground outline-none placeholder:text-muted-foreground/60"
+          aria-label="Mô tả cảnh"
+        />
+        <div className="flex items-center gap-1.5 pt-0.5">
+          <div className="relative">
+            <button type="button" onClick={() => !readOnly && setTypeOpen((v) => !v)} className="flex items-center gap-1" disabled={readOnly}>
+              <BlockTypeChip type={frame.blockType} />
+              {!readOnly && <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+            </button>
+            {typeOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setTypeOpen(false)} />
+                <div className="absolute bottom-full left-0 z-50 mb-1 max-h-56 w-[170px] overflow-y-auto rounded-xl border border-border bg-card p-1.5 shadow-xl">
+                  {BLOCK_TYPES.map((b) => {
+                    const Icon = b.icon;
+                    return (
+                      <button
+                        key={b.type}
+                        type="button"
+                        onClick={() => { onUpdate({ blockType: b.type as CourseBlockType }); setTypeOpen(false); }}
+                        className={cn("flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] transition hover:bg-muted", frame.blockType === b.type && "bg-accent text-primary")}
+                      >
+                        <Icon className="h-3.5 w-3.5" style={{ color: b.color }} /> {b.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+          {!readOnly && (
+            <button type="button" onClick={onDelete} className="ml-auto rounded p-1 text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100" aria-label="Xoá khung">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
-        <button type="button" onClick={onDelete} className="ml-auto rounded p-0.5 text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100" aria-label="Xoá khối">
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
       </div>
-      <textarea
-        value={item.intent}
-        onChange={(e) => onUpdate({ intent: e.target.value })}
-        rows={2}
-        className="mt-1.5 w-full resize-none rounded-md bg-muted/40 px-2 py-1.5 text-xs text-foreground outline-none focus:bg-muted"
-        aria-label="Mô tả khối"
-      />
     </div>
   );
 }
@@ -468,5 +529,62 @@ function BlockTypeChip({ type }: { type: CourseBlockType }) {
     >
       <Icon className="h-3 w-3" /> {meta.label}
     </span>
+  );
+}
+
+/* ─── Reference picker (sách / học liệu) ────────────────────────── */
+
+function ReferencePicker({
+  open, onClose, existing, onPick,
+}: {
+  open: boolean;
+  onClose: () => void;
+  existing: Reference[];
+  onPick: (r: Reference) => void;
+}) {
+  const items = useContent((s) => s.items);
+  const [q, setQ] = useState("");
+  const pickable = items
+    .filter((it) => it.category === "book" || it.category === "learning_material")
+    .filter((it) => !existing.some((e) => e.id === it.id))
+    .filter((it) => !q || it.title.toLowerCase().includes(q.toLowerCase()))
+    .slice(0, 40);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Thêm tài liệu tham chiếu</DialogTitle>
+          <DialogDescription>Chọn sách hoặc học liệu để AI bám theo khi dựng các khung cảnh.</DialogDescription>
+        </DialogHeader>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm sách / học liệu…" className="h-9 pl-8 text-sm" />
+        </div>
+        <div className="max-h-[300px] space-y-1.5 overflow-y-auto">
+          {pickable.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Không tìm thấy mục phù hợp.</p>
+          ) : (
+            pickable.map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => onPick({ id: it.id, title: it.title, label: it.category === "book" ? "Sách" : "Học liệu" })}
+                className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-50 text-primary">
+                  <BookOpen className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-foreground">{it.title}</span>
+                  <span className="block truncate text-[11px] text-muted-foreground">{it.category === "book" ? "Sách" : "Học liệu"}{it.subject ? ` · ${it.subject}` : ""}</span>
+                </span>
+                <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

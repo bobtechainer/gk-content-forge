@@ -4,6 +4,7 @@ import type { LearningMaterialSubtype } from "@/lib/types";
 import type { CourseTheme } from "@/lib/theme/resolve";
 import { SYSTEM_THEMES } from "@/lib/theme/system-themes";
 import { ramp } from "@/lib/theme/color";
+import { pickSceneArt } from "@/lib/storyboard/scene-art";
 import type {
   AiClient,
   ChatReplyRequest,
@@ -63,6 +64,8 @@ const storyboardItemSchema = z.object({
   blockType: courseBlockTypeSchema,
   intent: z.string().min(1),
   learningGoal: z.string().min(1),
+  title: z.string().optional(),
+  image: z.string().optional(),
 });
 
 const storyboardSectionSchema = z.object({
@@ -180,7 +183,30 @@ function buildStoryboardFromText(req: StoryboardRequest): Storyboard {
   });
 
   const storyboard: Storyboard = { sections };
-  return storyboardSchema.parse(storyboard);
+  return decorateStoryboard(storyboardSchema.parse(storyboard));
+}
+
+/* ─── Trang trí khung cảnh: gán tiêu đề ngắn + ảnh minh hoạ ──────── */
+
+/** Rút gọn intent thành tiêu đề cảnh (≤ 38 ký tự). */
+function sceneTitle(intent: string): string {
+  const raw = intent.replace(/^["']|["']$/g, "").trim();
+  const firstClause = raw.split(/[:.–—\n]/)[0].trim() || raw;
+  return firstClause.length > 38 ? firstClause.slice(0, 35) + "…" : firstClause;
+}
+
+/** Đảm bảo mỗi khung có tiêu đề + ảnh (gán theo nội dung nếu còn thiếu). */
+function decorateStoryboard(sb: Storyboard): Storyboard {
+  return {
+    sections: sb.sections.map((sec) => ({
+      ...sec,
+      items: sec.items.map((it) => ({
+        ...it,
+        title: it.title ?? sceneTitle(it.intent),
+        image: it.image ?? pickSceneArt(`${it.intent} ${sec.title}`, it.blockType),
+      })),
+    })),
+  };
 }
 
 /* ─── Storyboard generator ───────────────────────────────────────── */
@@ -264,7 +290,7 @@ function buildStoryboard(req: StoryboardRequest): Storyboard {
   ];
 
   const storyboard: Storyboard = { sections };
-  return storyboardSchema.parse(storyboard);
+  return decorateStoryboard(storyboardSchema.parse(storyboard));
 }
 
 /* ─── FillBlock ──────────────────────────────────────────────────── */

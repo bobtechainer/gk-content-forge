@@ -7,6 +7,10 @@ export interface StoryboardItem {
   blockType: CourseBlockType;
   intent: string;
   learningGoal: string;
+  /** Tiêu đề cảnh hiển thị trên khung (storyboard dạng lưới khung cảnh). */
+  title?: string;
+  /** Khoá ảnh minh hoạ cảnh (xem scene-art.ts). Tự gán khi tạo. */
+  image?: string;
 }
 
 export interface StoryboardSection {

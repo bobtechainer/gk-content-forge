@@ -15,9 +15,11 @@ export interface StoryboardLibraryItem {
   createdAt: number;
 }
 
+type PresetItem = { type: string; title: string; intent: string; image: string };
+
 const sb = (
   id: string,
-  sections: { title: string; items: { type: string; intent: string }[] }[],
+  sections: { title: string; items: PresetItem[] }[],
 ): Storyboard => ({
   sections: sections.map((s, si) => ({
     id: `${id}_sec${si}`,
@@ -25,8 +27,10 @@ const sb = (
     items: s.items.map((it, ii) => ({
       id: `${id}_sec${si}_it${ii}`,
       blockType: it.type as Storyboard["sections"][number]["items"][number]["blockType"],
+      title: it.title,
       intent: it.intent,
       learningGoal: it.intent,
+      image: it.image,
     })),
   })),
 });
@@ -39,11 +43,19 @@ export const STORYBOARD_PRESETS: StoryboardLibraryItem[] = [
     description: "Engage · Explore · Explain · Elaborate · Evaluate",
     createdAt: 0,
     storyboard: sb("sys_5e", [
-      { title: "Gắn kết (Engage)", items: [{ type: "callout", intent: "Đặt tình huống thực tế khơi gợi tò mò" }, { type: "video", intent: "Clip ngắn dẫn nhập" }] },
-      { title: "Khám phá (Explore)", items: [{ type: "text", intent: "Hoạt động tìm tòi, đặt câu hỏi" }, { type: "image", intent: "Hình ảnh/đồ thị quan sát" }] },
-      { title: "Giải thích (Explain)", items: [{ type: "text", intent: "Hình thành khái niệm cốt lõi" }, { type: "accordion", intent: "Mở rộng định nghĩa, tính chất" }] },
-      { title: "Vận dụng (Elaborate)", items: [{ type: "process", intent: "Quy trình áp dụng vào bài tập" }] },
-      { title: "Đánh giá (Evaluate)", items: [{ type: "quiz", intent: "3 câu kiểm tra hiểu bài" }] },
+      { title: "Gắn kết (Engage)", items: [
+        { type: "callout", title: "Tình huống mở đầu", intent: "Đặt tình huống thực tế khơi gợi tò mò", image: "engage" },
+        { type: "video", title: "Clip dẫn nhập", intent: "Clip ngắn dẫn nhập", image: "video" }] },
+      { title: "Khám phá (Explore)", items: [
+        { type: "text", title: "Hoạt động tìm tòi", intent: "Hoạt động tìm tòi, đặt câu hỏi", image: "explore" },
+        { type: "image", title: "Quan sát hình ảnh", intent: "Hình ảnh/đồ thị quan sát", image: "math" }] },
+      { title: "Giải thích (Explain)", items: [
+        { type: "text", title: "Khái niệm cốt lõi", intent: "Hình thành khái niệm cốt lõi", image: "explain" },
+        { type: "accordion", title: "Mở rộng định nghĩa", intent: "Mở rộng định nghĩa, tính chất", image: "reading" }] },
+      { title: "Vận dụng (Elaborate)", items: [
+        { type: "process", title: "Quy trình áp dụng", intent: "Quy trình áp dụng vào bài tập", image: "physics" }] },
+      { title: "Đánh giá (Evaluate)", items: [
+        { type: "quiz", title: "Kiểm tra hiểu bài", intent: "3 câu kiểm tra hiểu bài", image: "assess" }] },
     ]),
   },
   {
@@ -53,9 +65,14 @@ export const STORYBOARD_PRESETS: StoryboardLibraryItem[] = [
     description: "Tóm tắt · Thẻ ghi nhớ · Luyện đề",
     createdAt: 0,
     storyboard: sb("sys_revise", [
-      { title: "Tóm tắt trọng tâm", items: [{ type: "text", intent: "Hệ thống lại kiến thức chính" }, { type: "callout", intent: "Lưu ý điểm dễ nhầm" }] },
-      { title: "Ghi nhớ", items: [{ type: "flashcards", intent: "Bộ thẻ thuật ngữ" }] },
-      { title: "Luyện đề", items: [{ type: "quiz", intent: "Câu hỏi nhận biết" }, { type: "quiz", intent: "Câu hỏi vận dụng" }] },
+      { title: "Tóm tắt trọng tâm", items: [
+        { type: "text", title: "Hệ thống kiến thức", intent: "Hệ thống lại kiến thức chính", image: "recap" },
+        { type: "callout", title: "Điểm dễ nhầm", intent: "Lưu ý điểm dễ nhầm", image: "engage" }] },
+      { title: "Ghi nhớ", items: [
+        { type: "flashcards", title: "Thẻ thuật ngữ", intent: "Bộ thẻ thuật ngữ", image: "reading" }] },
+      { title: "Luyện đề", items: [
+        { type: "quiz", title: "Câu hỏi nhận biết", intent: "Câu hỏi nhận biết", image: "assess" },
+        { type: "quiz", title: "Câu hỏi vận dụng", intent: "Câu hỏi vận dụng", image: "math" }] },
     ]),
   },
   {
@@ -65,9 +82,15 @@ export const STORYBOARD_PRESETS: StoryboardLibraryItem[] = [
     description: "Mở đầu · Nội dung · Củng cố",
     createdAt: 0,
     storyboard: sb("sys_basic", [
-      { title: "Mở đầu", items: [{ type: "text", intent: "Giới thiệu chủ đề và mục tiêu" }] },
-      { title: "Nội dung chính", items: [{ type: "section", intent: "Mốc phần kiến thức" }, { type: "text", intent: "Trình bày khái niệm" }, { type: "image", intent: "Hình minh hoạ" }] },
-      { title: "Củng cố", items: [{ type: "quiz", intent: "Câu hỏi củng cố" }, { type: "text", intent: "Tổng kết bài học" }] },
+      { title: "Mở đầu", items: [
+        { type: "text", title: "Giới thiệu bài", intent: "Giới thiệu chủ đề và mục tiêu", image: "engage" }] },
+      { title: "Nội dung chính", items: [
+        { type: "section", title: "Mốc kiến thức", intent: "Mốc phần kiến thức", image: "explain" },
+        { type: "text", title: "Trình bày khái niệm", intent: "Trình bày khái niệm", image: "explore" },
+        { type: "image", title: "Hình minh hoạ", intent: "Hình minh hoạ", image: "nature" }] },
+      { title: "Củng cố", items: [
+        { type: "quiz", title: "Câu hỏi củng cố", intent: "Câu hỏi củng cố", image: "assess" },
+        { type: "text", title: "Tổng kết bài", intent: "Tổng kết bài học", image: "recap" }] },
     ]),
   },
 ];
@@ -75,6 +98,7 @@ export const STORYBOARD_PRESETS: StoryboardLibraryItem[] = [
 interface StoryboardLibraryState {
   items: StoryboardLibraryItem[];
   add: (item: { name: string; subject?: string; description?: string; storyboard: Storyboard }) => string;
+  update: (id: string, patch: { name?: string; subject?: string; description?: string; storyboard?: Storyboard }) => void;
   remove: (id: string) => void;
 }
 
@@ -87,6 +111,8 @@ export const useStoryboardLibrary = create<StoryboardLibraryState>()(
         set({ items: [{ id, name, subject, description, storyboard, source: "user", createdAt: Date.now() }, ...get().items] });
         return id;
       },
+      update: (id, patch) =>
+        set({ items: get().items.map((i) => (i.id === id ? { ...i, ...patch } : i)) }),
       remove: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
     }),
     {
