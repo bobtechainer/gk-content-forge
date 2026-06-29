@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
-  Sparkles, Send, ChevronDown, Wand2, PenLine, ListChecks, Layers, Boxes,
+  Sparkles, Send, ChevronDown, Wand2, PenLine, ListChecks, GraduationCap, Boxes,
   Check, Loader2, ArrowUpRight, LayoutList, Palette, Library, CircleDot,
-  Plus, Maximize2, Minimize2, X, FileUp, Paperclip, BookOpen,
+  Plus, Maximize2, Minimize2, X, FileUp, Paperclip, BookOpen, BookText, ListTree, FileStack,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiClient } from "@/lib/ai";
 import { streamText, runSteps, sleep, type StepStatus } from "@/lib/ai/stream";
 import type { AiChatMode, GeneratedMaterial, Storyboard } from "@/lib/ai/types";
 import { useCourse, type CourseBlock, type CourseBlockType } from "@/stores/course";
+import { sceneSrc } from "@/lib/storyboard/scene-art";
+import { ramp } from "@/lib/theme/color";
 import { useContent } from "@/stores/content";
 import { useSession } from "@/stores/session";
 import { useStoryboard } from "@/stores/storyboard";
@@ -20,7 +22,7 @@ import { useUiSystemLibrary, allUiSystemItems } from "@/stores/ui-system-library
 import type { ContentItem, LearningMaterialSubtype } from "@/lib/types";
 import type { CourseTheme } from "@/lib/theme/resolve";
 import { LEARNING_MATERIAL_TYPES, MATERIAL_TYPE_LABELS, MATERIAL_TYPE_ICONS } from "@/lib/taxonomy";
-import { storyboardRoutePattern, uiSystemRoutePattern, type BuilderScope } from "@/lib/builder-url";
+import { newModuleDraftId, type BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
 
 /* ─── Modes ─────────────────────────────────────────────────────── */
@@ -29,9 +31,9 @@ interface ModeDef { id: AiChatMode; label: string; icon: typeof PenLine; placeho
 
 const MODES: ModeDef[] = [
   { id: "content", label: "Tạo nội dung", icon: PenLine, placeholder: "Yêu cầu AI viết nội dung… (vd: đoạn mở đầu về tốc độ phản ứng)" },
+  { id: "course", label: "Tạo cả khoá học", icon: GraduationCap, placeholder: "Mô tả khoá học bạn muốn dựng… (đính kèm 1 storyboard, 1 giao diện nếu muốn)" },
   { id: "full-lesson", label: "Tạo cả bài", icon: Wand2, placeholder: "Nhập chủ đề để AI dựng cả bài học…" },
   { id: "quiz", label: "Tạo câu hỏi", icon: ListChecks, placeholder: "Chủ đề câu hỏi ôn tập…" },
-  { id: "flashcards", label: "Tạo thẻ ghi nhớ", icon: Layers, placeholder: "Thuật ngữ / chủ đề cần ôn tập…" },
   { id: "material", label: "Tạo học liệu", icon: Boxes, placeholder: "Nhập chủ đề rồi chọn loại học liệu bên dưới…" },
   { id: "rewrite", label: "Soạn lại", icon: Sparkles, placeholder: "Dán đoạn cần soạn lại cho rõ hơn…" },
 ];
@@ -51,19 +53,18 @@ function followupsFor(mode: AiChatMode): Followup[] {
       { mode: "quiz", text: "Tạo 3 câu hỏi từ đoạn vừa viết" },
       { mode: "rewrite", text: "Rút gọn cho dễ đọc hơn" },
     ];
+    case "course": return [
+      { mode: "full-lesson", text: "Soạn chi tiết bài đầu tiên" },
+      { mode: "content", text: "Viết lời giới thiệu khoá học" },
+    ];
     case "full-lesson": return [
       { mode: "quiz", text: "Thêm câu hỏi củng cố cuối bài" },
-      { mode: "flashcards", text: "Tạo bộ thẻ ghi nhớ cho bài" },
       { mode: "content", text: "Viết phần tổng kết" },
+      { mode: "rewrite", text: "Soạn lại cho mạch lạc hơn" },
     ];
     case "quiz": return [
       { mode: "quiz", text: "Tạo thêm 3 câu khó hơn" },
-      { mode: "flashcards", text: "Chuyển các ý này thành thẻ ghi nhớ" },
       { mode: "content", text: "Giải thích kỹ hơn đáp án" },
-    ];
-    case "flashcards": return [
-      { mode: "quiz", text: "Tạo câu hỏi từ bộ thẻ này" },
-      { mode: "flashcards", text: "Thêm 5 thẻ nữa" },
     ];
     case "material": return [
       { mode: "material", text: "Tạo thêm một học liệu loại khác" },
@@ -89,14 +90,18 @@ interface ChatMessage {
   material?: GeneratedMaterial;
   materialSaved?: boolean;
   followups?: Followup[];
+  /** "Tạo cả khoá học": AI hỏi lại, hiện 2 nút cho người dùng chọn. */
+  courseChoice?: { prompt: string; storyboard?: Storyboard };
+  courseActed?: boolean;
 }
 
 type Attachment =
   | { kind: "storyboard"; label: string; storyboard: Storyboard }
   | { kind: "ui"; label: string; theme: CourseTheme }
   | { kind: "material"; label: string; material: ContentItem }
+  | { kind: "book"; label: string; book: ContentItem }
   | { kind: "file"; label: string };
-type PickerKind = "storyboard" | "ui" | "material" | null;
+type PickerKind = "storyboard" | "ui" | "material" | "book" | null;
 
 let msgSeq = 0;
 const newId = () => `m_${Date.now()}_${msgSeq++}`;
@@ -216,12 +221,6 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
           patchMessage(aid, { insertContent: `<p>${res.text}</p>` });
           break;
         }
-        case "flashcards": {
-          const patch = await aiClient.fillBlock({ item: { id: aid, blockType: "flashcards", intent: topic, learningGoal: topic }, subject, grade, topic });
-          insertBlock("flashcards", patch);
-          patchMessage(aid, { text: `${reply.text} Đã thêm bộ thẻ vào bài.` });
-          break;
-        }
         case "quiz": {
           const source = lessonSourceText() || topic;
           const items = await aiClient.quizFromContent({ sourceText: source, count: 3 });
@@ -264,17 +263,22 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   }, [busy, _run]);
 
   /* ─── "+" → chỉ ĐÍNH KÈM (tag), KHÔNG thực thi. Thực thi khi bấm Gửi. ─ */
+  // Storyboard & Giao diện: tối đa 1 mỗi loại — chọn cái mới thay cái cũ.
   const onPickStoryboard = (item: { name: string; storyboard: Storyboard }) => {
     setPicker(null);
-    setAttachments((a) => [...a, { kind: "storyboard", label: item.name, storyboard: item.storyboard }]);
+    setAttachments((a) => [...a.filter((x) => x.kind !== "storyboard"), { kind: "storyboard", label: item.name, storyboard: item.storyboard }]);
   };
   const onPickUiSystem = (item: { name: string; theme: CourseTheme }) => {
     setPicker(null);
-    setAttachments((a) => [...a, { kind: "ui", label: item.name, theme: item.theme }]);
+    setAttachments((a) => [...a.filter((x) => x.kind !== "ui"), { kind: "ui", label: item.name, theme: item.theme }]);
   };
   const onPickMaterial = (mat: ContentItem) => {
     setPicker(null);
     setAttachments((a) => [...a, { kind: "material", label: mat.title, material: mat }]);
+  };
+  const onPickBook = (b: ContentItem) => {
+    setPicker(null);
+    setAttachments((a) => [...a, { kind: "book", label: b.title, book: b }]);
   };
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -282,6 +286,77 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     setAttachments((a) => [...a, { kind: "file", label: f.name }]);
     e.target.value = "";
   };
+
+  /* ─── "Tạo cả khoá học": gửi xong AI hỏi lại bằng 2 nút ─────────── */
+  const startCourseChoice = useCallback(async (prompt: string, storyboard: Storyboard | undefined, labels: string[]) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const topic = prompt.trim() || subject || "khoá học";
+      const userText = [prompt.trim(), labels.length ? `đính kèm: ${labels.join(", ")}` : ""].filter(Boolean).join("  ·  ") || "Tạo cả khoá học";
+      setMessages((c) => [...c, { id: newId(), role: "user", text: userText }]);
+      const aid = newId();
+      setMessages((c) => [...c, { id: aid, role: "assistant", text: "", streaming: true }]);
+      const reply = await aiClient.chatReply({ prompt: topic, mode: "course", topic });
+      await streamText(reply.text, (p) => patchMessage(aid, { text: p }));
+      patchMessage(aid, { streaming: false, courseChoice: { prompt: topic, storyboard } });
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, subject, patchMessage]);
+
+  const runCourse = useCallback(async (msgId: string, kind: "outline" | "content", choice: { prompt: string; storyboard?: Storyboard }) => {
+    if (busy) return;
+    setBusy(true);
+    patchMessage(msgId, { courseActed: true });
+    const aid = pushAssistant(kind === "outline" ? "Đang dựng dàn ý khoá học…" : "Đang dựng khoá học và viết nội dung từng bài…");
+    try {
+      const outline = await aiClient.generateCourseOutline({ prompt: choice.prompt, subject, grade, storyboard: choice.storyboard });
+      const lessonRefs: { id: string; title: string }[] = [];
+      const cs = useCourse.getState();
+      for (const part of outline.parts) {
+        const pid = cs.addPart(courseId, part.title);
+        for (const ch of part.chapters) {
+          const cid = cs.addChapterUnder(courseId, pid, ch.title);
+          for (const ls of ch.lessons) {
+            const lid = cs.addLessonUnder(courseId, { id: cid, type: "chapter" }, ls.title);
+            lessonRefs.push({ id: lid, title: ls.title });
+          }
+        }
+      }
+      if (kind === "content") {
+        const steps = lessonRefs.map((l) => ({ label: `Viết nội dung — ${l.title}`, status: "pending" as StepStatus }));
+        patchMessage(aid, { steps });
+        await runSteps(
+          steps.map((_, i) => ({ id: String(i), label: steps[i].label })),
+          (i, st) => patchStep(aid, i, st),
+          {
+            perStepMs: 220,
+            onWork: async (i) => {
+              const l = lessonRefs[i];
+              const sb = await aiClient.generateStoryboard({ subject, grade, topic: l.title });
+              for (const it of sb.sections.flatMap((s) => s.items)) {
+                const bid = useCourse.getState().addBlock(courseId, l.id, it.blockType);
+                const patch = await aiClient.fillBlock({ item: it, subject, grade, topic: l.title });
+                if (bid) useCourse.getState().updateBlock(courseId, l.id, bid, { ...patch, aiGenerated: true });
+              }
+            },
+          },
+        );
+      }
+      const partsN = outline.parts.length;
+      patchMessage(aid, {
+        text: kind === "outline"
+          ? `Xong rồi! Mình đã dựng dàn ý: ${partsN} phần, ${lessonRefs.length} bài. Bạn mở cây nội dung bên trái để xem và chỉnh nhé.`
+          : `Xong rồi! Mình đã dựng ${partsN} phần, ${lessonRefs.length} bài kèm nội dung từng bài. Bạn xem ở cây bên trái nhé.`,
+        followups: followupsFor("course"),
+      });
+    } catch {
+      patchMessage(aid, { text: "Có lỗi khi dựng khoá học. Bạn thử lại giúp mình nhé." });
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, subject, grade, courseId, patchMessage, patchStep]);
 
   const handleInsert = useCallback((id: string, html: string) => { insertBlock("text", { content: html }); patchMessage(id, { inserted: true }); }, [insertBlock, patchMessage]);
   const handleSaveMaterial = useCallback((id: string, mat: GeneratedMaterial) => {
@@ -297,6 +372,16 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     const prompt = input;
     const hasPrompt = prompt.trim().length > 0;
     if (!hasPrompt && atts.length === 0 && mode !== "full-lesson") return;
+
+    // Tạo cả khoá học: KHÔNG chạy ngay — gửi xong AI hỏi lại bằng 2 nút.
+    if (mode === "course") {
+      const sbAtt = atts.find((a) => a.kind === "storyboard");
+      setInput("");
+      setAttachments([]);
+      await startCourseChoice(prompt, sbAtt?.kind === "storyboard" ? sbAtt.storyboard : undefined, atts.map((a) => a.label));
+      return;
+    }
+
     setInput("");
     setAttachments([]);
     setBusy(true);
@@ -318,6 +403,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       }
       // 3) Tệp (mô phỏng)
       for (const a of atts) if (a.kind === "file") pushAssistant(`Đã tham khảo tệp "${a.label}" (mô phỏng).`);
+      // 3b) Sách — làm ngữ cảnh cho AI
+      for (const a of atts) if (a.kind === "book") pushAssistant(`Đã lấy sách "${a.label}" làm ngữ cảnh — mình sẽ bám theo khi soạn.`);
       // 4) Dàn ý (agentic, có nhật ký bước)
       for (const a of atts) if (a.kind === "storyboard") {
         if (!lessonId) { pushAssistant("Hãy chọn một bài học trước khi áp dàn ý nhé."); continue; }
@@ -334,13 +421,14 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   };
 
   const suggestions = [
-    { mode: "full-lesson" as AiChatMode, text: `Dựng cả bài về ${subject || "chủ đề này"}` },
+    { mode: "course" as AiChatMode, text: `Dựng cả khoá học về ${subject || "chủ đề này"}` },
+    { mode: "full-lesson" as AiChatMode, text: "Dựng cả bài hiện tại" },
     { mode: "content" as AiChatMode, text: "Viết đoạn mở đầu cuốn hút" },
     { mode: "quiz" as AiChatMode, text: "Tạo 3 câu hỏi ôn tập" },
-    { mode: "flashcards" as AiChatMode, text: "Tạo bộ thẻ ghi nhớ thuật ngữ" },
   ];
 
   const myMaterials = materials.filter((i) => i.category === "learning_material" && (i.ownerId === roleId || i.status === "published"));
+  const books = materials.filter((i) => i.category === "book");
 
   /* ─── Render pieces ───────────────────────────────────────────── */
 
@@ -376,7 +464,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       ) : (
         <div className={cn("mx-auto space-y-3", expanded && "max-w-2xl")}>
           {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} onInsert={handleInsert} onSaveMaterial={handleSaveMaterial} scope={scope} onFollowup={(f) => runMode(f.mode, f.text)} busy={busy} />
+            <MessageBubble key={m.id} message={m} onInsert={handleInsert} onSaveMaterial={handleSaveMaterial} scope={scope} onFollowup={(f) => runMode(f.mode, f.text)} onCourseChoice={runCourse} busy={busy} />
           ))}
         </div>
       )}
@@ -408,7 +496,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         <div className="mb-2 flex flex-wrap gap-1.5">
           {attachments.map((a, i) => (
             <span key={i} className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-1 text-[11px] font-medium text-primary">
-              {a.kind === "storyboard" ? <LayoutList className="h-3 w-3" /> : a.kind === "ui" ? <Palette className="h-3 w-3" /> : a.kind === "file" ? <Paperclip className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
+              {a.kind === "storyboard" ? <LayoutList className="h-3 w-3" /> : a.kind === "ui" ? <Palette className="h-3 w-3" /> : a.kind === "file" ? <Paperclip className="h-3 w-3" /> : a.kind === "book" ? <BookText className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
               {a.label}
               <button type="button" onClick={() => setAttachments((cur) => cur.filter((_, j) => j !== i))} aria-label="Bỏ đính kèm"><X className="h-3 w-3" /></button>
             </span>
@@ -473,9 +561,9 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setPlusOpen(false)} />
                 <div className="absolute bottom-full left-0 z-50 mb-1.5 w-[210px] rounded-xl border border-border bg-card p-1.5 shadow-xl">
+                  <PlusItem icon={BookText} label="Chèn sách" onClick={() => { setPlusOpen(false); setPicker("book"); }} />
                   <PlusItem icon={BookOpen} label="Chèn học liệu từ kho" onClick={() => { setPlusOpen(false); setPicker("material"); }} />
                   <PlusItem icon={FileUp} label="Tải tệp lên" onClick={() => { setPlusOpen(false); fileRef.current?.click(); }} />
-                  <PlusItem icon={Boxes} label="Tạo học liệu mới" onClick={() => { setPlusOpen(false); setMode("material"); }} />
                 </div>
               </>
             )}
@@ -500,9 +588,11 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
           storyboards={allStoryboardItems(storyboardLib)}
           uiSystems={allUiSystemItems(uiSystemLib)}
           materials={myMaterials}
+          books={books}
           onPickStoryboard={onPickStoryboard}
           onPickUiSystem={onPickUiSystem}
           onPickMaterial={onPickMaterial}
+          onPickBook={onPickBook}
         />
       )}
     </div>
@@ -540,7 +630,7 @@ function PlusItem({ icon: Icon, label, onClick }: { icon: typeof Plus; label: st
 }
 
 function LibraryPicker({
-  kind, scope, roleId, onClose, storyboards, uiSystems, materials, onPickStoryboard, onPickUiSystem, onPickMaterial,
+  kind, scope, roleId, onClose, storyboards, uiSystems, materials, books, onPickStoryboard, onPickUiSystem, onPickMaterial, onPickBook,
 }: {
   kind: Exclude<PickerKind, null>;
   scope: BuilderScope;
@@ -549,39 +639,42 @@ function LibraryPicker({
   storyboards: { id: string; name: string; source: string; description?: string; storyboard: Storyboard }[];
   uiSystems: { id: string; name: string; source: string; description?: string; theme: CourseTheme }[];
   materials: ContentItem[];
+  books: ContentItem[];
   onPickStoryboard: (i: { name: string; storyboard: Storyboard }) => void;
   onPickUiSystem: (i: { name: string; theme: CourseTheme }) => void;
   onPickMaterial: (m: ContentItem) => void;
+  onPickBook: (m: ContentItem) => void;
 }) {
-  const navigate = useNavigate();
   const [tab, setTab] = useState<"system" | "user">("system");
   const [q, setQ] = useState("");
   const sysTab = tab === "system";
   const match = (s: string) => !q.trim() || s.toLowerCase().includes(q.trim().toLowerCase());
+  const isModule = kind === "storyboard" || kind === "ui";
 
   const sb = storyboards.filter((it) => (sysTab ? it.source === "system" : it.source === "user")).filter((it) => match(it.name));
   const ui = uiSystems.filter((it) => (sysTab ? it.source === "system" : it.source === "user")).filter((it) => match(it.name));
   const mat = materials.filter((m) => (sysTab ? m.ownerId !== roleId : m.ownerId === roleId)).filter((m) => match(m.title));
-  const empty = (kind === "storyboard" ? sb.length : kind === "ui" ? ui.length : mat.length) === 0;
+  const bk = books.filter((m) => (sysTab ? m.ownerId !== roleId : m.ownerId === roleId)).filter((m) => match(m.title));
+  const empty = (kind === "storyboard" ? sb.length : kind === "ui" ? ui.length : kind === "book" ? bk.length : mat.length) === 0;
 
-  const title = kind === "storyboard" ? "Chọn dàn ý" : kind === "ui" ? "Chọn giao diện" : "Chọn học liệu";
-  const TitleIcon = kind === "ui" ? Palette : kind === "material" ? BookOpen : LayoutList;
+  const title = kind === "storyboard" ? "Chọn Storyboard" : kind === "ui" ? "Chọn Giao diện" : kind === "book" ? "Chọn sách" : "Chọn học liệu";
+  const TitleIcon = kind === "ui" ? Palette : kind === "material" ? BookOpen : kind === "book" ? BookText : LayoutList;
 
-  const openKho = () => {
-    const id = `mod_${Date.now()}`;
-    if (kind === "storyboard") navigate({ to: storyboardRoutePattern(scope), params: { id } });
-    else if (kind === "ui") navigate({ to: uiSystemRoutePattern(scope), params: { id } });
-    else navigate({ to: scope === "org" ? "/org/library" : "/creator/library" });
+  const base = scope === "org" ? "/org" : "/creator";
+  const openCreate = () => {
+    if (kind === "storyboard") window.open(`${base}/builder/storyboard/${newModuleDraftId()}`, "_blank", "noopener");
+    else if (kind === "ui") window.open(`${base}/builder/ui-system/${newModuleDraftId()}`, "_blank", "noopener");
+    else window.open(`${base}/library`, "_blank", "noopener");
   };
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-foreground/30 p-4" onClick={onClose}>
-      <div className="flex max-h-[74vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="flex max-h-[78vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-primary"><TitleIcon className="h-4 w-4" /></span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground">{title}</p>
-            <p className="truncate text-[11px] text-muted-foreground">Đính kèm — bấm Gửi mới thực thi</p>
+            <p className="truncate text-[11px] text-muted-foreground">Xem trước rồi đính kèm — bấm Gửi mới thực thi{isModule ? " · chỉ chọn 1" : ""}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Đóng"><X className="h-4 w-4 text-muted-foreground" /></button>
         </div>
@@ -598,47 +691,91 @@ function LibraryPicker({
             className="ml-auto my-1.5 w-[150px] rounded-lg border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-primary" />
         </div>
 
-        {/* List */}
-        <div className="min-h-[160px] flex-1 space-y-1.5 overflow-y-auto p-3">
-          {empty && <p className="px-1 py-10 text-center text-xs text-muted-foreground">Không tìm thấy mục nào ở đây.</p>}
-          {kind === "storyboard" && sb.map((it) => (
-            <button key={it.id} type="button" onClick={() => onPickStoryboard(it)} className="flex w-full items-start gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
-              <LayoutList className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{it.description ?? `${it.storyboard.sections.length} phần`}</span>
-              </span>
-              <Plus className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
-          {kind === "ui" && ui.map((it) => (
-            <button key={it.id} type="button" onClick={() => onPickUiSystem(it)} className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
-              <span className="h-7 w-7 shrink-0 rounded-md border border-border" style={{ background: it.theme.accentSeed }} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{it.description ?? "Giao diện khoá học"}</span>
-              </span>
-              <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
-          {kind === "material" && mat.map((m) => (
-            <button key={m.id} type="button" onClick={() => onPickMaterial(m)} className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
-              <BookOpen className="h-4 w-4 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-medium text-foreground">{m.title}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{MATERIAL_TYPE_LABELS[(m.materialSubtype ?? "document")]} · {m.subject}</span>
-              </span>
-              <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
+        {/* Gallery / list */}
+        <div className="min-h-[200px] flex-1 overflow-y-auto p-3">
+          {empty && <p className="px-1 py-12 text-center text-xs text-muted-foreground">Không tìm thấy mục nào ở đây.</p>}
+
+          {kind === "storyboard" && (
+            <div className="grid grid-cols-2 gap-2.5">
+              {sb.map((it) => {
+                const frames = it.storyboard.sections.flatMap((s) => s.items);
+                return (
+                  <button key={it.id} type="button" onClick={() => onPickStoryboard(it)} className="group overflow-hidden rounded-xl border border-border bg-card text-left transition hover:border-primary hover:shadow-md">
+                    <div className="flex gap-0.5 bg-muted/30 p-1">
+                      {frames.slice(0, 3).map((f, i) => (
+                        <div key={i} className="h-12 flex-1 rounded bg-cover bg-center" style={{ backgroundImage: `url("${sceneSrc(f.image)}")` }} />
+                      ))}
+                      {frames.length === 0 && <div className="h-12 flex-1 rounded bg-muted" />}
+                    </div>
+                    <div className="p-2">
+                      <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
+                      <span className="block truncate text-[11px] text-muted-foreground">{frames.length} khung</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {kind === "ui" && (
+            <div className="grid grid-cols-2 gap-2.5">
+              {ui.map((it) => {
+                const r = ramp(it.theme.accentSeed);
+                return (
+                  <button key={it.id} type="button" onClick={() => onPickUiSystem(it)} className="group overflow-hidden rounded-xl border border-border bg-card text-left transition hover:border-primary hover:shadow-md">
+                    <div className="flex h-12 items-stretch" style={{ background: r.soft }}>
+                      <div className="flex flex-1 items-center justify-center text-[11px] font-bold" style={{ color: it.theme.accentSeed }}>Aa</div>
+                      <div className="w-7" style={{ background: it.theme.accentSeed }} />
+                      <div className="w-4" style={{ background: r.strong }} />
+                    </div>
+                    <div className="p-2">
+                      <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
+                      <span className="block truncate text-[11px] text-muted-foreground">{it.description ?? "Giao diện khoá học"}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {kind === "material" && (
+            <div className="space-y-1.5">
+              {mat.map((m) => (
+                <button key={m.id} type="button" onClick={() => onPickMaterial(m)} className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
+                  <BookOpen className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-medium text-foreground">{m.title}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">{MATERIAL_TYPE_LABELS[(m.materialSubtype ?? "document")]} · {m.subject}</span>
+                  </span>
+                  <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {kind === "book" && (
+            <div className="space-y-1.5">
+              {bk.map((m) => (
+                <button key={m.id} type="button" onClick={() => onPickBook(m)} className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
+                  <BookText className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-medium text-foreground">{m.title}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">Sách{m.subject ? ` · ${m.subject}` : ""}</span>
+                  </span>
+                  <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Footer: mở kho đầy đủ */}
+        {/* Footer: tạo mới / mở thư viện ở tab mới */}
         <div className="flex items-center gap-2 border-t border-border px-4 py-3">
-          <button type="button" onClick={openKho} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-            {kind === "material" ? "Mở Thư viện đầy đủ" : kind === "ui" ? "Mở kho Giao diện" : "Mở kho Storyboard"}
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={openCreate}>
+            <Plus className="h-3.5 w-3.5" />
+            {isModule ? "Tạo mới" : "Mở Thư viện"}
             <ArrowUpRight className="h-3.5 w-3.5" />
-          </button>
+          </Button>
           <Button variant="ghost" size="sm" className="ml-auto text-xs" onClick={onClose}>Đóng</Button>
         </div>
       </div>
@@ -650,13 +787,14 @@ function LibraryPicker({
 /* ─── Message bubble ────────────────────────────────────────────── */
 
 function MessageBubble({
-  message, onInsert, onSaveMaterial, scope, onFollowup, busy,
+  message, onInsert, onSaveMaterial, scope, onFollowup, onCourseChoice, busy,
 }: {
   message: ChatMessage;
   onInsert: (id: string, html: string) => void;
   onSaveMaterial: (id: string, mat: GeneratedMaterial) => void;
   scope: BuilderScope;
   onFollowup: (f: Followup) => void;
+  onCourseChoice: (id: string, kind: "outline" | "content", choice: { prompt: string; storyboard?: Storyboard }) => void;
   busy: boolean;
 }) {
   if (message.role === "user") {
@@ -684,6 +822,27 @@ function MessageBubble({
               </div>
             ))}
           </div>
+        )}
+
+        {message.courseChoice && !message.streaming && (
+          message.courseActed ? (
+            <p className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã bắt đầu dựng</p>
+          ) : (
+            <div className="gk-pop space-y-1.5 rounded-xl border border-border bg-card p-2.5">
+              <p className="text-[11px] text-muted-foreground">Chọn cách dựng — bấm để bắt đầu:</p>
+              <div className="flex gap-1.5">
+                <button type="button" disabled={busy} onClick={() => onCourseChoice(message.id, "outline", message.courseChoice!)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-[11.5px] font-semibold text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50">
+                  <ListTree className="h-3.5 w-3.5" /> Tạo dàn ý
+                </button>
+                <button type="button" disabled={busy} onClick={() => onCourseChoice(message.id, "content", message.courseChoice!)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary bg-accent px-2.5 py-2 text-[11.5px] font-semibold text-primary transition hover:bg-accent/70 disabled:opacity-50">
+                  <FileStack className="h-3.5 w-3.5" /> Tạo nội dung đầy đủ
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Dàn ý: dựng cây Phần/Chương/Bài. Nội dung đầy đủ: viết luôn nội dung từng bài.</p>
+            </div>
+          )
         )}
 
         {message.insertContent && !message.streaming && (

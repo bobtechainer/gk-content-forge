@@ -60,11 +60,29 @@ export interface PublishAnalysis {
 
 export type AiChatMode =
   | "content"
+  | "course"
   | "full-lesson"
   | "quiz"
-  | "flashcards"
   | "material"
   | "rewrite";
+
+/* ─── Tạo cả khoá học (đổ vào cây nội dung) ────────────────────────── */
+
+export interface CourseGenRequest {
+  prompt: string;
+  subject?: string;
+  grade?: string;
+  /** Storyboard tham chiếu (tối đa 1) để bám cấu trúc khung cảnh. */
+  storyboard?: Storyboard;
+}
+
+export interface OutlineLesson { title: string }
+export interface OutlineChapter { title: string; lessons: OutlineLesson[] }
+export interface OutlinePart { title: string; chapters: OutlineChapter[] }
+export interface CourseOutline {
+  title: string;
+  parts: OutlinePart[];
+}
 
 /* ─── Tạo học liệu (9 loại trong kho) ──────────────────────────────── */
 
@@ -121,5 +139,6 @@ export interface AiClient {
   >;
   generateMaterial(req: GenerateMaterialRequest): Promise<GeneratedMaterial>;
   generateUiSystem(req: UiSystemRequest): Promise<UiSystemResult>;
+  generateCourseOutline(req: CourseGenRequest): Promise<CourseOutline>;
   chatReply(req: ChatReplyRequest): Promise<{ text: string }>;
 }

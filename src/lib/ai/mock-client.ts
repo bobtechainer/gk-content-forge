@@ -635,13 +635,45 @@ function buildChatReply(req: ChatReplyRequest): { text: string } {
   const about = topic ? ` về "${topic}"` : "";
   const byMode: Record<ChatReplyRequest["mode"], string> = {
     content: `Được, mình viết nội dung${about} ngay. Bạn xem rồi chèn vào bài nhé.`,
+    course: `Mình nắm rồi${about}! Bạn muốn mình dựng theo hướng nào — chỉ dàn ý khung sườn, hay viết luôn nội dung từng bài?`,
     "full-lesson": `Để mình dựng cả bài${about}: phác dàn ý, viết từng phần rồi đổ lên canvas giúp bạn.`,
     quiz: `Mình tạo vài câu hỏi${about} bám nội dung bài để kiểm tra mức độ hiểu nhé.`,
-    flashcards: `Mình làm một bộ thẻ ghi nhớ${about} cho phần ôn tập.`,
     material: `Mình tạo học liệu${about} rồi lưu vào kho để bạn dùng lại sau.`,
     rewrite: `Mình soạn lại đoạn này cho rõ ràng và mạch lạc hơn nhé.`,
   };
   return { text: byMode[req.mode] };
+}
+
+/* ─── GenerateCourseOutline (tạo cả khoá học) ────────────────────── */
+
+function buildCourseOutline(req: import("./types").CourseGenRequest): import("./types").CourseOutline {
+  const subject = req.subject?.trim() || "khoá học";
+  const topic = req.prompt.trim() || subject;
+  const seed = djb2(`${topic}|${subject}`);
+
+  // Nếu có storyboard tham chiếu → lấy tiêu đề các phần làm tên chương.
+  const sbSections = req.storyboard?.sections.map((s) => s.title).filter(Boolean) ?? [];
+
+  const PART_TEMPLATES = [
+    { title: "Mở đầu & kiến thức nền", chapters: ["Giới thiệu chủ đề", "Khái niệm cơ bản"] },
+    { title: `Kiến thức trọng tâm về ${topic}`, chapters: sbSections.length ? sbSections.slice(0, 3) : ["Nội dung lõi", "Mở rộng & ví dụ"] },
+    { title: "Luyện tập & tổng kết", chapters: ["Bài tập vận dụng", "Ôn tập & đánh giá"] },
+  ];
+
+  const parts = PART_TEMPLATES.map((p, pi) => ({
+    title: p.title,
+    chapters: p.chapters.map(( chTitle, ci) => {
+      const lessonCount = 2 + ((seed + pi * 3 + ci) % 2); // 2–3 bài
+      return {
+        title: chTitle,
+        lessons: Array.from({ length: lessonCount }, (_, li) => ({
+          title: `Bài ${li + 1}: ${chTitle}`,
+        })),
+      };
+    }),
+  }));
+
+  return { title: topic, parts };
 }
 
 /* ─── mockAiClient ───────────────────────────────────────────────── */
@@ -683,6 +715,10 @@ export const mockAiClient: AiClient = {
 
   async generateUiSystem(req: UiSystemRequest) {
     return buildUiSystem(req);
+  },
+
+  async generateCourseOutline(req) {
+    return buildCourseOutline(req);
   },
 
   async chatReply(req: ChatReplyRequest) {
