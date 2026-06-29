@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import {
   Sparkles, Send, ChevronDown, Wand2, PenLine, ListChecks, GraduationCap, Boxes,
   Check, Loader2, ArrowUpRight, LayoutList, Palette, Library, CircleDot,
-  Plus, Maximize2, Minimize2, X, FileUp, Paperclip, BookOpen, BookText, ListTree, FileStack,
+  Plus, Maximize2, Minimize2, X, FileUp, Paperclip, BookOpen, BookText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiClient } from "@/lib/ai";
@@ -30,12 +30,10 @@ import { cn } from "@/lib/utils";
 interface ModeDef { id: AiChatMode; label: string; icon: typeof PenLine; placeholder: string; }
 
 const MODES: ModeDef[] = [
-  { id: "content", label: "Tạo nội dung", icon: PenLine, placeholder: "Yêu cầu AI viết nội dung… (vd: đoạn mở đầu về tốc độ phản ứng)" },
-  { id: "course", label: "Tạo cả khoá học", icon: GraduationCap, placeholder: "Mô tả khoá học bạn muốn dựng… (đính kèm 1 storyboard, 1 giao diện nếu muốn)" },
-  { id: "full-lesson", label: "Tạo cả bài", icon: Wand2, placeholder: "Nhập chủ đề để AI dựng cả bài học…" },
+  { id: "course", label: "Tạo dàn ý khoá học", icon: GraduationCap, placeholder: "Mô tả khoá học để AI dựng dàn ý Phần/Chương/Bài… (đính kèm 1 storyboard, 1 giao diện nếu muốn)" },
+  { id: "full-lesson", label: "Tạo nội dung bài học", icon: Wand2, placeholder: "Nhập chủ đề để AI soạn nội dung cho bài đang chọn…" },
   { id: "quiz", label: "Tạo câu hỏi", icon: ListChecks, placeholder: "Chủ đề câu hỏi ôn tập…" },
   { id: "material", label: "Tạo học liệu", icon: Boxes, placeholder: "Nhập chủ đề rồi chọn loại học liệu bên dưới…" },
-  { id: "rewrite", label: "Soạn lại", icon: Sparkles, placeholder: "Dán đoạn cần soạn lại cho rõ hơn…" },
 ];
 
 const BLOCK_LABELS: Partial<Record<CourseBlockType, string>> = {
@@ -51,16 +49,14 @@ function followupsFor(mode: AiChatMode): Followup[] {
     case "content": return [
       { mode: "content", text: "Thêm một ví dụ thực tế minh hoạ" },
       { mode: "quiz", text: "Tạo 3 câu hỏi từ đoạn vừa viết" },
-      { mode: "rewrite", text: "Rút gọn cho dễ đọc hơn" },
     ];
     case "course": return [
-      { mode: "full-lesson", text: "Soạn chi tiết bài đầu tiên" },
-      { mode: "content", text: "Viết lời giới thiệu khoá học" },
+      { mode: "full-lesson", text: "Soạn nội dung bài đầu tiên" },
+      { mode: "quiz", text: "Tạo câu hỏi ôn tập cho khoá" },
     ];
     case "full-lesson": return [
       { mode: "quiz", text: "Thêm câu hỏi củng cố cuối bài" },
       { mode: "content", text: "Viết phần tổng kết" },
-      { mode: "rewrite", text: "Soạn lại cho mạch lạc hơn" },
     ];
     case "quiz": return [
       { mode: "quiz", text: "Tạo thêm 3 câu khó hơn" },
@@ -69,10 +65,6 @@ function followupsFor(mode: AiChatMode): Followup[] {
     case "material": return [
       { mode: "material", text: "Tạo thêm một học liệu loại khác" },
       { mode: "quiz", text: "Tạo bộ đề cho chủ đề này" },
-    ];
-    case "rewrite": return [
-      { mode: "rewrite", text: "Đổi sang giọng thân thiện hơn" },
-      { mode: "content", text: "Mở rộng thêm ý cho đoạn này" },
     ];
   }
 }
@@ -90,9 +82,6 @@ interface ChatMessage {
   material?: GeneratedMaterial;
   materialSaved?: boolean;
   followups?: Followup[];
-  /** "Tạo cả khoá học": AI hỏi lại, hiện 2 nút cho người dùng chọn. */
-  courseChoice?: { prompt: string; storyboard?: Storyboard };
-  courseActed?: boolean;
 }
 
 type Attachment =
@@ -118,7 +107,7 @@ interface AiAssistantPanelProps {
 export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [mode, setMode] = useState<AiChatMode>("content");
+  const [mode, setMode] = useState<AiChatMode | null>(null);
   const [busy, setBusy] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
@@ -138,8 +127,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   const uiSystemLib = useUiSystemLibrary((s) => s.items);
   const materials = useContent((s) => s.items);
 
-  const modeDef = MODES.find((m) => m.id === mode)!;
-  const ModeIcon = modeDef.icon;
+  const modeDef = MODES.find((m) => m.id === mode) ?? null;
+  const ModeIcon = modeDef?.icon ?? Sparkles;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -195,7 +184,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     if (pushUser) {
       const userText = activeMode === "material" && materialKind
         ? `Tạo ${MATERIAL_TYPE_LABELS[materialKind].toLowerCase()}: ${topic}`
-        : rawPrompt.trim() || MODES.find((m) => m.id === activeMode)!.label;
+        : rawPrompt.trim() || MODES.find((m) => m.id === activeMode)?.label || "Trợ lý AI";
       setMessages((cur) => [...cur, { id: newId(), role: "user", text: userText }]);
     }
     const aid = newId();
@@ -214,11 +203,6 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         case "content": {
           const patch = await aiClient.fillBlock({ item: { id: aid, blockType: "text", intent: topic, learningGoal: topic }, subject, grade, topic });
           patchMessage(aid, { insertContent: (patch.content as string) ?? "" });
-          break;
-        }
-        case "rewrite": {
-          const res = await aiClient.companionEdit({ text: rawPrompt.trim() || topic, action: "fix" });
-          patchMessage(aid, { insertContent: `<p>${res.text}</p>` });
           break;
         }
         case "quiz": {
@@ -287,72 +271,46 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     e.target.value = "";
   };
 
-  /* ─── "Tạo cả khoá học": gửi xong AI hỏi lại bằng 2 nút ─────────── */
-  const startCourseChoice = useCallback(async (prompt: string, storyboard: Storyboard | undefined, labels: string[]) => {
+  /* ─── "Tạo dàn ý khoá học": dựng thẳng cây Phần/Chương/Bài ──────── */
+  const runCourseOutline = useCallback(async (prompt: string, storyboard: Storyboard | undefined, labels: string[]) => {
     if (busy) return;
     setBusy(true);
     try {
       const topic = prompt.trim() || subject || "khoá học";
-      const userText = [prompt.trim(), labels.length ? `đính kèm: ${labels.join(", ")}` : ""].filter(Boolean).join("  ·  ") || "Tạo cả khoá học";
+      const userText = [prompt.trim(), labels.length ? `đính kèm: ${labels.join(", ")}` : ""].filter(Boolean).join("  ·  ") || "Tạo dàn ý khoá học";
       setMessages((c) => [...c, { id: newId(), role: "user", text: userText }]);
       const aid = newId();
       setMessages((c) => [...c, { id: aid, role: "assistant", text: "", streaming: true }]);
       const reply = await aiClient.chatReply({ prompt: topic, mode: "course", topic });
       await streamText(reply.text, (p) => patchMessage(aid, { text: p }));
-      patchMessage(aid, { streaming: false, courseChoice: { prompt: topic, storyboard } });
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, subject, patchMessage]);
+      patchMessage(aid, { streaming: false });
 
-  const runCourse = useCallback(async (msgId: string, kind: "outline" | "content", choice: { prompt: string; storyboard?: Storyboard }) => {
-    if (busy) return;
-    setBusy(true);
-    patchMessage(msgId, { courseActed: true });
-    const aid = pushAssistant(kind === "outline" ? "Đang dựng dàn ý khoá học…" : "Đang dựng khoá học và viết nội dung từng bài…");
-    try {
-      const outline = await aiClient.generateCourseOutline({ prompt: choice.prompt, subject, grade, storyboard: choice.storyboard });
-      const lessonRefs: { id: string; title: string }[] = [];
+      const outline = await aiClient.generateCourseOutline({ prompt: topic, subject, grade, storyboard });
       const cs = useCourse.getState();
-      for (const part of outline.parts) {
-        const pid = cs.addPart(courseId, part.title);
-        for (const ch of part.chapters) {
-          const cid = cs.addChapterUnder(courseId, pid, ch.title);
-          for (const ls of ch.lessons) {
-            const lid = cs.addLessonUnder(courseId, { id: cid, type: "chapter" }, ls.title);
-            lessonRefs.push({ id: lid, title: ls.title });
-          }
-        }
-      }
-      if (kind === "content") {
-        const steps = lessonRefs.map((l) => ({ label: `Viết nội dung — ${l.title}`, status: "pending" as StepStatus }));
-        patchMessage(aid, { steps });
-        await runSteps(
-          steps.map((_, i) => ({ id: String(i), label: steps[i].label })),
-          (i, st) => patchStep(aid, i, st),
-          {
-            perStepMs: 220,
-            onWork: async (i) => {
-              const l = lessonRefs[i];
-              const sb = await aiClient.generateStoryboard({ subject, grade, topic: l.title });
-              for (const it of sb.sections.flatMap((s) => s.items)) {
-                const bid = useCourse.getState().addBlock(courseId, l.id, it.blockType);
-                const patch = await aiClient.fillBlock({ item: it, subject, grade, topic: l.title });
-                if (bid) useCourse.getState().updateBlock(courseId, l.id, bid, { ...patch, aiGenerated: true });
-              }
-            },
+      const steps = outline.parts.map((p) => ({ label: `Phần: ${p.title}`, status: "pending" as StepStatus }));
+      patchMessage(aid, { steps });
+      let lessons = 0;
+      await runSteps(
+        steps.map((_, i) => ({ id: String(i), label: steps[i].label })),
+        (i, st) => patchStep(aid, i, st),
+        {
+          perStepMs: 280,
+          onWork: (i) => {
+            const part = outline.parts[i];
+            const pid = cs.addPart(courseId, part.title);
+            for (const ch of part.chapters) {
+              const cid = cs.addChapterUnder(courseId, pid, ch.title);
+              for (const ls of ch.lessons) { cs.addLessonUnder(courseId, { id: cid, type: "chapter" }, ls.title); lessons++; }
+            }
           },
-        );
-      }
-      const partsN = outline.parts.length;
+        },
+      );
       patchMessage(aid, {
-        text: kind === "outline"
-          ? `Xong rồi! Mình đã dựng dàn ý: ${partsN} phần, ${lessonRefs.length} bài. Bạn mở cây nội dung bên trái để xem và chỉnh nhé.`
-          : `Xong rồi! Mình đã dựng ${partsN} phần, ${lessonRefs.length} bài kèm nội dung từng bài. Bạn xem ở cây bên trái nhé.`,
+        text: `Xong rồi! Mình đã dựng dàn ý: ${outline.parts.length} phần, ${lessons} bài. Bạn mở cây nội dung bên trái để xem và chỉnh — chọn một bài rồi dùng "Tạo nội dung bài học" để soạn chi tiết nhé.`,
         followups: followupsFor("course"),
       });
     } catch {
-      patchMessage(aid, { text: "Có lỗi khi dựng khoá học. Bạn thử lại giúp mình nhé." });
+      pushAssistant("Có lỗi khi dựng dàn ý khoá học. Bạn thử lại giúp mình nhé.");
     } finally {
       setBusy(false);
     }
@@ -371,14 +329,16 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     const atts = attachments;
     const prompt = input;
     const hasPrompt = prompt.trim().length > 0;
-    if (!hasPrompt && atts.length === 0 && mode !== "full-lesson") return;
+    if (!hasPrompt && atts.length === 0 && mode !== "full-lesson" && mode !== "course") return;
 
-    // Tạo cả khoá học: KHÔNG chạy ngay — gửi xong AI hỏi lại bằng 2 nút.
+    // Tạo dàn ý khoá học: dựng thẳng cây nội dung (áp giao diện nếu có đính kèm).
     if (mode === "course") {
       const sbAtt = atts.find((a) => a.kind === "storyboard");
+      const uiAtt = atts.find((a) => a.kind === "ui");
       setInput("");
       setAttachments([]);
-      await startCourseChoice(prompt, sbAtt?.kind === "storyboard" ? sbAtt.storyboard : undefined, atts.map((a) => a.label));
+      if (uiAtt?.kind === "ui") useCourseTheme.getState().setTheme(courseId, uiAtt.theme);
+      await runCourseOutline(prompt, sbAtt?.kind === "storyboard" ? sbAtt.storyboard : undefined, atts.map((a) => a.label));
       return;
     }
 
@@ -413,18 +373,17 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         await runFill(aid, a.storyboard, subject || a.label);
         patchMessage(aid, { text: `Đã áp dàn ý "${a.label}" — thêm ${a.storyboard.sections.flatMap((s) => s.items).length} khối.`, followups: followupsFor("full-lesson") });
       }
-      // 5) Câu lệnh chữ
-      if (hasPrompt || mode === "full-lesson") await _run(mode, prompt, undefined, false);
+      // 5) Câu lệnh chữ (không chọn mode → soạn nội dung chung)
+      if (hasPrompt || mode === "full-lesson") await _run(mode ?? "content", prompt, undefined, false);
     } finally {
       setBusy(false);
     }
   };
 
-  const suggestions = [
-    { mode: "course" as AiChatMode, text: `Dựng cả khoá học về ${subject || "chủ đề này"}` },
-    { mode: "full-lesson" as AiChatMode, text: "Dựng cả bài hiện tại" },
-    { mode: "content" as AiChatMode, text: "Viết đoạn mở đầu cuốn hút" },
-    { mode: "quiz" as AiChatMode, text: "Tạo 3 câu hỏi ôn tập" },
+  const suggestions: { mode: AiChatMode; text: string }[] = [
+    { mode: "course", text: `Dựng dàn ý khoá học về ${subject || "chủ đề này"}` },
+    { mode: "full-lesson", text: "Soạn nội dung cho bài đang chọn" },
+    { mode: "quiz", text: "Tạo 3 câu hỏi ôn tập" },
   ];
 
   const myMaterials = materials.filter((i) => i.category === "learning_material" && (i.ownerId === roleId || i.status === "published"));
@@ -454,7 +413,10 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
           <p className="mt-1 text-xs text-muted-foreground">Chọn chế độ ở dưới, hoặc thử nhanh:</p>
           <div className="mt-3 grid w-full gap-1.5 sm:grid-cols-2">
             {suggestions.map((s) => (
-              <button key={s.text} type="button" disabled={busy} onClick={() => { setMode(s.mode); void runMode(s.mode, s.text); }}
+              <button key={s.text} type="button" disabled={busy} onClick={() => {
+                if (s.mode === "course") { void runCourseOutline(s.text, undefined, []); return; }
+                setMode(s.mode); void runMode(s.mode, s.text);
+              }}
                 className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left text-xs text-foreground transition hover:border-primary hover:bg-accent disabled:opacity-50">
                 <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" /><span className="truncate">{s.text}</span>
               </button>
@@ -464,7 +426,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       ) : (
         <div className={cn("mx-auto space-y-3", expanded && "max-w-2xl")}>
           {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} onInsert={handleInsert} onSaveMaterial={handleSaveMaterial} scope={scope} onFollowup={(f) => runMode(f.mode, f.text)} onCourseChoice={runCourse} busy={busy} />
+            <MessageBubble key={m.id} message={m} onInsert={handleInsert} onSaveMaterial={handleSaveMaterial} scope={scope} onFollowup={(f) => runMode(f.mode, f.text)} busy={busy} />
           ))}
         </div>
       )}
@@ -491,12 +453,12 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         </div>
       )}
 
-      {/* attachments */}
-      {attachments.length > 0 && (
+      {/* attachments khác (học liệu / sách / tệp) — nhiều được */}
+      {attachments.some((a) => a.kind === "material" || a.kind === "book" || a.kind === "file") && (
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {attachments.map((a, i) => (
+          {attachments.map((a, i) => (a.kind === "storyboard" || a.kind === "ui") ? null : (
             <span key={i} className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-1 text-[11px] font-medium text-primary">
-              {a.kind === "storyboard" ? <LayoutList className="h-3 w-3" /> : a.kind === "ui" ? <Palette className="h-3 w-3" /> : a.kind === "file" ? <Paperclip className="h-3 w-3" /> : a.kind === "book" ? <BookText className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
+              {a.kind === "file" ? <Paperclip className="h-3 w-3" /> : a.kind === "book" ? <BookText className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
               {a.label}
               <button type="button" onClick={() => setAttachments((cur) => cur.filter((_, j) => j !== i))} aria-label="Bỏ đính kèm"><X className="h-3 w-3" /></button>
             </span>
@@ -504,30 +466,28 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         </div>
       )}
 
-      {/* Quick-add: đính kèm module dùng lại — luôn hiện để bạn biết có thể thêm (tuỳ chọn). */}
+      {/* Quick-add: Storyboard & Giao diện — chỉ chọn 1; chọn xong "+" thành card, ✕ để gỡ. */}
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         <span className="text-[11px] text-muted-foreground">Đính kèm:</span>
-        <button
-          type="button"
-          onClick={() => setPicker("storyboard")}
-          className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
-        >
-          <Plus className="h-3 w-3" /> <LayoutList className="h-3 w-3" /> Storyboard
-        </button>
-        <button
-          type="button"
-          onClick={() => setPicker("ui")}
-          className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
-        >
-          <Plus className="h-3 w-3" /> <Palette className="h-3 w-3" /> Giao diện
-        </button>
+        <QuickAttach
+          icon={LayoutList} label="Storyboard"
+          chosen={attachments.find((a) => a.kind === "storyboard")?.label}
+          onAdd={() => setPicker("storyboard")}
+          onRemove={() => setAttachments((a) => a.filter((x) => x.kind !== "storyboard"))}
+        />
+        <QuickAttach
+          icon={Palette} label="Giao diện"
+          chosen={attachments.find((a) => a.kind === "ui")?.label}
+          onAdd={() => setPicker("ui")}
+          onRemove={() => setAttachments((a) => a.filter((x) => x.kind !== "ui"))}
+        />
       </div>
 
       <div className="relative rounded-2xl border border-border bg-background p-2 focus-within:border-primary">
         {/* mode chip */}
         <div className="relative mb-1.5 inline-block">
           <button type="button" onClick={() => setModeOpen((v) => !v)} className="flex items-center gap-1 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-semibold text-primary transition hover:bg-accent">
-            <ModeIcon className="h-3.5 w-3.5" /><span>{modeDef.label}</span><ChevronDown className="h-3 w-3" />
+            <ModeIcon className="h-3.5 w-3.5" /><span>{modeDef?.label ?? "Chọn chế độ"}</span><ChevronDown className="h-3 w-3" />
           </button>
           {modeOpen && (
             <>
@@ -547,7 +507,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         <textarea
           ref={taRef} value={input} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-          rows={1} placeholder={modeDef.placeholder}
+          rows={1} placeholder={modeDef?.placeholder ?? "Nhập yêu cầu cho trợ lý, hoặc chọn một chế độ ở trên…"}
           className="block max-h-[220px] min-h-[44px] w-full resize-none bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
         />
 
@@ -571,7 +531,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
 
           <span className="flex-1 truncate px-1 text-[10px] text-muted-foreground">Nội dung do AI tạo — bạn nên đọc lại trước khi xuất bản.</span>
 
-          <Button size="icon" className="h-8 w-8 shrink-0 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={busy || (!input.trim() && attachments.length === 0 && mode !== "full-lesson")} onClick={handleSend} aria-label="Gửi">
+          <Button size="icon" className="h-8 w-8 shrink-0 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={busy || (!input.trim() && attachments.length === 0 && mode !== "full-lesson" && mode !== "course")} onClick={handleSend} aria-label="Gửi">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
@@ -625,6 +585,24 @@ function PlusItem({ icon: Icon, label, onClick }: { icon: typeof Plus; label: st
   return (
     <button type="button" onClick={onClick} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs text-foreground transition hover:bg-muted">
       <Icon className="h-4 w-4 shrink-0 text-primary" /><span className="font-medium">{label}</span>
+    </button>
+  );
+}
+
+/** Nút đính kèm nhanh: chưa chọn = "+", đã chọn = card có ✕ (chỉ 1 mỗi loại). */
+function QuickAttach({ icon: Icon, label, chosen, onAdd, onRemove }: { icon: typeof Plus; label: string; chosen?: string; onAdd: () => void; onRemove: () => void }) {
+  if (chosen) {
+    return (
+      <span className="inline-flex max-w-[180px] items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-primary">
+        <Icon className="h-3 w-3 shrink-0" /> <span className="truncate">{chosen}</span>
+        <button type="button" onClick={onRemove} aria-label={`Bỏ ${label}`} className="shrink-0"><X className="h-3 w-3" /></button>
+      </span>
+    );
+  }
+  return (
+    <button type="button" onClick={onAdd}
+      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary">
+      <Plus className="h-3 w-3" /> <Icon className="h-3 w-3" /> {label}
     </button>
   );
 }
@@ -787,14 +765,13 @@ function LibraryPicker({
 /* ─── Message bubble ────────────────────────────────────────────── */
 
 function MessageBubble({
-  message, onInsert, onSaveMaterial, scope, onFollowup, onCourseChoice, busy,
+  message, onInsert, onSaveMaterial, scope, onFollowup, busy,
 }: {
   message: ChatMessage;
   onInsert: (id: string, html: string) => void;
   onSaveMaterial: (id: string, mat: GeneratedMaterial) => void;
   scope: BuilderScope;
   onFollowup: (f: Followup) => void;
-  onCourseChoice: (id: string, kind: "outline" | "content", choice: { prompt: string; storyboard?: Storyboard }) => void;
   busy: boolean;
 }) {
   if (message.role === "user") {
@@ -822,27 +799,6 @@ function MessageBubble({
               </div>
             ))}
           </div>
-        )}
-
-        {message.courseChoice && !message.streaming && (
-          message.courseActed ? (
-            <p className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã bắt đầu dựng</p>
-          ) : (
-            <div className="gk-pop space-y-1.5 rounded-xl border border-border bg-card p-2.5">
-              <p className="text-[11px] text-muted-foreground">Chọn cách dựng — bấm để bắt đầu:</p>
-              <div className="flex gap-1.5">
-                <button type="button" disabled={busy} onClick={() => onCourseChoice(message.id, "outline", message.courseChoice!)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-2.5 py-2 text-[11.5px] font-semibold text-primary-foreground transition hover:bg-primary-hover disabled:opacity-50">
-                  <ListTree className="h-3.5 w-3.5" /> Tạo dàn ý
-                </button>
-                <button type="button" disabled={busy} onClick={() => onCourseChoice(message.id, "content", message.courseChoice!)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary bg-accent px-2.5 py-2 text-[11.5px] font-semibold text-primary transition hover:bg-accent/70 disabled:opacity-50">
-                  <FileStack className="h-3.5 w-3.5" /> Tạo nội dung đầy đủ
-                </button>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Dàn ý: dựng cây Phần/Chương/Bài. Nội dung đầy đủ: viết luôn nội dung từng bài.</p>
-            </div>
-          )
         )}
 
         {message.insertContent && !message.streaming && (

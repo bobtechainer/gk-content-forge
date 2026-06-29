@@ -41,7 +41,9 @@ export interface FillRequest {
 
 export interface CompanionRequest {
   text: string;
-  action: "shorten" | "lengthen" | "tone-friendly" | "tone-formal" | "fix";
+  action: "shorten" | "lengthen" | "tone-friendly" | "tone-formal" | "fix" | "rewrite" | "custom";
+  /** Khi action = "custom": yêu cầu tự do của người dùng cho đoạn bôi đen. */
+  customPrompt?: string;
 }
 
 export interface QuizFromContentRequest {
@@ -63,8 +65,7 @@ export type AiChatMode =
   | "course"
   | "full-lesson"
   | "quiz"
-  | "material"
-  | "rewrite";
+  | "material";
 
 /* ─── Tạo cả khoá học (đổ vào cây nội dung) ────────────────────────── */
 

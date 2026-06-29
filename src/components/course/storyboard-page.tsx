@@ -9,7 +9,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft, Plus, Trash2, Wand2, Loader2, GripVertical, ArrowRight, Sparkles,
-  ChevronDown, Library, BookOpen, X, ImagePlus, Copy, Search,
+  ChevronDown, Library, BookOpen, BookText, ListTree, X, ImagePlus, Copy, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,13 +20,13 @@ import {
 import { aiClient } from "@/lib/ai";
 import { fillStoryboard } from "@/lib/ai/fill-orchestrator";
 import type { Storyboard, StoryboardItem } from "@/lib/ai/types";
-import { useCourse, type CourseBlockType } from "@/stores/course";
+import { useCourse } from "@/stores/course";
 import { useContent } from "@/stores/content";
 import { useStoryboard } from "@/stores/storyboard";
 import {
   useStoryboardLibrary, allStoryboardItems, type StoryboardLibraryItem,
 } from "@/stores/storyboard-library";
-import { BLOCK_TYPES } from "./course-palette";
+import { allTopics } from "@/lib/registry/topics";
 import { sceneSrc, SCENE_KEYS, SCENE_LABELS, type SceneKey } from "@/lib/storyboard/scene-art";
 import { courseBuilderRoutePattern, storyboardRoutePattern, type BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
@@ -47,7 +47,7 @@ interface StoryboardPageProps {
   standalone?: boolean;
 }
 
-type Reference = { id: string; title: string; label: string };
+type Reference = { id: string; title: string; label: string; detail: string };
 
 export function StoryboardPage({ courseId, scope, standalone = false }: StoryboardPageProps) {
   const navigate = useNavigate();
@@ -298,23 +298,29 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
               </div>
               {refs.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-border px-2.5 py-2 text-[11px] text-muted-foreground">
-                  Thêm sách hoặc học liệu để AI bám theo khi dựng khung.
+                  Thêm sách, học liệu hoặc chủ đề để AI bám theo khi dựng khung.
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="space-y-1.5">
                   {refs.map((r) => (
-                    <span key={r.id} className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-1 text-[11px] font-medium text-primary">
-                      <BookOpen className="h-3 w-3" /> {r.title}
-                      <button type="button" onClick={() => setRefs((cur) => cur.filter((x) => x.id !== r.id))} aria-label="Bỏ tham chiếu"><X className="h-3 w-3" /></button>
-                    </span>
+                    <div key={r.id} className="flex items-start gap-2 rounded-lg border border-border bg-card p-2">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-50 text-primary">
+                        {r.label === "Chủ đề" ? <ListTree className="h-3.5 w-3.5" /> : r.label === "Sách" ? <BookText className="h-3.5 w-3.5" /> : <BookOpen className="h-3.5 w-3.5" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[11px] font-medium text-foreground">{r.title}</span>
+                        <span className="block truncate text-[10px] text-muted-foreground">{r.label} · {r.detail}</span>
+                      </span>
+                      <button type="button" onClick={() => setRefs((cur) => cur.filter((x) => x.id !== r.id))} aria-label="Bỏ tham chiếu" className="text-muted-foreground transition hover:text-destructive"><X className="h-3.5 w-3.5" /></button>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
 
             <details>
-              <summary className="cursor-pointer text-xs font-semibold text-foreground">Dán văn bản nguồn</summary>
-              <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="Dán nội dung… AI sẽ tách thành các khung cảnh." className="mt-1.5 min-h-[80px] text-xs" />
+              <summary className="cursor-pointer text-xs font-semibold text-foreground">Hướng dẫn AI nên làm thế nào <span className="font-normal text-muted-foreground">(tuỳ chọn)</span></summary>
+              <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="Vd: chia 6 cảnh, mỗi cảnh một ý chính, giọng gần gũi, có ví dụ thực tế…" className="mt-1.5 min-h-[80px] text-xs" />
             </details>
 
             <Button className="mt-auto w-full gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={generating || !effectiveLessonId} onClick={handleGenerate}>
@@ -411,7 +417,6 @@ function SortableScene({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: frame.id, disabled: readOnly });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const [imgOpen, setImgOpen] = useState(false);
-  const [typeOpen, setTypeOpen] = useState(false);
 
   return (
     <div
@@ -481,32 +486,7 @@ function SortableScene({
           aria-label="Mô tả cảnh"
         />
         <div className="flex items-center gap-1.5 pt-0.5">
-          <div className="relative">
-            <button type="button" onClick={() => !readOnly && setTypeOpen((v) => !v)} className="flex items-center gap-1" disabled={readOnly}>
-              <BlockTypeChip type={frame.blockType} />
-              {!readOnly && <ChevronDown className="h-3 w-3 text-muted-foreground" />}
-            </button>
-            {typeOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setTypeOpen(false)} />
-                <div className="absolute bottom-full left-0 z-50 mb-1 max-h-56 w-[170px] overflow-y-auto rounded-xl border border-border bg-card p-1.5 shadow-xl">
-                  {BLOCK_TYPES.map((b) => {
-                    const Icon = b.icon;
-                    return (
-                      <button
-                        key={b.type}
-                        type="button"
-                        onClick={() => { onUpdate({ blockType: b.type as CourseBlockType }); setTypeOpen(false); }}
-                        className={cn("flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] transition hover:bg-muted", frame.blockType === b.type && "bg-accent text-primary")}
-                      >
-                        <Icon className="h-3.5 w-3.5" style={{ color: b.color }} /> {b.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
+          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Ảnh + văn bản</span>
           {!readOnly && (
             <button type="button" onClick={onDelete} className="ml-auto rounded p-1 text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100" aria-label="Xoá khung">
               <Trash2 className="h-3.5 w-3.5" />
@@ -518,21 +498,7 @@ function SortableScene({
   );
 }
 
-function BlockTypeChip({ type }: { type: CourseBlockType }) {
-  const meta = BLOCK_TYPES.find((b) => b.type === type);
-  if (!meta) return null;
-  const Icon = meta.icon;
-  return (
-    <span
-      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold"
-      style={{ background: `color-mix(in srgb, ${meta.color} 12%, transparent)`, color: meta.color }}
-    >
-      <Icon className="h-3 w-3" /> {meta.label}
-    </span>
-  );
-}
-
-/* ─── Reference picker (sách / học liệu) ────────────────────────── */
+/* ─── Reference picker (sách / học liệu / chủ đề chung) ─────────── */
 
 function ReferencePicker({
   open, onClose, existing, onPick,
@@ -543,45 +509,91 @@ function ReferencePicker({
   onPick: (r: Reference) => void;
 }) {
   const items = useContent((s) => s.items);
+  const [tab, setTab] = useState<"content" | "topic">("content");
   const [q, setQ] = useState("");
-  const pickable = items
+  const taken = (id: string) => existing.some((e) => e.id === id);
+  const ql = q.trim().toLowerCase();
+
+  const pickableContent = items
     .filter((it) => it.category === "book" || it.category === "learning_material")
-    .filter((it) => !existing.some((e) => e.id === it.id))
-    .filter((it) => !q || it.title.toLowerCase().includes(q.toLowerCase()))
+    .filter((it) => !taken(it.id))
+    .filter((it) => !ql || it.title.toLowerCase().includes(ql))
     .slice(0, 40);
+  const pickableTopics = allTopics()
+    .filter((tp) => !taken(tp.id))
+    .filter((tp) => !ql || tp.path.toLowerCase().includes(ql))
+    .slice(0, 40);
+
+  const showContent = tab === "content";
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Thêm tài liệu tham chiếu</DialogTitle>
-          <DialogDescription>Chọn sách hoặc học liệu để AI bám theo khi dựng các khung cảnh.</DialogDescription>
+          <DialogDescription>Chọn sách/học liệu, hoặc một chủ đề trong Khung chung — AI sẽ bám theo khi dựng các khung cảnh.</DialogDescription>
         </DialogHeader>
+
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-border">
+          {([["content", "Sách & học liệu"], ["topic", "Chủ đề chung"]] as const).map(([id, label]) => (
+            <button key={id} type="button" onClick={() => setTab(id)}
+              className={cn("relative px-3 py-2 text-xs font-semibold transition", tab === id ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+              {label}{tab === id && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" />}
+            </button>
+          ))}
+        </div>
+
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm sách / học liệu…" className="h-9 pl-8 text-sm" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={showContent ? "Tìm sách / học liệu…" : "Tìm chủ đề / chuyên đề…"} className="h-9 pl-8 text-sm" />
         </div>
+
         <div className="max-h-[300px] space-y-1.5 overflow-y-auto">
-          {pickable.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Không tìm thấy mục phù hợp.</p>
+          {showContent ? (
+            pickableContent.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Không tìm thấy mục phù hợp.</p>
+            ) : (
+              pickableContent.map((it) => (
+                <button
+                  key={it.id}
+                  type="button"
+                  onClick={() => onPick({ id: it.id, title: it.title, label: it.category === "book" ? "Sách" : "Học liệu", detail: it.subject || "Chung" })}
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-50 text-primary">
+                    {it.category === "book" ? <BookText className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">{it.title}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">{it.category === "book" ? "Sách" : "Học liệu"}{it.subject ? ` · ${it.subject}` : ""}</span>
+                  </span>
+                  <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+              ))
+            )
           ) : (
-            pickable.map((it) => (
-              <button
-                key={it.id}
-                type="button"
-                onClick={() => onPick({ id: it.id, title: it.title, label: it.category === "book" ? "Sách" : "Học liệu" })}
-                className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent"
-              >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-50 text-primary">
-                  <BookOpen className="h-4 w-4" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-foreground">{it.title}</span>
-                  <span className="block truncate text-[11px] text-muted-foreground">{it.category === "book" ? "Sách" : "Học liệu"}{it.subject ? ` · ${it.subject}` : ""}</span>
-                </span>
-                <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-            ))
+            pickableTopics.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Không tìm thấy chủ đề phù hợp.</p>
+            ) : (
+              pickableTopics.map((tp) => (
+                <button
+                  key={tp.id}
+                  type="button"
+                  onClick={() => onPick({ id: tp.id, title: tp.name, label: "Chủ đề", detail: `${tp.subject} · ${tp.strand} · ${tp.grade}` })}
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-50 text-primary">
+                    <ListTree className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">{tp.name}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">{tp.subject} · {tp.strand} · {tp.grade}</span>
+                  </span>
+                  <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+              ))
+            )
           )}
         </div>
       </DialogContent>

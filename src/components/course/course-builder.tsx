@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   closestCenter, pointerWithin, rectIntersection, MeasuringStrategy,
@@ -20,12 +20,56 @@ import { toast } from "sonner";
 import { useCourse } from "@/stores/course";
 import type { CourseBlockType } from "@/stores/course";
 import { useContent } from "@/stores/content";
+import { useCourseTheme } from "@/stores/course-theme";
+import { useUiSystemLibrary, allUiSystemItems } from "@/stores/ui-system-library";
 import type { ContentItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type Viewport } from "@/lib/preview/viewport";
-import {
-  storyboardRoutePattern, uiSystemRoutePattern, type BuilderScope,
-} from "@/lib/builder-url";
+import { type BuilderScope } from "@/lib/builder-url";
+
+/** Nút "Giao diện" ở header trái — popup chọn UI System áp cho TOÀN khoá học. */
+function CourseThemePicker({ courseId }: { courseId: string }) {
+  const [open, setOpen] = useState(false);
+  const items = allUiSystemItems(useUiSystemLibrary((s) => s.items));
+  const setTheme = useCourseTheme((s) => s.setTheme);
+  const current = useCourseTheme((s) => s.byCourse[courseId]);
+
+  return (
+    <div className="relative">
+      <Button variant="ghost" size="sm" className="hidden h-8 gap-1.5 text-xs text-muted-foreground sm:flex" onClick={() => setOpen((v) => !v)}>
+        <Palette className="h-3.5 w-3.5" /> Giao diện
+      </Button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-50 mt-1 w-[268px] rounded-xl border border-border bg-card p-2 shadow-xl">
+            <p className="px-1.5 pb-1.5 text-[11px] text-muted-foreground">Áp một giao diện cho cả khoá học</p>
+            <div className="max-h-[320px] space-y-1 overflow-y-auto">
+              {items.map((it) => {
+                const active = current?.accentSeed?.toLowerCase() === it.theme.accentSeed.toLowerCase() && current?.fontPairId === it.theme.fontPairId;
+                return (
+                  <button
+                    key={it.id}
+                    type="button"
+                    onClick={() => { setTheme(courseId, it.theme); toast.success(`Đã áp giao diện "${it.name}" cho khoá học`); setOpen(false); }}
+                    className={cn("flex w-full items-center gap-2 rounded-lg border p-2 text-left transition", active ? "border-primary bg-accent" : "border-border hover:border-primary hover:bg-accent")}
+                  >
+                    <span className="h-7 w-7 shrink-0 rounded-md border border-border" style={{ background: it.theme.accentSeed }} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
+                      <span className="block truncate text-[10px] text-muted-foreground">{it.source === "system" ? "Hệ thống" : "Của tôi"}{it.description ? ` · ${it.description}` : ""}</span>
+                    </span>
+                    {active && <span className="text-[10px] font-semibold text-primary">Đang dùng</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export type CourseBuilderBackTo = "/creator/dashboard" | "/org/dashboard";
 
@@ -211,6 +255,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
             </Button>
           )}
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-[10px] font-bold text-primary-foreground">C</div>
+          {!previewMode && <CourseThemePicker courseId={id} />}
           <div className="flex min-w-0 flex-1 items-center gap-1">
             <input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={saveTitle}
               aria-label="Tiêu đề khóa học"
@@ -251,21 +296,6 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                   </button>
                 ))}
               </div>
-            )}
-
-            {!previewMode && (
-              <>
-                <Button asChild variant="outline" size="sm" className="hidden h-8 gap-1.5 text-xs sm:flex">
-                  <Link to={storyboardRoutePattern(scope)} params={{ id }}>
-                    <LayoutList className="h-3.5 w-3.5" /> Dàn ý
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="sm" className="hidden h-8 gap-1.5 text-xs sm:flex">
-                  <Link to={uiSystemRoutePattern(scope)} params={{ id }}>
-                    <Palette className="h-3.5 w-3.5" /> Giao diện
-                  </Link>
-                </Button>
-              </>
             )}
 
             <Button size="sm" className="h-8 bg-primary text-xs text-primary-foreground hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>

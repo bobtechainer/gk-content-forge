@@ -15,6 +15,9 @@ import {
   Smile,
   BookOpen,
   CheckCheck,
+  Wand2,
+  Sparkles,
+  Send,
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -53,8 +56,17 @@ interface BubbleToolbarProps {
   editor: Editor | null;
 }
 
+const FONT_SIZES: { label: string; value: string }[] = [
+  { label: "Nhỏ", value: "14px" },
+  { label: "Vừa", value: "16px" },
+  { label: "Lớn", value: "20px" },
+  { label: "Rất lớn", value: "28px" },
+];
+
 export function BubbleToolbar({ editor }: BubbleToolbarProps) {
   const [aiLoading, setAiLoading] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
+  const [ask, setAsk] = useState("");
 
   if (!editor) return null;
 
@@ -114,18 +126,32 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
     },
   ];
 
-  async function handleCompanion(action: CompanionRequest["action"]) {
+  function applyFontSize(value: string) {
+    if (!editor || value === "") return;
+    if (value === "reset") editor.chain().focus().unsetMark("fontSize").run();
+    else editor.chain().focus().setMark("fontSize", { size: value }).run();
+  }
+
+  async function handleCompanion(action: CompanionRequest["action"], customPrompt?: string) {
     if (aiLoading || !editor) return;
     const { from, to } = editor.state.selection;
     const text = editor.state.doc.textBetween(from, to, " ");
     if (!text) return;
     setAiLoading(true);
     try {
-      const result = await aiClient.companionEdit({ text, action });
+      const result = await aiClient.companionEdit({ text, action, customPrompt });
       editor.chain().focus().insertContentAt({ from, to }, result.text).run();
     } finally {
       setAiLoading(false);
     }
+  }
+
+  async function submitAsk() {
+    const q = ask.trim();
+    if (!q) return;
+    await handleCompanion("custom", q);
+    setAsk("");
+    setAskOpen(false);
   }
 
   const aiButtons: {
@@ -133,6 +159,7 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
     icon: React.ReactNode;
     action: CompanionRequest["action"];
   }[] = [
+    { label: "Soạn lại", icon: <Wand2 className="h-3.5 w-3.5" />, action: "rewrite" },
     { label: "Rút gọn", icon: <Minimize2 className="h-3.5 w-3.5" />, action: "shorten" },
     { label: "Mở rộng", icon: <Maximize2 className="h-3.5 w-3.5" />, action: "lengthen" },
     { label: "Thân thiện", icon: <Smile className="h-3.5 w-3.5" />, action: "tone-friendly" },
@@ -145,33 +172,82 @@ export function BubbleToolbar({ editor }: BubbleToolbarProps) {
   return (
     <BubbleMenu
       editor={editor}
-      className="flex items-center gap-0.5 rounded-lg border bg-card px-1 py-0.5 shadow-md"
+      className="flex flex-col gap-1 rounded-lg border bg-card p-1 shadow-md"
       shouldShow={({ state }) => !state.selection.empty}
     >
-      {formatButtons.map((btn) => (
-        <ToolbarButton
-          key={btn.label}
-          isActive={btn.isActive}
-          onClick={btn.onClick}
-          label={btn.label}
-          icon={btn.icon}
-        />
-      ))}
-      <div className="mx-0.5 h-3 w-px bg-border" />
-      {aiButtons.map((btn) => (
-        <ToolbarButton
-          key={btn.label}
-          isActive={false}
-          onClick={() => { void handleCompanion(btn.action); }}
-          label={btn.label}
-          icon={btn.icon}
+      {/* Hàng 1: định dạng + cỡ chữ */}
+      <div className="flex items-center gap-0.5">
+        {formatButtons.map((btn) => (
+          <ToolbarButton key={btn.label} isActive={btn.isActive} onClick={btn.onClick} label={btn.label} icon={btn.icon} />
+        ))}
+        <div className="mx-0.5 h-3 w-px bg-border" />
+        <select
+          aria-label="Cỡ chữ"
+          title="Cỡ chữ"
+          value=""
+          onChange={(e) => applyFontSize(e.target.value)}
+          className="h-7 rounded border border-border bg-card px-1 text-[11px] text-muted-foreground outline-none hover:text-foreground"
+        >
+          <option value="">Cỡ chữ</option>
+          {FONT_SIZES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+          <option value="reset">Mặc định</option>
+        </select>
+      </div>
+
+      {/* Hàng 2: AI inline */}
+      <div className="flex items-center gap-0.5">
+        {aiButtons.map((btn) => (
+          <ToolbarButton
+            key={btn.label}
+            isActive={false}
+            onClick={() => { void handleCompanion(btn.action); }}
+            label={btn.label}
+            icon={btn.icon}
+            disabled={noSelection || aiLoading}
+          />
+        ))}
+        <div className="mx-0.5 h-3 w-px bg-border" />
+        <button
+          type="button"
+          aria-label="Hỏi AI"
+          title="Hỏi AI"
+          onClick={() => setAskOpen((v) => !v)}
           disabled={noSelection || aiLoading}
-        />
-      ))}
-      {aiLoading && (
-        <span className="ml-1 flex h-5 w-5 items-center justify-center text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        </span>
+          className={cn(
+            "flex h-7 items-center gap-1 rounded px-1.5 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+            askOpen ? "bg-primary text-primary-foreground" : "text-primary hover:bg-muted",
+          )}
+        >
+          <Sparkles className="h-3.5 w-3.5" /> Hỏi AI
+        </button>
+        {aiLoading && (
+          <span className="ml-1 flex h-5 w-5 items-center justify-center text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          </span>
+        )}
+      </div>
+
+      {/* Hàng 3: ô "Hỏi AI…" tự do */}
+      {askOpen && (
+        <div className="flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-1">
+          <input
+            value={ask}
+            onChange={(e) => setAsk(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void submitAsk(); } }}
+            placeholder="Vd: viết lại trang trọng hơn…"
+            autoFocus
+            className="h-6 w-48 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground"
+          />
+          <button
+            type="button"
+            aria-label="Gửi yêu cầu cho AI"
+            onClick={() => void submitAsk()}
+            disabled={!ask.trim() || aiLoading}
+            className="flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground transition disabled:opacity-40"
+          >
+            <Send className="h-3 w-3" />
+          </button>
+        </div>
       )}
     </BubbleMenu>
   );

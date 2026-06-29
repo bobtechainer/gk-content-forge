@@ -469,6 +469,21 @@ function fixText(text: string): string {
   return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`;
 }
 
+function rewriteText(text: string): string {
+  const r = fixText(text);
+  return r.length < 50 ? `${r} — diễn đạt lại cho rõ ràng, mạch lạc hơn.` : r;
+}
+
+/** action "custom": suy ý định từ yêu cầu tự do rồi áp phép biến đổi gần nhất. */
+function customEditText(text: string, prompt: string): string {
+  const p = (prompt || "").toLowerCase();
+  if (/(ngắn|gọn|súc tích|rút)/.test(p)) return shortenText(text);
+  if (/(dài|chi tiết|mở rộng|kỹ hơn|kĩ hơn)/.test(p)) return lengthenText(text);
+  if (/(thân thiện|gần gũi|dễ thương)/.test(p)) return toFriendlyTone(text);
+  if (/(trang trọng|nghiêm túc|học thuật)/.test(p)) return toFormalTone(text);
+  return rewriteText(text);
+}
+
 /* ─── QuizFromContent ────────────────────────────────────────────── */
 
 function extractKeywords(text: string): string[] {
@@ -639,7 +654,6 @@ function buildChatReply(req: ChatReplyRequest): { text: string } {
     "full-lesson": `Để mình dựng cả bài${about}: phác dàn ý, viết từng phần rồi đổ lên canvas giúp bạn.`,
     quiz: `Mình tạo vài câu hỏi${about} bám nội dung bài để kiểm tra mức độ hiểu nhé.`,
     material: `Mình tạo học liệu${about} rồi lưu vào kho để bạn dùng lại sau.`,
-    rewrite: `Mình soạn lại đoạn này cho rõ ràng và mạch lạc hơn nhé.`,
   };
   return { text: byMode[req.mode] };
 }
@@ -700,6 +714,10 @@ export const mockAiClient: AiClient = {
         return { text: toFormalTone(text) };
       case "fix":
         return { text: fixText(text) };
+      case "rewrite":
+        return { text: rewriteText(text) };
+      case "custom":
+        return { text: customEditText(text, req.customPrompt ?? "") };
       default:
         return { text };
     }

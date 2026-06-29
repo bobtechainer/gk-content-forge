@@ -14,6 +14,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
+import { FontSize } from "@/components/blocks/font-size-extension";
 import type { CourseBlock, CourseBlockType, CalloutVariant, BlockLayout, BlockAnimation } from "@/stores/course";
 import type { ContentItem, MaterialType } from "@/lib/types";
 import { useContent } from "@/stores/content";
@@ -268,6 +269,7 @@ function TextBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Underline,
+      FontSize,
       Placeholder.configure({ placeholder: "Nhập nội dung văn bản..." }),
     ],
     content: block.content || "",
