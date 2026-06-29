@@ -363,12 +363,12 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
             {showRightPanel && !previewMode && (
               <motion.div
                 initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 340, opacity: 1 }}
+                animate={{ width: 420, opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 320, damping: 34 }}
                 className="hidden shrink-0 overflow-hidden border-l border-border lg:block"
               >
-                <div className="h-full w-[340px]">
+                <div className="h-full w-[420px]">
                   <AiAssistantPanel
                     courseId={id}
                     lessonId={activeLessonId ?? undefined}

@@ -17,6 +17,8 @@ import { ContentTable } from "./content-table";
 import { LIBRARY_TABS, MaterialTabs, StatusFilterChips } from "./material-tabs";
 import { PageFrame } from "./page-frame";
 import { PageSkeleton } from "./page-skeleton";
+import { ModuleLibrarySection } from "./module-library-section";
+import type { BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
 
 /** Resolve the effective MaterialType for filtering. */
@@ -119,6 +121,9 @@ export function LibraryView({ scope }: { scope: StudioScope }) {
         ) : (
           <ContentGrid items={filtered} scope={scope} />
         )}
+
+        {/* Module AI (Storyboard + UI System) — kho dùng lại, phần phụ thêm */}
+        <ModuleLibrarySection scope={scope as BuilderScope} />
 
         {/* Version history & co-authors — additive panel, does not affect list/search */}
         {withHistory.length > 0 && (

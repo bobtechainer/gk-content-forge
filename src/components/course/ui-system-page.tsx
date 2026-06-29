@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Wand2, Loader2, Check, Sparkles, ArrowRight, Moon, Sun } from "lucide-react";
+import { ArrowLeft, Wand2, Loader2, Check, Sparkles, ArrowRight, Moon, Sun, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { aiClient } from "@/lib/ai";
 import { useContent } from "@/stores/content";
 import { useCourseTheme } from "@/stores/course-theme";
+import { useUiSystemLibrary } from "@/stores/ui-system-library";
 import { getResolvedThemeVars, type CourseTheme } from "@/lib/theme/resolve";
 import { SYSTEM_THEMES, FONT_PAIRS } from "@/lib/theme/system-themes";
 import { contrastRatio, accessibleInk, mix, ramp } from "@/lib/theme/color";
@@ -36,6 +37,7 @@ export function UiSystemPage({ courseId, scope }: UiSystemPageProps) {
   const navigate = useNavigate();
   const contentItem = useContent((s) => s.items.find((x) => x.id === courseId));
   const savedTheme = useCourseTheme((s) => s.byCourse[courseId]);
+  const saveToLibrary = useUiSystemLibrary((s) => s.add);
 
   const [theme, setTheme] = useState<CourseTheme>(savedTheme ?? SYSTEM_THEMES["mobifone-default"]);
   const [description, setDescription] = useState("");
@@ -76,6 +78,12 @@ export function UiSystemPage({ courseId, scope }: UiSystemPageProps) {
     navigate({ to: courseBuilderRoutePattern(scope), params: { id: courseId } });
   };
 
+  const handleSaveLibrary = () => {
+    const name = result?.name || (contentItem?.subject ? `Giao diện ${contentItem.subject}` : "Giao diện của tôi");
+    saveToLibrary({ name, description: result?.rationale, theme });
+    toast.success(`Đã lưu "${name}" vào kho giao diện`);
+  };
+
   const previewVars = getResolvedThemeVars(theme) as React.CSSProperties;
 
   return (
@@ -93,9 +101,14 @@ export function UiSystemPage({ courseId, scope }: UiSystemPageProps) {
           <p className="truncate text-sm font-semibold text-foreground">Tạo giao diện · UI System</p>
           <p className="truncate text-[11px] text-muted-foreground">{contentItem?.title ?? "Khoá học"}</p>
         </div>
-        <Button className="ml-auto gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" size="sm" onClick={handleApply}>
-          <ArrowRight className="h-4 w-4" /> Áp dụng cho khoá học
-        </Button>
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleSaveLibrary}>
+            <Library className="h-4 w-4" /> Lưu vào kho
+          </Button>
+          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" size="sm" onClick={handleApply}>
+            <ArrowRight className="h-4 w-4" /> Áp dụng cho khoá học
+          </Button>
+        </div>
       </header>
 
       <div className="flex min-h-0 flex-1">

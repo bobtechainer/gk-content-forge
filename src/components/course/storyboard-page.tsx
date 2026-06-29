@@ -7,7 +7,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  ArrowLeft, Plus, Trash2, Wand2, Loader2, GripVertical, ArrowRight, Sparkles, ChevronDown,
+  ArrowLeft, Plus, Trash2, Wand2, Loader2, GripVertical, ArrowRight, Sparkles, ChevronDown, Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import type { Storyboard, StoryboardItem } from "@/lib/ai/types";
 import { useCourse, type CourseBlockType } from "@/stores/course";
 import { useContent } from "@/stores/content";
 import { useStoryboard } from "@/stores/storyboard";
+import { useStoryboardLibrary } from "@/stores/storyboard-library";
 import { BLOCK_TYPES } from "./course-palette";
 import { courseBuilderRoutePattern, type BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ export function StoryboardPage({ courseId, scope }: StoryboardPageProps) {
 
   const board = useStoryboard((s) => (effectiveLessonId ? s.byLesson[effectiveLessonId] : undefined));
   const setStoryboard = useStoryboard((s) => s.setStoryboard);
+  const saveToLibrary = useStoryboardLibrary((s) => s.add);
 
   const [topic, setTopic] = useState("");
   const [objectives, setObjectives] = useState("");
@@ -104,6 +106,13 @@ export function StoryboardPage({ courseId, scope }: StoryboardPageProps) {
     } finally {
       setApplying(false);
     }
+  };
+
+  const handleSaveLibrary = () => {
+    if (!board || board.sections.flatMap((s) => s.items).length === 0) return;
+    const name = topic.trim() || activeLesson?.title || "Dàn ý chưa đặt tên";
+    saveToLibrary({ name, subject, storyboard: board });
+    toast.success(`Đã lưu "${name}" vào kho dàn ý`);
   };
 
   /* ─── Board mutations ───────────────────────────────────────── */
@@ -212,6 +221,15 @@ export function StoryboardPage({ courseId, scope }: StoryboardPageProps) {
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={!board || (board?.sections.flatMap((s) => s.items).length ?? 0) === 0}
+            onClick={handleSaveLibrary}
+          >
+            <Library className="h-4 w-4" /> Lưu vào kho
+          </Button>
           <Button
             className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover"
             size="sm"
