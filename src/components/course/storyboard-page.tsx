@@ -27,6 +27,7 @@ import {
   useStoryboardLibrary, allStoryboardItems, type StoryboardLibraryItem,
 } from "@/stores/storyboard-library";
 import { allTopics } from "@/lib/registry/topics";
+import { ModuleStartChoice } from "./module-start-choice";
 import { sceneSrc, SCENE_KEYS, SCENE_LABELS, type SceneKey } from "@/lib/storyboard/scene-art";
 import { courseBuilderRoutePattern, storyboardRoutePattern, type BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
@@ -88,6 +89,8 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
   const [generating, setGenerating] = useState(false);
   const [applying, setApplying] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Module mới: hỏi cách bắt đầu trước (bản nháp mẫu / trang trắng).
+  const [started, setStarted] = useState(pageMode !== "new");
 
   const subject = contentItem?.subject ?? libItem?.subject ?? "";
   const grade = contentItem?.grade ?? "";
@@ -128,6 +131,21 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
       toast.success("Đã dựng storyboard — bạn chỉnh lại từng khung nếu cần nhé.");
     } catch {
       toast.error("Chưa dựng được storyboard, bạn thử lại nhé.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Bắt đầu: bản nháp mẫu (sinh sẵn vài khung) hoặc trang trắng.
+  const startWithSample = async () => {
+    setStarted(true);
+    if (generating) return;
+    setGenerating(true);
+    try {
+      const sb = await aiClient.generateStoryboard({ subject, grade, topic: topic.trim() || subject || "Bài học mẫu" });
+      setFrames(flatFrames(sb));
+    } catch {
+      toast.error("Chưa dựng được bản mẫu, bạn thử lại nhé.");
     } finally {
       setGenerating(false);
     }
@@ -275,6 +293,9 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
         </div>
       </header>
 
+      {!started ? (
+        <ModuleStartChoice kind="storyboard" onContinueDraft={startWithSample} onBlank={() => setStarted(true)} />
+      ) : (
       <div className="flex min-h-0 flex-1">
         {/* Left: intake + references */}
         {!readOnly && (
@@ -377,6 +398,7 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
           )}
         </main>
       </div>
+      )}
 
       <ReferencePicker open={refPickerOpen} onClose={() => setRefPickerOpen(false)} existing={refs} onPick={(r) => { setRefs((cur) => [...cur, r]); setRefPickerOpen(false); }} />
     </div>
