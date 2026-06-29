@@ -1,4 +1,4 @@
-import { BookOpen, GraduationCap } from "lucide-react";
+import { BookOpen, GraduationCap, LayoutList, Palette } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,13 +15,17 @@ const ATTACHMENTS: LearningMaterialSubtype[] = ["document", "video", "image", "a
 
 const SUBTYPE_MAP = Object.fromEntries(LEARNING_MATERIAL_SUBTYPES.map((s) => [s.id, s]));
 
+/** Module dùng lại — ngang hàng học liệu, có kho + trình tạo riêng, độc lập khoá học. */
+export type ReusableModule = "storyboard" | "ui_system";
+
 interface PickHandlers {
   onPickCategory: (category: CreationCategory) => void;
   onPickMaterial: (subtype: LearningMaterialSubtype) => void;
+  onPickModule: (module: ReusableModule) => void;
 }
 
-/** The 3-zone creation grid, shared by the modal hub and the Studio landing page. */
-export function MaterialTypeGrid({ onPickCategory, onPickMaterial }: PickHandlers) {
+/** The 4-zone creation grid, shared by the modal hub and the Studio landing page. */
+export function MaterialTypeGrid({ onPickCategory, onPickMaterial, onPickModule }: PickHandlers) {
   return (
     <div className="space-y-6">
       <Section title="Sản phẩm xuất bản" hint="Builder soạn thảo chuyên dụng">
@@ -58,6 +62,25 @@ export function MaterialTypeGrid({ onPickCategory, onPickMaterial }: PickHandler
           ))}
         </div>
       </Section>
+
+      <Section title="Module dùng lại" hint="Độc lập, có kho riêng — dùng lại ở mọi nơi">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ProductButton
+            label="Tạo Storyboard"
+            description="Dàn ý mẫu dùng lại cho bài học, khoá học, học liệu"
+            icon={LayoutList}
+            accent="var(--primary)"
+            onClick={() => onPickModule("storyboard")}
+          />
+          <ProductButton
+            label="Tạo Giao diện (UI System)"
+            description="Bộ giao diện dùng lại — áp cho khoá học hoặc học liệu"
+            icon={Palette}
+            accent="var(--primary)"
+            onClick={() => onPickModule("ui_system")}
+          />
+        </div>
+      </Section>
     </div>
   );
 }
@@ -72,6 +95,7 @@ export function MaterialTypePicker({
   onOpenChange,
   onPickCategory,
   onPickMaterial,
+  onPickModule,
 }: MaterialTypePickerProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,6 +117,10 @@ export function MaterialTypePicker({
             onPickMaterial={(m) => {
               onOpenChange(false);
               onPickMaterial(m);
+            }}
+            onPickModule={(m) => {
+              onOpenChange(false);
+              onPickModule(m);
             }}
           />
         </div>

@@ -29,21 +29,24 @@ const makeId = (p: string) => `${p}_${Date.now()}_${Math.random().toString(36).s
 interface StoryboardPageProps {
   courseId: string;
   scope: BuilderScope;
+  /** Module độc lập: không gắn khoá học/bài — chỉ soạn rồi lưu vào kho. */
+  standalone?: boolean;
 }
 
-export function StoryboardPage({ courseId, scope }: StoryboardPageProps) {
+export function StoryboardPage({ courseId, scope, standalone = false }: StoryboardPageProps) {
   const navigate = useNavigate();
   const init = useCourse((s) => s.init);
   const courseData = useCourse((s) => s.courseData[courseId]);
   const globalActiveLesson = useCourse((s) => s.activeLessonId);
   const contentItem = useContent((s) => s.items.find((x) => x.id === courseId));
 
-  useEffect(() => { init(courseId); }, [courseId, init]);
+  useEffect(() => { if (!standalone) init(courseId); }, [courseId, init, standalone]);
 
-  const lessons = courseData?.lessons ?? [];
+  const lessons = standalone ? [] : (courseData?.lessons ?? []);
   const [lessonId, setLessonId] = useState<string>(globalActiveLesson ?? lessons[0]?.id ?? "");
   const activeLesson = lessons.find((l) => l.id === lessonId) ?? lessons[0];
-  const effectiveLessonId = activeLesson?.id ?? "";
+  // Standalone: board sống trên slot khoá theo chính id nháp (không gắn lesson).
+  const effectiveLessonId = standalone ? courseId : (activeLesson?.id ?? "");
 
   const board = useStoryboard((s) => (effectiveLessonId ? s.byLesson[effectiveLessonId] : undefined));
   const setStoryboard = useStoryboard((s) => s.setStoryboard);
@@ -193,16 +196,25 @@ export function StoryboardPage({ courseId, scope }: StoryboardPageProps) {
     <div className="flex h-screen flex-col bg-muted/30">
       {/* Header */}
       <header className="z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
-        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Quay lại bài"
-          onClick={() => navigate({ to: courseBuilderRoutePattern(scope), params: { id: courseId } })}>
+        <Button variant="ghost" size="icon" className="h-8 w-8"
+          aria-label={standalone ? "Quay lại Thư viện" : "Quay lại bài"}
+          onClick={() =>
+            standalone
+              ? navigate({ to: scope === "org" ? "/org/library" : "/creator/library" })
+              : navigate({ to: courseBuilderRoutePattern(scope), params: { id: courseId } })
+          }>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-primary">
           <Sparkles className="h-4 w-4" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">Dàn ý bài học</p>
-          <p className="truncate text-[11px] text-muted-foreground">{contentItem?.title ?? "Khoá học"}</p>
+          <p className="truncate text-sm font-semibold text-foreground">
+            {standalone ? "Trình tạo Storyboard" : "Dàn ý bài học"}
+          </p>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {standalone ? "Module độc lập · lưu vào kho để dùng lại" : (contentItem?.title ?? "Khoá học")}
+          </p>
         </div>
 
         {/* Lesson selector */}
@@ -222,23 +234,25 @@ export function StoryboardPage({ courseId, scope }: StoryboardPageProps) {
 
         <div className="ml-auto flex items-center gap-2">
           <Button
-            variant="outline"
+            variant={standalone ? "default" : "outline"}
             size="sm"
-            className="gap-2"
+            className={cn("gap-2", standalone && "bg-primary text-primary-foreground hover:bg-primary-hover")}
             disabled={!board || (board?.sections.flatMap((s) => s.items).length ?? 0) === 0}
             onClick={handleSaveLibrary}
           >
             <Library className="h-4 w-4" /> Lưu vào kho
           </Button>
-          <Button
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover"
-            size="sm"
-            disabled={!board || applying || (board?.sections.flatMap((s) => s.items).length ?? 0) === 0}
-            onClick={handleApply}
-          >
-            {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            Áp dụng vào bài
-          </Button>
+          {!standalone && (
+            <Button
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover"
+              size="sm"
+              disabled={!board || applying || (board?.sections.flatMap((s) => s.items).length ?? 0) === 0}
+              onClick={handleApply}
+            >
+              {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              Áp dụng vào bài
+            </Button>
+          )}
         </div>
       </header>
 

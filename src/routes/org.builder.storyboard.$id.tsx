@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { StoryboardPage } from "@/components/course/storyboard-page";
+import { isStandaloneModuleId } from "@/lib/builder-url";
 
 export const Route = createFileRoute("/org/builder/storyboard/$id")({
   head: () => ({ meta: [{ title: "Dàn ý bài học — GK Studio" }] }),
@@ -8,5 +9,5 @@ export const Route = createFileRoute("/org/builder/storyboard/$id")({
 
 function OrgStoryboard() {
   const { id } = Route.useParams();
-  return <StoryboardPage courseId={id} scope="org" />;
+  return <StoryboardPage courseId={id} scope="org" standalone={isStandaloneModuleId(id)} />;
 }

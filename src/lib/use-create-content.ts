@@ -1,6 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { CreationCategory, LearningMaterialSubtype } from "./types";
 import type { StudioScope } from "./use-scoped-content";
+import type { ReusableModule } from "@/components/shared/material-type-picker";
+import { newModuleDraftId } from "./builder-url";
 import { useContent } from "@/stores/content";
 import { useSession } from "@/stores/session";
 
@@ -32,5 +34,18 @@ export function useCreateContent(scope: StudioScope) {
     });
   };
 
-  return { createCategory, createMaterial };
+  // Module dùng lại (Storyboard / UI System) — độc lập khoá học. Mở trình tạo ở
+  // chế độ standalone qua id tiền tố `mod_` (xem newModuleDraftId / builder-url).
+  const createModule = (module: ReusableModule) => {
+    const id = newModuleDraftId();
+    navigate({
+      to:
+        module === "storyboard"
+          ? `${base}/builder/storyboard/$id`
+          : `${base}/builder/ui-system/$id`,
+      params: { id },
+    });
+  };
+
+  return { createCategory, createMaterial, createModule };
 }

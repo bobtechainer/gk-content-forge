@@ -9,7 +9,7 @@ import { PageSkeleton } from "./page-skeleton";
 
 export function StudioView({ scope }: { scope: StudioScope }) {
   const loading = usePageLoading();
-  const { createCategory, createMaterial } = useCreateContent(scope);
+  const { createCategory, createMaterial, createModule } = useCreateContent(scope);
   const items = useScopedContent(scope);
   const drafts = items.filter((i) => i.status === "draft");
 
@@ -26,7 +26,7 @@ export function StudioView({ scope }: { scope: StudioScope }) {
           <CardDescription>Sản phẩm xuất bản, học liệu tương tác và tệp đính kèm.</CardDescription>
         </CardHeader>
         <CardContent>
-          <MaterialTypeGrid onPickCategory={createCategory} onPickMaterial={createMaterial} />
+          <MaterialTypeGrid onPickCategory={createCategory} onPickMaterial={createMaterial} onPickModule={createModule} />
         </CardContent>
       </Card>
 

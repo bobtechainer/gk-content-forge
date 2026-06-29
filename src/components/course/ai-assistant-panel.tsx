@@ -416,6 +416,25 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         </div>
       )}
 
+      {/* Quick-add: đính kèm module dùng lại — luôn hiện để bạn biết có thể thêm (tuỳ chọn). */}
+      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] text-muted-foreground">Đính kèm:</span>
+        <button
+          type="button"
+          onClick={() => setPicker("storyboard")}
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
+        >
+          <Plus className="h-3 w-3" /> <LayoutList className="h-3 w-3" /> Storyboard
+        </button>
+        <button
+          type="button"
+          onClick={() => setPicker("ui")}
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
+        >
+          <Plus className="h-3 w-3" /> <Palette className="h-3 w-3" /> Giao diện
+        </button>
+      </div>
+
       <div className="relative rounded-2xl border border-border bg-background p-2 focus-within:border-primary">
         {/* mode chip */}
         <div className="relative mb-1.5 inline-block">
@@ -454,9 +473,6 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setPlusOpen(false)} />
                 <div className="absolute bottom-full left-0 z-50 mb-1.5 w-[210px] rounded-xl border border-border bg-card p-1.5 shadow-xl">
-                  <PlusItem icon={LayoutList} label="Thêm Storyboard" onClick={() => { setPlusOpen(false); setPicker("storyboard"); }} />
-                  <PlusItem icon={Palette} label="Thêm Giao diện" onClick={() => { setPlusOpen(false); setPicker("ui"); }} />
-                  <div className="my-1 h-px bg-border" />
                   <PlusItem icon={BookOpen} label="Chèn học liệu từ kho" onClick={() => { setPlusOpen(false); setPicker("material"); }} />
                   <PlusItem icon={FileUp} label="Tải tệp lên" onClick={() => { setPlusOpen(false); fileRef.current?.click(); }} />
                   <PlusItem icon={Boxes} label="Tạo học liệu mới" onClick={() => { setPlusOpen(false); setMode("material"); }} />

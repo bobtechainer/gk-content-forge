@@ -35,7 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { builderHref } from "@/lib/builder-url";
+import { builderHref, newModuleDraftId } from "@/lib/builder-url";
 import { ACCOUNTS, CONTENT_REPORTS, VERIFICATION_REQUESTS, resolveDemoAccount } from "@/lib/mock-data";
 import type { CreationCategory, LearningMaterialSubtype, RoleId, SchoolRole } from "@/lib/types";
 import { resolveActiveOrgId } from "@/lib/use-scoped-content";
@@ -372,6 +372,14 @@ export function ContentStudioShell() {
     );
   };
 
+  // Module độc lập (Storyboard / UI System): không tạo ContentItem, mở trình tạo
+  // standalone trong tab mới bằng id tiền tố `mod_`.
+  const handleCreateModule = (module: "storyboard" | "ui_system") => {
+    const base = scope === "org" ? "/org" : "/creator";
+    const segment = module === "storyboard" ? "storyboard" : "ui-system";
+    window.open(`${base}/builder/${segment}/${newModuleDraftId()}`, "_blank", "noopener");
+  };
+
   // Builder routes render full-screen.
   if (isBuilder) {
     return (
@@ -505,6 +513,7 @@ export function ContentStudioShell() {
           onOpenChange={setPickerOpen}
           onPickCategory={handleCreateCategory}
           onPickMaterial={handleCreateMaterial}
+          onPickModule={handleCreateModule}
         />
       )}
 

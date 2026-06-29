@@ -49,3 +49,20 @@ export function uiSystemRoutePattern(scope: BuilderScope) {
   if (scope === "org") return "/org/builder/ui-system/$id" as const;
   return "/creator/builder/ui-system/$id" as const;
 }
+
+/* ─── Module độc lập (Storyboard / UI System) ───────────────────────
+ * Trình tạo module mở ở chế độ standalone (không gắn khoá học). Phân biệt
+ * bằng tiền tố id `mod_` — cô lập, không cần search param hay route riêng.
+ * ────────────────────────────────────────────────────────────────── */
+
+const MODULE_DRAFT_PREFIX = "mod_";
+
+/** Id nháp cho một module độc lập, mở trình tạo ở chế độ standalone. */
+export function newModuleDraftId(): string {
+  return `${MODULE_DRAFT_PREFIX}${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** Trang trình tạo dùng id này có phải module độc lập (không khoá học) không. */
+export function isStandaloneModuleId(id: string): boolean {
+  return id.startsWith(MODULE_DRAFT_PREFIX);
+}

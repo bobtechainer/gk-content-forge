@@ -31,9 +31,11 @@ function nudgeToAA(hex: string, bg: string): string {
 interface UiSystemPageProps {
   courseId: string;
   scope: BuilderScope;
+  /** Module độc lập: không gắn khoá học — chỉ soạn giao diện rồi lưu vào kho. */
+  standalone?: boolean;
 }
 
-export function UiSystemPage({ courseId, scope }: UiSystemPageProps) {
+export function UiSystemPage({ courseId, scope, standalone = false }: UiSystemPageProps) {
   const navigate = useNavigate();
   const contentItem = useContent((s) => s.items.find((x) => x.id === courseId));
   const savedTheme = useCourseTheme((s) => s.byCourse[courseId]);
@@ -90,24 +92,40 @@ export function UiSystemPage({ courseId, scope }: UiSystemPageProps) {
     <div className="flex h-screen flex-col bg-muted/30">
       {/* Header */}
       <header className="z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
-        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Quay lại bài"
-          onClick={() => navigate({ to: courseBuilderRoutePattern(scope), params: { id: courseId } })}>
+        <Button variant="ghost" size="icon" className="h-8 w-8"
+          aria-label={standalone ? "Quay lại Thư viện" : "Quay lại bài"}
+          onClick={() =>
+            standalone
+              ? navigate({ to: scope === "org" ? "/org/library" : "/creator/library" })
+              : navigate({ to: courseBuilderRoutePattern(scope), params: { id: courseId } })
+          }>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-primary">
           <Sparkles className="h-4 w-4" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">Tạo giao diện · UI System</p>
-          <p className="truncate text-[11px] text-muted-foreground">{contentItem?.title ?? "Khoá học"}</p>
+          <p className="truncate text-sm font-semibold text-foreground">
+            {standalone ? "Trình tạo Giao diện" : "Tạo giao diện · UI System"}
+          </p>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {standalone ? "Module độc lập · lưu vào kho để dùng lại" : (contentItem?.title ?? "Khoá học")}
+          </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={handleSaveLibrary}>
+          <Button
+            variant={standalone ? "default" : "outline"}
+            size="sm"
+            className={cn("gap-2", standalone && "bg-primary text-primary-foreground hover:bg-primary-hover")}
+            onClick={handleSaveLibrary}
+          >
             <Library className="h-4 w-4" /> Lưu vào kho
           </Button>
-          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" size="sm" onClick={handleApply}>
-            <ArrowRight className="h-4 w-4" /> Áp dụng cho khoá học
-          </Button>
+          {!standalone && (
+            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" size="sm" onClick={handleApply}>
+              <ArrowRight className="h-4 w-4" /> Áp dụng cho khoá học
+            </Button>
+          )}
         </div>
       </header>
 
