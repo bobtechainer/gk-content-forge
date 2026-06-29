@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { BLOCK_TYPES } from "./course-palette";
 import { PageCanvas } from "./page-canvas";
 import { LessonTree } from "./lesson-tree";
-import { StructureDrawer } from "./structure-drawer";
 import { AiAssistantPanel } from "./ai-assistant-panel";
 import { PublishSheet } from "@/components/publish-sheet";
 import { toast } from "sonner";
@@ -38,13 +37,6 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
   const courseData = useCourse((s) => s.courseData[id]);
   const activeLessonId = useCourse((s) => s.activeLessonId);
   const setActiveLesson = useCourse((s) => s.setActiveLesson);
-  const addChapter = useCourse((s) => s.addChapter);
-  const renameChapter = useCourse((s) => s.renameChapter);
-  const deleteChapter = useCourse((s) => s.deleteChapter);
-  const addLesson = useCourse((s) => s.addLesson);
-  const renameLesson = useCourse((s) => s.renameLesson);
-  const deleteLesson = useCourse((s) => s.deleteLesson);
-  const reorderLessons = useCourse((s) => s.reorderLessons);
   const addBlock = useCourse((s) => s.addBlock);
   const updateBlock = useCourse((s) => s.updateBlock);
   const deleteBlock = useCourse((s) => s.deleteBlock);
@@ -58,7 +50,6 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
 
   const [title, setTitle] = useState(item?.title ?? "Khóa học chưa đặt tên");
   const [publishOpen, setPublishOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [activeDragType, setActiveDragType] = useState<CourseBlockType | null>(null);
@@ -126,9 +117,6 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
       const blk = activeBlocks.find((b) => b.id === String(e.active.id));
       const meta = blk ? BLOCK_TYPES.find((t) => t.type === blk.type) : undefined;
       if (meta) setActiveDragLabel({ kind: "block", label: meta.label, color: meta.color });
-    } else if (data?.source === "strip") {
-      const ls = lessons.find((l) => l.id === String(e.active.id));
-      if (ls) setActiveDragLabel({ kind: "lesson", label: ls.title, color: "var(--primary)" });
     }
   };
 
@@ -174,10 +162,6 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
       const to = targetIndex > fromIndex ? targetIndex - 1 : targetIndex;
       if (to === fromIndex) return;
       moveBlockToIndex(id, activeLessonId, String(active.id), to);
-      return;
-    }
-    if (data?.source === "strip" && over.id !== active.id && lessons.some((l) => l.id === String(over.id))) {
-      reorderLessons(id, String(active.id), String(over.id));
       return;
     }
   };
@@ -284,20 +268,8 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
               </>
             )}
 
-            {showPublishLessonBtn && activeLessonId && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 border-warning text-xs text-warning-700 hover:bg-warning-50"
-                onClick={() => publishLesson(id, activeLessonId)}
-                title="Xuất bản nội dung hiện tại của bài này"
-              >
-                {activeLessonPublishState === "never" ? "Xuất bản bài" : "Xuất bản thay đổi"}
-              </Button>
-            )}
-
             <Button size="sm" className="h-8 bg-primary text-xs text-primary-foreground hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>
-              Xuất bản
+              Xuất bản khoá
             </Button>
 
             {!previewMode && (
@@ -326,18 +298,10 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 className="hidden shrink-0 overflow-hidden md:block"
               >
                 <LessonTree
-                  chapters={chapters}
-                  lessons={lessons}
+                  courseId={id}
                   activeLessonId={activeLessonId}
                   onSelectLesson={setActiveLesson}
-                  onAddChapter={() => addChapter(id)}
-                  onAddLesson={(chId) => addLesson(id, chId)}
-                  onRenameChapter={(chId, t) => renameChapter(id, chId, t)}
-                  onRenameLesson={(lsId, t) => renameLesson(id, lsId, t)}
-                  onDeleteChapter={(chId) => deleteChapter(id, chId)}
-                  onDeleteLesson={(lsId) => deleteLesson(id, lsId)}
                   getPublishState={getPublishState}
-                  onOpenStructure={() => setDrawerOpen(true)}
                 />
               </motion.div>
             )}
@@ -345,6 +309,24 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
 
           {/* Center: canvas */}
           <div className="flex min-w-0 flex-1 flex-col">
+            {/* Thanh ngữ cảnh bài — trạng thái + xuất bản bài (chế độ Soạn) */}
+            {!previewMode && activeLesson && (
+              <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
+                <span className="truncate text-sm font-semibold text-foreground">{activeLesson.title}</span>
+                <LessonStatusChip state={activeLessonPublishState} />
+                {showPublishLessonBtn && activeLessonId && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-auto h-7 border-warning text-xs text-warning-700 hover:bg-warning-50"
+                    onClick={() => publishLesson(id, activeLessonId)}
+                    title="Xuất bản nội dung hiện tại của bài này"
+                  >
+                    {activeLessonPublishState === "never" ? "Xuất bản bài này" : "Xuất bản thay đổi"}
+                  </Button>
+                )}
+              </div>
+            )}
             <div className="min-h-0 flex-1 overflow-y-auto">
               {activeLesson ? (
                 <PageCanvas
@@ -429,25 +411,25 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
         )}
       </DragOverlay>
 
-      {/* Structure drawer */}
-      <StructureDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        chapters={chapters}
-        lessons={lessons}
-        activeLessonId={activeLessonId}
-        onSelectLesson={(lsId) => { setActiveLesson(lsId); setDrawerOpen(false); }}
-        onAddChapter={() => addChapter(id)}
-        onAddLesson={(chId) => addLesson(id, chId)}
-        onRenameChapter={(chId, t) => renameChapter(id, chId, t)}
-        onRenameLesson={(lsId, t) => renameLesson(id, lsId, t)}
-        onDeleteChapter={(chId) => deleteChapter(id, chId)}
-        onDeleteLesson={(lsId) => deleteLesson(id, lsId)}
-        getPublishState={getPublishState}
-      />
-
       <PublishSheet open={publishOpen} onOpenChange={setPublishOpen} contentId={id} title={title}
         onPublished={() => navigate({ to: backTo })} />
     </DndContext>
+  );
+}
+
+/* ─── Chip trạng thái xuất bản của bài ──────────────────────────── */
+
+function LessonStatusChip({ state }: { state: "never" | "published" | "dirty" }) {
+  const map = {
+    never: { label: "Bản nháp", cls: "bg-muted text-muted-foreground", dot: "bg-muted-foreground/50" },
+    dirty: { label: "Có thay đổi chưa xuất bản", cls: "bg-warning-50 text-warning-700", dot: "bg-warning-500" },
+    published: { label: "Đã xuất bản", cls: "bg-success-50 text-success", dot: "bg-success" },
+  } as const;
+  const m = map[state];
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium", m.cls)}>
+      <span className={cn("h-1.5 w-1.5 rounded-full", m.dot)} />
+      {m.label}
+    </span>
   );
 }

@@ -1,15 +1,23 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import {
+  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter,
+  useDroppable, type DragEndEvent, type DragStartEvent,
+} from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  ChevronRight, Plus, GripVertical, Trash2, Check, FileText, FolderTree, Settings2,
+  ChevronRight, Plus, Trash2, Check, FileText, Folder, Layers, FolderTree, CornerDownRight,
 } from "lucide-react";
-import type { CourseChapter, CourseLesson } from "@/stores/course";
-import { Button } from "@/components/ui/button";
+import {
+  useCourse, buildCourseTree,
+  type CourseData, type CourseNodeType, type CourseTreeNode,
+} from "@/stores/course";
 import { cn } from "@/lib/utils";
 
 type PublishState = "never" | "published" | "dirty";
+type ParentRef = { id: string; type: "part" | "chapter" } | null;
+type Selected = { id: string; type: CourseNodeType } | null;
 
 const PUBLISH_DOT: Record<PublishState, { className: string; label: string }> = {
   never: { className: "bg-muted-foreground/40", label: "Chưa xuất bản" },
@@ -17,291 +25,342 @@ const PUBLISH_DOT: Record<PublishState, { className: string; label: string }> = 
   dirty: { className: "bg-warning-500", label: "Có thay đổi chưa xuất bản" },
 };
 
-/* ─── Props ─────────────────────────────────────────────────────── */
+const NODE_META: Record<CourseNodeType, { icon: typeof Folder; chip: string }> = {
+  part: { icon: Layers, chip: "bg-brand-50 text-primary" },
+  chapter: { icon: Folder, chip: "bg-muted text-muted-foreground" },
+  lesson: { icon: FileText, chip: "" },
+};
+
+const EMPTY: CourseData = { parts: [], chapters: [], lessons: [] };
 
 interface LessonTreeProps {
-  chapters: CourseChapter[];
-  lessons: CourseLesson[];
+  courseId: string;
   activeLessonId: string | null;
   onSelectLesson: (id: string) => void;
-  onAddChapter: () => void;
-  onAddLesson: (chapterId: string) => void;
-  onRenameChapter: (id: string, title: string) => void;
-  onRenameLesson: (id: string, title: string) => void;
-  onDeleteChapter: (id: string) => void;
-  onDeleteLesson: (id: string) => void;
   getPublishState: (lessonId: string) => PublishState;
-  onOpenStructure: () => void;
 }
 
-/* ─── Tree ──────────────────────────────────────────────────────── */
+export function LessonTree({ courseId, activeLessonId, onSelectLesson, getPublishState }: LessonTreeProps) {
+  const data = useCourse((s) => s.courseData[courseId]) ?? EMPTY;
+  const addPart = useCourse((s) => s.addPart);
+  const addChapterUnder = useCourse((s) => s.addChapterUnder);
+  const addLessonUnder = useCourse((s) => s.addLessonUnder);
+  const renameNode = useCourse((s) => s.renameNode);
+  const deleteNode = useCourse((s) => s.deleteNode);
+  const moveNode = useCourse((s) => s.moveNode);
 
-export function LessonTree({
-  chapters, lessons, activeLessonId,
-  onSelectLesson, onAddChapter, onAddLesson,
-  onRenameChapter, onRenameLesson, onDeleteChapter, onDeleteLesson,
-  getPublishState, onOpenStructure,
-}: LessonTreeProps) {
+  const tree = useMemo(() => buildCourseTree(data), [data]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [selected, setSelected] = useState<Selected>(null);
+  const [dragLabel, setDragLabel] = useState<string | null>(null);
+
   const toggle = (id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] }));
+
+  /* ─── Resolve "add target" from current selection ─────────────── */
+  const partIdOf = (sel: Selected): string | null => {
+    if (!sel) return null;
+    if (sel.type === "part") return sel.id;
+    if (sel.type === "chapter") return data.chapters.find((c) => c.id === sel.id)?.partId ?? null;
+    const l = data.lessons.find((x) => x.id === sel.id);
+    if (l?.chapterId) return data.chapters.find((c) => c.id === l.chapterId)?.partId ?? null;
+    return l?.partId ?? null;
+  };
+  const containerForLesson = (sel: Selected): ParentRef => {
+    if (!sel) return null;
+    if (sel.type === "chapter") return { id: sel.id, type: "chapter" };
+    if (sel.type === "part") return { id: sel.id, type: "part" };
+    const l = data.lessons.find((x) => x.id === sel.id);
+    if (l?.chapterId) return { id: l.chapterId, type: "chapter" };
+    if (l?.partId) return { id: l.partId, type: "part" };
+    return null;
+  };
+
+  const handleAddPart = () => { const id = addPart(courseId); setSelected({ id, type: "part" }); };
+  const handleAddChapter = () => { const id = addChapterUnder(courseId, partIdOf(selected)); setSelected({ id, type: "chapter" }); };
+  const handleAddLesson = () => {
+    const id = addLessonUnder(courseId, containerForLesson(selected));
+    setSelected({ id, type: "lesson" });
+    onSelectLesson(id);
+  };
+
+  /* ─── DnD reparent (self-contained context) ───────────────────── */
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const nodeTypeOf = (id: string): CourseNodeType | null => {
+    if ((data.parts ?? []).some((p) => p.id === id)) return "part";
+    if (data.chapters.some((c) => c.id === id)) return "chapter";
+    if (data.lessons.some((l) => l.id === id)) return "lesson";
+    return null;
+  };
+  const parentRefOf = (id: string, type: CourseNodeType): ParentRef => {
+    if (type === "part") return null;
+    if (type === "chapter") { const c = data.chapters.find((x) => x.id === id); return c?.partId ? { id: c.partId, type: "part" } : null; }
+    const l = data.lessons.find((x) => x.id === id);
+    if (l?.chapterId) return { id: l.chapterId, type: "chapter" };
+    if (l?.partId) return { id: l.partId, type: "part" };
+    return null;
+  };
+
+  const onDragStart = (e: DragStartEvent) => {
+    const id = String(e.active.id);
+    const title =
+      (data.parts ?? []).find((p) => p.id === id)?.title ??
+      data.chapters.find((c) => c.id === id)?.title ??
+      data.lessons.find((l) => l.id === id)?.title ?? "";
+    setDragLabel(title);
+  };
+
+  const onDragEnd = (e: DragEndEvent) => {
+    setDragLabel(null);
+    const { active, over } = e;
+    if (!over) return;
+    const aid = String(active.id);
+    const oid = String(over.id);
+    if (aid === oid) return;
+    const aType = nodeTypeOf(aid);
+    if (!aType) return;
+
+    if (oid === "tree-root") { moveNode(courseId, aid, aType, null); return; }
+    const oType = nodeTypeOf(oid);
+    if (!oType) return;
+
+    let targetParent: ParentRef = null;
+    let beforeId: string | null = null;
+    if (oType === "lesson") { targetParent = parentRefOf(oid, "lesson"); beforeId = oid; }
+    else if (oType === "chapter") {
+      if (aType === "lesson") { targetParent = { id: oid, type: "chapter" }; }
+      else { targetParent = parentRefOf(oid, "chapter"); beforeId = oid; }
+    } else { // over a part
+      if (aType === "part") { targetParent = null; beforeId = oid; }
+      else { targetParent = { id: oid, type: "part" }; }
+    }
+    if (aType === "part") targetParent = null;
+    if (aType === "chapter" && targetParent && targetParent.type === "chapter") {
+      targetParent = parentRefOf(targetParent.id, "chapter");
+    }
+    moveNode(courseId, aid, aType, targetParent, beforeId);
+  };
+
+  const allIds = useMemo(() => {
+    const ids: string[] = [];
+    const walk = (nodes: CourseTreeNode[]) => nodes.forEach((n) => { ids.push(n.id); walk(n.children); });
+    walk(tree);
+    return ids;
+  }, [tree]);
 
   return (
     <div className="flex h-full w-[268px] shrink-0 flex-col border-r border-border bg-sidebar">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
-        <div className="flex items-center gap-2">
+      {/* Header + add bar */}
+      <div className="border-b border-border px-3 py-2.5">
+        <div className="mb-2 flex items-center gap-2">
           <FolderTree className="h-4 w-4 text-primary" />
           <span className="text-xs font-semibold text-sidebar-foreground">Nội dung khoá học</span>
         </div>
-        <button
-          type="button"
-          onClick={onAddChapter}
-          className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-primary"
-          title="Thêm chương" aria-label="Thêm chương"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+        <div className="flex gap-1">
+          {([["part", "Phần", handleAddPart], ["chapter", "Chương", handleAddChapter], ["lesson", "Bài", handleAddLesson]] as const).map(
+            ([type, label, fn]) => (
+              <button
+                key={type}
+                type="button"
+                onClick={fn}
+                className="flex flex-1 items-center justify-center gap-1 rounded-md border border-border bg-card px-1.5 py-1 text-[11px] font-medium text-foreground transition hover:border-primary hover:text-primary"
+                title={`Thêm ${label}${selected ? " vào mục đang chọn" : ""}`}
+              >
+                <Plus className="h-3 w-3" /> {label}
+              </button>
+            ),
+          )}
+        </div>
       </div>
 
-      {/* Tree body */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        <SortableContext items={lessons.map((l) => l.id)} strategy={verticalListSortingStrategy}>
-          {chapters.map((chapter, ci) => {
-            const chLessons = lessons.filter((l) => l.chapterId === chapter.id);
-            const isCollapsed = collapsed[chapter.id];
-            return (
-              <div key={chapter.id} className="mb-1">
-                <ChapterRow
-                  chapter={chapter}
-                  index={ci}
-                  lessonCount={chLessons.length}
-                  collapsed={!!isCollapsed}
-                  canDelete={chapters.length > 1}
-                  onToggle={() => toggle(chapter.id)}
-                  onRename={(t) => onRenameChapter(chapter.id, t)}
-                  onAddLesson={() => onAddLesson(chapter.id)}
-                  onDelete={() => onDeleteChapter(chapter.id)}
+      {/* Tree */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+          <SortableContext items={allIds} strategy={verticalListSortingStrategy}>
+            {tree.length === 0 ? (
+              <p className="px-2 py-6 text-center text-[11px] text-muted-foreground">
+                Chưa có nội dung. Bấm <b>＋ Phần / Chương / Bài</b> ở trên để bắt đầu.
+              </p>
+            ) : (
+              tree.map((node) => (
+                <TreeRow
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  collapsed={collapsed}
+                  onToggle={toggle}
+                  selectedId={selected?.id ?? null}
+                  activeLessonId={activeLessonId}
+                  onSelect={(n) => {
+                    setSelected({ id: n.id, type: n.type });
+                    if (n.type === "lesson") onSelectLesson(n.id);
+                    else toggle(n.id);
+                  }}
+                  onRename={(n, t) => renameNode(courseId, n.id, n.type, t)}
+                  onDelete={(n) => deleteNode(courseId, n.id, n.type)}
+                  onAddChild={(n) => {
+                    if (n.type === "part") { const id = addChapterUnder(courseId, n.id); setSelected({ id, type: "chapter" }); }
+                    else if (n.type === "chapter") { const id = addLessonUnder(courseId, { id: n.id, type: "chapter" }); setSelected({ id, type: "lesson" }); onSelectLesson(id); }
+                  }}
+                  getPublishState={getPublishState}
                 />
-                <AnimatePresence initial={false}>
-                  {!isCollapsed && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border pl-2">
-                        {chLessons.map((lesson, li) => (
-                          <LessonRow
-                            key={lesson.id}
-                            lesson={lesson}
-                            number={li + 1}
-                            isActive={activeLessonId === lesson.id}
-                            publishState={getPublishState(lesson.id)}
-                            canDelete={chLessons.length > 1 || chapters.length > 1}
-                            onSelect={() => onSelectLesson(lesson.id)}
-                            onRename={(t) => onRenameLesson(lesson.id, t)}
-                            onDelete={() => onDeleteLesson(lesson.id)}
-                          />
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => onAddLesson(chapter.id)}
-                          className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium text-muted-foreground transition hover:bg-accent hover:text-primary"
-                        >
-                          <Plus className="h-3.5 w-3.5" /> Thêm bài học
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
-        </SortableContext>
-      </div>
+              ))
+            )}
+            <RootDropZone visible={!!dragLabel} />
+          </SortableContext>
+        </div>
 
-      {/* Footer */}
-      <div className="border-t border-border p-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full justify-start gap-2 text-xs"
-          onClick={onOpenStructure}
-        >
-          <Settings2 className="h-3.5 w-3.5" /> Cấu trúc nâng cao
-        </Button>
-      </div>
+        <DragOverlay>
+          {dragLabel && (
+            <div className="flex items-center gap-1.5 rounded-md border border-primary bg-card px-2.5 py-1.5 text-xs font-medium text-foreground shadow-lg">
+              <CornerDownRight className="h-3.5 w-3.5 text-primary" /> {dragLabel}
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }
 
-/* ─── Chapter row ───────────────────────────────────────────────── */
+/* ─── Root drop zone (kéo ra ngoài cùng) ────────────────────────── */
 
-function ChapterRow({
-  chapter, index, lessonCount, collapsed, canDelete, onToggle, onRename, onAddLesson, onDelete,
+function RootDropZone({ visible }: { visible: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "tree-root" });
+  if (!visible) return <div ref={setNodeRef} className="h-3" />;
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "mt-1 rounded-md border border-dashed px-2 py-2 text-center text-[10px] transition",
+        isOver ? "border-primary bg-accent text-primary" : "border-border text-muted-foreground",
+      )}
+    >
+      Thả vào đây để đưa ra ngoài cùng
+    </div>
+  );
+}
+
+/* ─── Tree row (recursive) ──────────────────────────────────────── */
+
+function TreeRow({
+  node, depth, collapsed, onToggle, selectedId, activeLessonId,
+  onSelect, onRename, onDelete, onAddChild, getPublishState,
 }: {
-  chapter: CourseChapter;
-  index: number;
-  lessonCount: number;
-  collapsed: boolean;
-  canDelete: boolean;
-  onToggle: () => void;
-  onRename: (t: string) => void;
-  onAddLesson: () => void;
-  onDelete: () => void;
+  node: CourseTreeNode;
+  depth: number;
+  collapsed: Record<string, boolean>;
+  onToggle: (id: string) => void;
+  selectedId: string | null;
+  activeLessonId: string | null;
+  onSelect: (n: CourseTreeNode) => void;
+  onRename: (n: CourseTreeNode, t: string) => void;
+  onDelete: (n: CourseTreeNode) => void;
+  onAddChild: (n: CourseTreeNode) => void;
+  getPublishState: (lessonId: string) => PublishState;
 }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
   const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(chapter.title);
-  const save = () => { if (val.trim() && val !== chapter.title) onRename(val.trim()); setEditing(false); };
+  const [val, setVal] = useState(node.title);
+
+  const isContainer = node.type !== "lesson";
+  const isOpen = !collapsed[node.id];
+  const isActive = node.type === "lesson" ? activeLessonId === node.id : selectedId === node.id;
+  const meta = NODE_META[node.type];
+  const Icon = meta.icon;
+  const save = () => { if (val.trim() && val !== node.title) onRename(node, val.trim()); setEditing(false); };
 
   return (
-    <div className="group flex items-center gap-1 rounded-md px-1.5 py-1.5 transition hover:bg-accent/60">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:text-foreground"
-        aria-label={collapsed ? "Mở chương" : "Thu gọn chương"}
+    <div>
+      <div
+        ref={setNodeRef}
+        style={{ ...style, paddingLeft: depth * 14 + 4 }}
+        className={cn(
+          "group relative flex items-center gap-1 rounded-md py-1.5 pr-1.5 transition",
+          isActive ? "bg-accent" : "hover:bg-accent/50",
+          isDragging && "opacity-50",
+        )}
       >
-        <motion.span animate={{ rotate: collapsed ? 0 : 90 }} transition={{ duration: 0.18 }}>
-          <ChevronRight className="h-3.5 w-3.5" />
-        </motion.span>
-      </button>
+        {isActive && node.type === "lesson" && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />}
 
-      {editing ? (
-        <div className="flex flex-1 items-center gap-1">
+        {isContainer ? (
+          <button type="button" onClick={() => onToggle(node.id)} className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground" aria-label={isOpen ? "Thu gọn" : "Mở"}>
+            <motion.span animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.15 }}>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </motion.span>
+          </button>
+        ) : (
+          <span className="w-5 shrink-0" />
+        )}
+
+        <span {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing" title="Kéo để chuyển cấp / sắp xếp">
+          <Icon className={cn("h-3.5 w-3.5", isActive ? "text-primary" : "text-muted-foreground")} />
+        </span>
+
+        {editing ? (
           <input
             value={val}
             onChange={(e) => setVal(e.target.value)}
             onBlur={save}
             onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
             autoFocus
-            className="w-full rounded border border-primary bg-card px-1.5 py-0.5 text-xs font-semibold text-foreground outline-none"
+            className="min-w-0 flex-1 rounded border border-primary bg-card px-1.5 py-0.5 text-xs outline-none"
           />
-          <button onClick={save} className="text-primary" aria-label="Lưu tên chương"><Check className="h-3.5 w-3.5" /></button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onDoubleClick={() => { setVal(chapter.title); setEditing(true); }}
-          onClick={onToggle}
-          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-          title="Bấm để thu gọn · double-click để đổi tên"
-        >
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brand-50 text-[10px] font-bold text-primary">
-            {index + 1}
-          </span>
-          <span className="truncate text-xs font-semibold text-sidebar-foreground">{chapter.title}</span>
-          <span className="shrink-0 text-[10px] text-muted-foreground">{lessonCount}</span>
-        </button>
-      )}
-
-      <div className="flex shrink-0 items-center opacity-0 transition group-hover:opacity-100">
-        <button
-          type="button"
-          onClick={onAddLesson}
-          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-card hover:text-primary"
-          title="Thêm bài vào chương" aria-label="Thêm bài vào chương"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-        {canDelete && (
+        ) : (
           <button
             type="button"
-            onClick={onDelete}
-            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition hover:bg-error-50 hover:text-destructive"
-            title="Xoá chương" aria-label="Xoá chương"
+            onClick={() => onSelect(node)}
+            onDoubleClick={() => { setVal(node.title); setEditing(true); }}
+            className={cn("min-w-0 flex-1 truncate text-left text-xs", isActive ? "font-semibold text-primary" : "text-sidebar-foreground")}
+            title="Bấm để chọn · double-click để đổi tên"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            {node.title}
           </button>
         )}
+
+        {node.type === "lesson" && (
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", PUBLISH_DOT[getPublishState(node.id)].className)} title={PUBLISH_DOT[getPublishState(node.id)].label} />
+        )}
+
+        <div className="flex shrink-0 items-center opacity-0 transition group-hover:opacity-100">
+          {isContainer && (
+            <button type="button" onClick={() => onAddChild(node)} className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition hover:bg-card hover:text-primary" title={node.type === "part" ? "Thêm chương" : "Thêm bài"} aria-label="Thêm mục con">
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button type="button" onClick={() => onDelete(node)} className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition hover:bg-error-50 hover:text-destructive" title="Xoá" aria-label="Xoá">
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
 
-/* ─── Lesson row (sortable) ─────────────────────────────────────── */
-
-function LessonRow({
-  lesson, number, isActive, publishState, canDelete, onSelect, onRename, onDelete,
-}: {
-  lesson: CourseLesson;
-  number: number;
-  isActive: boolean;
-  publishState: PublishState;
-  canDelete: boolean;
-  onSelect: () => void;
-  onRename: (t: string) => void;
-  onDelete: () => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(lesson.title);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: lesson.id,
-    data: { source: "strip", lessonId: lesson.id },
-  });
-  const style = { transform: CSS.Transform.toString(transform), transition };
-  const save = () => { if (val.trim() && val !== lesson.title) onRename(val.trim()); setEditing(false); };
-  const dot = PUBLISH_DOT[publishState];
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      onClick={!editing ? onSelect : undefined}
-      className={cn(
-        "group/lesson relative flex cursor-pointer select-none items-center gap-1.5 rounded-md px-2 py-1.5 transition",
-        isActive ? "bg-accent" : "hover:bg-accent/50",
-        isDragging && "z-50 opacity-60",
-      )}
-    >
-      {isActive && <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />}
-
-      <span
-        {...listeners}
-        {...attributes}
-        onClick={(e) => e.stopPropagation()}
-        className="flex h-4 w-4 shrink-0 cursor-grab items-center justify-center text-muted-foreground/0 transition group-hover/lesson:text-muted-foreground/60 active:cursor-grabbing"
-        title="Kéo để sắp xếp"
-      >
-        <GripVertical className="h-3 w-3" />
-      </span>
-
-      <FileText className={cn("h-3.5 w-3.5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
-
-      {editing ? (
-        <input
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          onBlur={save}
-          onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
-          onClick={(e) => e.stopPropagation()}
-          autoFocus
-          className="min-w-0 flex-1 rounded border border-primary bg-card px-1.5 py-0.5 text-xs outline-none"
-        />
-      ) : (
-        <span
-          onDoubleClick={(e) => { e.stopPropagation(); setVal(lesson.title); setEditing(true); }}
-          className={cn("min-w-0 flex-1 truncate text-xs", isActive ? "font-semibold text-primary" : "text-sidebar-foreground")}
-          title="Double-click để đổi tên"
-        >
-          {number}. {lesson.title}
-        </span>
-      )}
-
-      <span className={cn("h-2 w-2 shrink-0 rounded-full", dot.className)} title={dot.label} aria-label={dot.label} />
-
-      {canDelete && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition hover:text-destructive group-hover/lesson:opacity-100"
-          title="Xoá bài" aria-label="Xoá bài học"
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
+      {isContainer && (
+        <AnimatePresence initial={false}>
+          {isOpen && node.children.length > 0 && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
+              {node.children.map((child) => (
+                <TreeRow
+                  key={child.id}
+                  node={child}
+                  depth={depth + 1}
+                  collapsed={collapsed}
+                  onToggle={onToggle}
+                  selectedId={selectedId}
+                  activeLessonId={activeLessonId}
+                  onSelect={onSelect}
+                  onRename={onRename}
+                  onDelete={onDelete}
+                  onAddChild={onAddChild}
+                  getPublishState={getPublishState}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
     </div>
   );
 }
+
+/* Giữ export tên cũ để builder import không đổi. */
+export default LessonTree;

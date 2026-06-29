@@ -80,7 +80,12 @@ export interface CourseBlock {
 export interface CourseLesson {
   id: string;
   title: string;
-  chapterId: string;
+  /** Chương cha (null = không thuộc chương nào — nằm thẳng trong Phần hoặc ở gốc). */
+  chapterId: string | null;
+  /** Phần cha khi bài nằm thẳng trong Phần (chỉ dùng khi chapterId = null). */
+  partId?: string | null;
+  /** Thứ tự trong nhóm anh em (để xếp xen kẽ Chương/Bài). */
+  order?: number;
   blocks: CourseBlock[];
   /** Thời điểm xuất bản gần nhất (timestamp ms). Không có = chưa xuất bản. */
   publishedAt?: number;
@@ -92,11 +97,119 @@ export interface CourseChapter {
   id: string;
   title: string;
   courseId: string;
+  /** Phần cha (null/undefined = chương ở gốc). */
+  partId?: string | null;
+  /** Thứ tự trong nhóm anh em. */
+  order?: number;
+}
+
+/** Phần — cấp folder cao nhất (chứa Chương hoặc Bài). */
+export interface CoursePart {
+  id: string;
+  title: string;
+  order?: number;
 }
 
 export interface CourseData {
+  parts?: CoursePart[];
   chapters: CourseChapter[];
   lessons: CourseLesson[];
+}
+
+/* ─── Cây cấu trúc dẫn xuất (Phần → Chương/Bài → Bài) ──────────────── */
+
+export type CourseNodeType = "part" | "chapter" | "lesson";
+
+export interface CourseTreeNode {
+  id: string;
+  type: CourseNodeType;
+  title: string;
+  /** Chỉ lesson mới có (tham chiếu để đọc trạng thái xuất bản…). */
+  lesson?: CourseLesson;
+  children: CourseTreeNode[];
+}
+
+type ParentRef = { id: string; type: "part" | "chapter" } | null;
+
+interface OrderedRef {
+  id: string;
+  type: CourseNodeType;
+  title: string;
+  order: number;
+  lesson?: CourseLesson;
+}
+
+/** Lấy danh sách con (đã sắp xếp) của một parent (null = gốc). */
+function childrenOf(data: CourseData, parent: ParentRef): OrderedRef[] {
+  const parts = data.parts ?? [];
+  const refs: OrderedRef[] = [];
+  const fallback = (i: number, base: number) => base + i; // giữ thứ tự mảng khi thiếu order
+
+  if (parent === null) {
+    parts.forEach((p, i) => refs.push({ id: p.id, type: "part", title: p.title, order: p.order ?? fallback(i, 0) }));
+    data.chapters.forEach((c, i) => {
+      if (!c.partId) refs.push({ id: c.id, type: "chapter", title: c.title, order: c.order ?? fallback(i, 1000) });
+    });
+    data.lessons.forEach((l, i) => {
+      if (!l.chapterId && !l.partId) refs.push({ id: l.id, type: "lesson", title: l.title, order: l.order ?? fallback(i, 2000), lesson: l });
+    });
+  } else if (parent.type === "part") {
+    data.chapters.forEach((c, i) => {
+      if (c.partId === parent.id) refs.push({ id: c.id, type: "chapter", title: c.title, order: c.order ?? fallback(i, 0) });
+    });
+    data.lessons.forEach((l, i) => {
+      if (!l.chapterId && l.partId === parent.id) refs.push({ id: l.id, type: "lesson", title: l.title, order: l.order ?? fallback(i, 1000), lesson: l });
+    });
+  } else {
+    data.lessons.forEach((l, i) => {
+      if (l.chapterId === parent.id) refs.push({ id: l.id, type: "lesson", title: l.title, order: l.order ?? fallback(i, 0), lesson: l });
+    });
+  }
+  return refs.sort((a, b) => a.order - b.order);
+}
+
+/** Dựng cây cấu trúc đầy đủ từ CourseData. */
+export function buildCourseTree(data: CourseData): CourseTreeNode[] {
+  const toNode = (r: OrderedRef): CourseTreeNode => ({
+    id: r.id,
+    type: r.type,
+    title: r.title,
+    lesson: r.lesson,
+    children:
+      r.type === "lesson"
+        ? []
+        : childrenOf(data, { id: r.id, type: r.type as "part" | "chapter" }).map(toNode),
+  });
+  return childrenOf(data, null).map(toNode);
+}
+
+/** Order kế tiếp cho một nhóm anh em (lớn hơn mọi order hiện có). */
+function childOrderNext(data: CourseData, parent: ParentRef): number {
+  const sibs = childrenOf(data, parent);
+  return sibs.length ? Math.max(...sibs.map((s) => s.order)) + 1 : 0;
+}
+
+/** Đánh số lại order cho nhóm anh em của `parent`, chèn `movedId` trước `beforeId`. */
+function renumberSiblings(
+  data: CourseData,
+  parent: ParentRef,
+  movedId: string,
+  beforeId: string | null,
+): CourseData {
+  const sibs = childrenOf(data, parent).map((s) => s.id);
+  const order = sibs.filter((id) => id !== movedId);
+  const idx = beforeId ? order.indexOf(beforeId) : -1;
+  if (idx >= 0) order.splice(idx, 0, movedId);
+  else order.push(movedId);
+  const orderMap = new Map(order.map((id, i) => [id, i] as const));
+  const reorder = <T extends { id: string; order?: number }>(arr: T[]): T[] =>
+    arr.map((x) => (orderMap.has(x.id) ? { ...x, order: orderMap.get(x.id)! } : x));
+  return {
+    ...data,
+    parts: data.parts ? reorder(data.parts) : data.parts,
+    chapters: reorder(data.chapters),
+    lessons: reorder(data.lessons),
+  };
 }
 
 /* ─── Store ─────────────────────────────────────────────────────── */
@@ -131,6 +244,24 @@ interface CourseState {
   duplicateBlock: (courseId: string, lessonId: string, blockId: string) => string;
   reorderBlocks: (courseId: string, lessonId: string, fromId: string, toId: string) => void;
   moveBlockToIndex: (courseId: string, lessonId: string, blockId: string, newIndex: number) => void;
+
+  // Cây cấu trúc linh hoạt (Phần/Chương/Bài)
+  addPart: (courseId: string, title?: string) => string;
+  addChapterUnder: (courseId: string, partId: string | null, title?: string) => string;
+  addLessonUnder: (
+    courseId: string,
+    parent: { id: string; type: "part" | "chapter" } | null,
+    title?: string,
+  ) => string;
+  renameNode: (courseId: string, nodeId: string, type: CourseNodeType, title: string) => void;
+  deleteNode: (courseId: string, nodeId: string, type: CourseNodeType) => void;
+  moveNode: (
+    courseId: string,
+    nodeId: string,
+    type: CourseNodeType,
+    newParent: { id: string; type: "part" | "chapter" } | null,
+    beforeId?: string | null,
+  ) => void;
 }
 
 function makeId(prefix: string) {
@@ -266,7 +397,7 @@ function cloneSampleCourse(courseId: string): CourseData {
   const lessons: CourseLesson[] = SAMPLE_COURSE.lessons.map((ls) => ({
     ...ls,
     id: makeId("ls"),
-    chapterId: chapterIdMap[ls.chapterId] ?? ls.chapterId,
+    chapterId: ls.chapterId ? (chapterIdMap[ls.chapterId] ?? ls.chapterId) : ls.chapterId,
     blocks: ls.blocks.map((b) => cloneBlockDeep(b)),
   }));
   return { chapters, lessons };
@@ -576,6 +707,115 @@ export const useCourse = create<CourseState>()(
         set({
           courseData: { ...get().courseData, [courseId]: { ...data, lessons } },
         });
+      },
+
+      // ─── Cây cấu trúc linh hoạt (Phần/Chương/Bài) ──────────
+      addPart: (courseId, title) => {
+        const id = makeId("part");
+        const data = get().courseData[courseId];
+        if (!data) return id;
+        const parts = data.parts ?? [];
+        const order = childOrderNext(data, null);
+        set({
+          courseData: {
+            ...get().courseData,
+            [courseId]: { ...data, parts: [...parts, { id, title: title ?? `Phần ${parts.length + 1}`, order }] },
+          },
+        });
+        return id;
+      },
+
+      addChapterUnder: (courseId, partId, title) => {
+        const id = makeId("ch");
+        const data = get().courseData[courseId];
+        if (!data) return id;
+        const parent = partId ? ({ id: partId, type: "part" } as const) : null;
+        const order = childOrderNext(data, parent);
+        const chapter: CourseChapter = {
+          id,
+          title: title ?? `Chương ${data.chapters.length + 1}`,
+          courseId,
+          partId: partId ?? null,
+          order,
+        };
+        set({
+          courseData: { ...get().courseData, [courseId]: { ...data, chapters: [...data.chapters, chapter] } },
+        });
+        return id;
+      },
+
+      addLessonUnder: (courseId, parent, title) => {
+        const id = makeId("ls");
+        const data = get().courseData[courseId];
+        if (!data) return id;
+        const order = childOrderNext(data, parent);
+        const chapterId = parent?.type === "chapter" ? parent.id : null;
+        const partId = parent?.type === "part" ? parent.id : null;
+        const lesson: CourseLesson = { id, title: title ?? "Bài mới", chapterId, partId, order, blocks: [] };
+        set({
+          courseData: { ...get().courseData, [courseId]: { ...data, lessons: [...data.lessons, lesson] } },
+          activeLessonId: id,
+        });
+        return id;
+      },
+
+      renameNode: (courseId, nodeId, type, title) => {
+        const data = get().courseData[courseId];
+        if (!data) return;
+        let next: CourseData = data;
+        if (type === "part") next = { ...data, parts: (data.parts ?? []).map((p) => (p.id === nodeId ? { ...p, title } : p)) };
+        else if (type === "chapter") next = { ...data, chapters: data.chapters.map((c) => (c.id === nodeId ? { ...c, title } : c)) };
+        else next = { ...data, lessons: data.lessons.map((l) => (l.id === nodeId ? { ...l, title } : l)) };
+        set({ courseData: { ...get().courseData, [courseId]: next } });
+      },
+
+      deleteNode: (courseId, nodeId, type) => {
+        const data = get().courseData[courseId];
+        if (!data) return;
+        const active = get().activeLessonId;
+        let parts = data.parts ?? [];
+        let chapters = data.chapters;
+        let lessons = data.lessons;
+        let nextActive = active;
+        if (type === "lesson") {
+          lessons = lessons.filter((l) => l.id !== nodeId);
+          if (active === nodeId) nextActive = lessons[0]?.id ?? null;
+        } else if (type === "chapter") {
+          const chap = chapters.find((c) => c.id === nodeId);
+          const toPart = chap?.partId ?? null;
+          lessons = lessons.map((l) => (l.chapterId === nodeId ? { ...l, chapterId: null, partId: toPart } : l));
+          chapters = chapters.filter((c) => c.id !== nodeId);
+        } else {
+          chapters = chapters.map((c) => (c.partId === nodeId ? { ...c, partId: null } : c));
+          lessons = lessons.map((l) => (!l.chapterId && l.partId === nodeId ? { ...l, partId: null } : l));
+          parts = parts.filter((p) => p.id !== nodeId);
+        }
+        set({
+          courseData: { ...get().courseData, [courseId]: { ...data, parts, chapters, lessons } },
+          activeLessonId: nextActive,
+        });
+      },
+
+      moveNode: (courseId, nodeId, type, newParent, beforeId) => {
+        const data = get().courseData[courseId];
+        if (!data) return;
+        let chapters = data.chapters;
+        let lessons = data.lessons;
+        const parts = data.parts ?? [];
+        if (type === "lesson") {
+          const chapterId = newParent?.type === "chapter" ? newParent.id : null;
+          const partId = newParent?.type === "part" ? newParent.id : null;
+          lessons = lessons.map((l) => (l.id === nodeId ? { ...l, chapterId, partId } : l));
+        } else if (type === "chapter") {
+          if (newParent?.type === "chapter") return; // chương không nằm trong chương
+          const partId = newParent?.type === "part" ? newParent.id : null;
+          chapters = chapters.map((c) => (c.id === nodeId ? { ...c, partId } : c));
+        } else if (newParent !== null) {
+          return; // phần luôn ở gốc
+        }
+        const reassigned: CourseData = { ...data, parts, chapters, lessons };
+        const next = renumberSiblings(reassigned, newParent, nodeId, beforeId ?? null);
+        set({ courseData: { ...get().courseData, [courseId]: next } });
       },
     }),
     {
