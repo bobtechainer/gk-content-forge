@@ -39,11 +39,11 @@ export function ModuleGallery({ module, scope }: { module: "storyboard" | "ui_sy
           {isSb ? <LayoutList className="h-5 w-5" /> : <Palette className="h-5 w-5" />}
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-foreground">{isSb ? "Storyboard" : "Giao diện (UI System)"}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{isSb ? "Storyboard" : "Giao diện"}</h2>
           <p className="text-xs text-muted-foreground">
             {isSb
-              ? "Storyboard mẫu dùng lại được — chèn vào bài học, khoá học hoặc học liệu qua nút “+” của trợ lý AI."
-              : "Bộ giao diện dùng lại được — áp cho khoá học/học liệu, hoặc đính kèm qua trợ lý AI."}
+              ? "Những khung cảnh bạn đã phác cho bài giảng. Mở trợ lý AI để chèn vào bài bất cứ lúc nào."
+              : "Những bộ màu, phông, bố cục bạn đã dựng. Chọn một bộ để áp cho cả khoá học."}
           </p>
         </div>
         <span className="hidden shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground sm:inline">{count} mục</span>

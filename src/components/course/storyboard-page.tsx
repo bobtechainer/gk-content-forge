@@ -229,7 +229,7 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
     : pageMode === "view" ? "Xem storyboard mẫu"
     : "Storyboard bài học";
   const headerSub =
-    moduleMode ? (pageMode === "view" ? "Mẫu hệ thống · nhân bản để chỉnh sửa" : "Module độc lập · lưu vào kho để dùng lại")
+    moduleMode ? (pageMode === "view" ? "Mẫu có sẵn — nhân bản để chỉnh theo ý bạn" : "Lưu vào thư viện để dùng cho nhiều bài")
     : (contentItem?.title ?? "Khoá học");
 
   return (

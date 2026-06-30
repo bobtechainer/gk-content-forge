@@ -770,7 +770,7 @@ function LibraryPicker({
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-primary"><TitleIcon className="h-4 w-4" /></span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-foreground">{title}</p>
-            <p className="truncate text-[11px] text-muted-foreground">Xem trước rồi đính kèm — bấm Gửi mới thực thi{isModule ? " · chỉ chọn 1" : ""}</p>
+            <p className="truncate text-[11px] text-muted-foreground">Xem trước rồi đính kèm; bấm Gửi mới áp dụng{isModule ? " · chỉ chọn 1" : ""}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Đóng"><X className="h-4 w-4 text-muted-foreground" /></button>
         </div>

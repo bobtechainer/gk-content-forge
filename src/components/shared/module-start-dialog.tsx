@@ -45,7 +45,7 @@ export function ModuleStartDialog() {
   const close = useModuleStart((s) => s.close);
 
   const isSb = module === "storyboard";
-  const label = isSb ? "Storyboard" : "Giao diện (UI System)";
+  const label = isSb ? "Storyboard" : "Giao diện";
   const base = scope === "org" ? "/org" : "/creator";
 
   const go = (id: string) => {

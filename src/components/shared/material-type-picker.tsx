@@ -28,7 +28,7 @@ interface PickHandlers {
 export function MaterialTypeGrid({ onPickCategory, onPickMaterial, onPickModule }: PickHandlers) {
   return (
     <div className="space-y-6">
-      <Section title="Sản phẩm xuất bản" hint="Builder soạn thảo chuyên dụng">
+      <Section title="Sản phẩm xuất bản" hint="Có trình soạn thảo riêng cho từng loại">
         <div className="grid gap-3 sm:grid-cols-2">
           <ProductButton
             label="Tạo Sách"
@@ -55,7 +55,7 @@ export function MaterialTypeGrid({ onPickCategory, onPickMaterial, onPickModule 
         </div>
       </Section>
 
-      <Section title="Tệp đính kèm" hint="Tải tệp lên kèm metadata">
+      <Section title="Tệp đính kèm" hint="Tải tệp lên kèm thông tin mô tả">
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
           {ATTACHMENTS.map((id) => (
             <MaterialButton key={id} id={id} onClick={() => onPickMaterial(id)} />
@@ -63,18 +63,18 @@ export function MaterialTypeGrid({ onPickCategory, onPickMaterial, onPickModule 
         </div>
       </Section>
 
-      <Section title="Module dùng lại" hint="Độc lập, có kho riêng — dùng lại ở mọi nơi">
+      <Section title="Storyboard & Giao diện" hint="Tạo một lần, dùng cho nhiều bài và nhiều khoá">
         <div className="grid gap-3 sm:grid-cols-2">
           <ProductButton
             label="Tạo Storyboard"
-            description="Dàn ý mẫu dùng lại cho bài học, khoá học, học liệu"
+            description="Phác khung cảnh cho bài giảng, dùng lại khi cần"
             icon={LayoutList}
             accent="var(--primary)"
             onClick={() => onPickModule("storyboard")}
           />
           <ProductButton
-            label="Tạo Giao diện (UI System)"
-            description="Bộ giao diện dùng lại — áp cho khoá học hoặc học liệu"
+            label="Tạo Giao diện"
+            description="Bộ màu, phông, bố cục cho khoá học của bạn"
             icon={Palette}
             accent="var(--primary)"
             onClick={() => onPickModule("ui_system")}

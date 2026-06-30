@@ -29,7 +29,7 @@ export const LIBRARY_TABS: LibraryTab[] = [
     hasSubtypeFilter: true,
   },
   { id: "storyboard", label: "Storyboard", types: [], hasSubtypeFilter: false, module: "storyboard" },
-  { id: "ui_system", label: "Giao diện (UI System)", types: [], hasSubtypeFilter: false, module: "ui_system" },
+  { id: "ui_system", label: "Giao diện", types: [], hasSubtypeFilter: false, module: "ui_system" },
 ];
 
 /** Kept for backward-compat with old imports. */

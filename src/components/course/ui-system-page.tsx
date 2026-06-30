@@ -204,9 +204,9 @@ export function UiSystemPage({ courseId, scope, standalone = false }: UiSystemPa
     pageMode === "new" ? "Trình tạo Giao diện"
     : pageMode === "edit" ? "Chỉnh sửa giao diện"
     : pageMode === "view" ? "Xem giao diện mẫu"
-    : "Tạo giao diện · UI System";
+    : "Giao diện khoá học";
   const headerSub =
-    moduleMode ? (pageMode === "view" ? "Mẫu hệ thống · nhân bản để chỉnh sửa" : "Module độc lập · lưu vào kho để dùng lại")
+    moduleMode ? (pageMode === "view" ? "Mẫu có sẵn — nhân bản để chỉnh theo ý bạn" : "Lưu vào thư viện để áp cho nhiều khoá")
     : (contentItem?.title ?? "Khoá học");
 
   return (
