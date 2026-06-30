@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import {
   Sparkles, Send, ChevronDown, Wand2, PenLine, ListChecks, GraduationCap, Boxes,
   Check, Loader2, ArrowUpRight, LayoutList, Palette, Library, CircleDot,
-  Plus, Maximize2, Minimize2, X, FileUp, Paperclip, BookOpen, BookText,
+  Plus, Maximize2, Minimize2, X, FileUp, Paperclip, BookOpen, BookText, History, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { aiClient } from "@/lib/ai";
@@ -20,10 +20,13 @@ import { useCourseTheme } from "@/stores/course-theme";
 import { useStoryboardLibrary, allStoryboardItems } from "@/stores/storyboard-library";
 import { useUiSystemLibrary, allUiSystemItems } from "@/stores/ui-system-library";
 import type { ContentItem, LearningMaterialSubtype } from "@/lib/types";
+import type { ChatMessage, Followup } from "./ai-chat-types";
+import { useAiChats, type AiConversation } from "@/stores/ai-chats";
 import type { CourseTheme } from "@/lib/theme/resolve";
 import { LEARNING_MATERIAL_TYPES, MATERIAL_TYPE_LABELS, MATERIAL_TYPE_ICONS } from "@/lib/taxonomy";
 import { type BuilderScope } from "@/lib/builder-url";
 import { useModuleStart } from "@/stores/module-start";
+import { PreviewConfirmDialog } from "./preview-confirm-dialog";
 import { cn } from "@/lib/utils";
 
 /* ─── Modes ─────────────────────────────────────────────────────── */
@@ -42,8 +45,6 @@ const BLOCK_LABELS: Partial<Record<CourseBlockType, string>> = {
   section: "Phần", flashcards: "Thẻ ghi nhớ", accordion: "Accordion", process: "Quy trình",
   code: "Code", math: "Công thức", columns: "Cột", embed: "Học liệu", html: "Tương tác", divider: "Phân cách",
 };
-
-type Followup = { mode: AiChatMode; text: string };
 
 function followupsFor(mode: AiChatMode): Followup[] {
   switch (mode) {
@@ -72,19 +73,6 @@ function followupsFor(mode: AiChatMode): Followup[] {
 
 /* ─── Message model ─────────────────────────────────────────────── */
 
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  streaming?: boolean;
-  steps?: { label: string; status: StepStatus }[];
-  insertContent?: string;
-  inserted?: boolean;
-  material?: GeneratedMaterial;
-  materialSaved?: boolean;
-  followups?: Followup[];
-}
-
 type Attachment =
   | { kind: "storyboard"; label: string; storyboard: Storyboard }
   | { kind: "ui"; label: string; theme: CourseTheme }
@@ -95,6 +83,19 @@ type PickerKind = "storyboard" | "ui" | "material" | "book" | null;
 
 let msgSeq = 0;
 const newId = () => `m_${Date.now()}_${msgSeq++}`;
+const EMPTY_CONVS: AiConversation[] = [];
+
+/** Thời gian tương đối ngắn gọn cho lịch sử trò chuyện. */
+function relTime(ts: number): string {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "vừa xong";
+  if (m < 60) return `${m} phút trước`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} giờ trước`;
+  const d = Math.floor(h / 24);
+  return `${d} ngày trước`;
+}
 const stripHtml = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
 interface AiAssistantPanelProps {
@@ -115,6 +116,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   const [picker, setPicker] = useState<PickerKind>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [expanded, setExpanded] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [convId, setConvId] = useState(() => newId());
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -128,12 +131,28 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   const uiSystemLib = useUiSystemLibrary((s) => s.items);
   const materials = useContent((s) => s.items);
 
+  const saveChat = useAiChats((s) => s.save);
+  const removeChat = useAiChats((s) => s.remove);
+  const convs = useAiChats((s) => s.byCourse[courseId] ?? EMPTY_CONVS);
+
   const modeDef = MODES.find((m) => m.id === mode) ?? null;
   const ModeIcon = modeDef?.icon ?? Sparkles;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // Lưu cuộc trò chuyện vào lịch sử mỗi khi có thay đổi.
+  useEffect(() => {
+    if (!messages.length) return;
+    const firstUser = messages.find((m) => m.role === "user");
+    const title = (firstUser?.text || "Cuộc trò chuyện mới").slice(0, 48);
+    saveChat(courseId, { id: convId, title, messages: messages.map((m) => ({ ...m, streaming: false })), updatedAt: Date.now() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
+  const newChat = () => { setMessages([]); setAttachments([]); setConvId(newId()); setHistoryOpen(false); };
+  const loadConv = (c: AiConversation) => { setMessages(c.messages); setConvId(c.id); setHistoryOpen(false); };
 
   // Ô nhập tự giãn theo nội dung
   useEffect(() => {
@@ -209,14 +228,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         case "quiz": {
           const source = lessonSourceText() || topic;
           const items = await aiClient.quizFromContent({ sourceText: source, count: 3 });
-          const steps = items.map((_, i) => ({ label: `Câu hỏi ${i + 1}`, status: "pending" as StepStatus }));
-          patchMessage(aid, { steps });
-          await runSteps(
-            steps.map((_, i) => ({ id: String(i), label: steps[i].label })),
-            (i, st) => patchStep(aid, i, st),
-            { perStepMs: 260, onWork: (i) => { const it = items[i]; insertBlock("quiz", { content: it.content, quizOptions: it.quizOptions, quizCorrect: it.quizCorrect, quizExplanation: it.quizExplanation }); } },
-          );
-          patchMessage(aid, { text: `${reply.text} Đã thêm ${items.length} câu hỏi vào bài.` });
+          // KHÔNG chèn ngay — hiện thẻ xem trước, người dùng xác nhận mới đưa vào bài.
+          patchMessage(aid, { quizItems: items, text: `${reply.text} Mình đã soạn ${items.length} câu — bạn xem trước rồi đưa vào bài nhé.` });
           break;
         }
         case "full-lesson": {
@@ -317,7 +330,18 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     }
   }, [busy, subject, grade, courseId, patchMessage, patchStep]);
 
+  // Popup xem trước + xác nhận (preview-before-confirm) cho mọi thao tác thêm vào bài.
+  const [confirm, setConfirm] = useState<{ title: string; confirmLabel: string; preview: React.ReactNode; onConfirm: () => void } | null>(null);
+
   const handleInsert = useCallback((id: string, html: string) => { insertBlock("text", { content: html }); patchMessage(id, { inserted: true }); }, [insertBlock, patchMessage]);
+  const handleInsertQuiz = useCallback((id: string, items: NonNullable<ChatMessage["quizItems"]>) => {
+    for (const it of items) insertBlock("quiz", { content: it.content, quizOptions: it.quizOptions, quizCorrect: it.quizCorrect, quizExplanation: it.quizExplanation });
+    patchMessage(id, { inserted: true });
+  }, [insertBlock, patchMessage]);
+  const handleEmbedMaterial = useCallback((id: string, mat: GeneratedMaterial) => {
+    insertBlock("embed", { embedTitle: mat.title, embedType: mat.kind });
+    patchMessage(id, { materialInserted: true });
+  }, [insertBlock, patchMessage]);
   const handleSaveMaterial = useCallback((id: string, mat: GeneratedMaterial) => {
     if (!roleId) return;
     const draftId = useContent.getState().createDraft("learning_material", roleId, { category: "learning_material", materialSubtype: mat.kind });
@@ -399,6 +423,12 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         <p className="text-sm font-semibold text-foreground">Trợ lý AI soạn bài</p>
         <p className="truncate text-[11px] text-muted-foreground">Hỏi bất kỳ điều gì, mình soạn thẳng vào bài</p>
       </div>
+      <button type="button" onClick={newChat} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground" title="Cuộc trò chuyện mới" aria-label="Cuộc trò chuyện mới">
+        <Plus className="h-4 w-4" />
+      </button>
+      <button type="button" onClick={() => setHistoryOpen(true)} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground" title="Lịch sử" aria-label="Lịch sử trò chuyện">
+        <History className="h-4 w-4" />
+      </button>
       <button type="button" onClick={() => setExpanded((v) => !v)} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground" title={expanded ? "Thu nhỏ" : "Mở rộng"} aria-label={expanded ? "Thu nhỏ" : "Mở rộng"}>
         {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
       </button>
@@ -427,7 +457,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       ) : (
         <div className={cn("mx-auto space-y-3", expanded && "max-w-2xl")}>
           {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} onInsert={handleInsert} onSaveMaterial={handleSaveMaterial} scope={scope} onFollowup={(f) => runMode(f.mode, f.text)} busy={busy} />
+            <MessageBubble key={m.id} message={m} onInsert={handleInsert} onInsertQuiz={handleInsertQuiz} onEmbedMaterial={handleEmbedMaterial} onSaveMaterial={handleSaveMaterial} onPreview={setConfirm} scope={scope} onFollowup={(f) => runMode(f.mode, f.text)} busy={busy} />
           ))}
         </div>
       )}
@@ -555,10 +585,51 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   );
 
   const inner = (
-    <div className="flex h-full flex-col bg-card">
+    <div className="relative flex h-full flex-col bg-card">
       {header}
+      {historyOpen && (
+        <div className="absolute inset-0 z-[55] flex flex-col bg-card">
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
+            <span className="flex-1 text-sm font-semibold text-foreground">Cuộc trò chuyện</span>
+            <button type="button" onClick={newChat} className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary">
+              <Plus className="h-3.5 w-3.5" /> Mới
+            </button>
+            <button type="button" onClick={() => setHistoryOpen(false)} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Đóng">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            {convs.length === 0 ? (
+              <p className="px-2 py-10 text-center text-xs text-muted-foreground">Chưa có cuộc trò chuyện nào được lưu.</p>
+            ) : (
+              convs.map((c) => (
+                <div key={c.id} className={cn("group flex items-center gap-2 rounded-lg px-2.5 py-2 transition hover:bg-muted", c.id === convId && "bg-accent")}>
+                  <button type="button" onClick={() => loadConv(c)} className="min-w-0 flex-1 text-left">
+                    <span className="block truncate text-xs font-medium text-foreground">{c.title}</span>
+                    <span className="block text-[10px] text-muted-foreground">{relTime(c.updatedAt)} · {c.messages.length} tin nhắn</span>
+                  </button>
+                  <button type="button" onClick={() => removeChat(courseId, c.id)} className="rounded p-1 text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100" aria-label="Xoá cuộc trò chuyện">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
       {thread}
       {composer}
+      {confirm && (
+        <PreviewConfirmDialog
+          open
+          onOpenChange={(o) => { if (!o) setConfirm(null); }}
+          title={confirm.title}
+          confirmLabel={confirm.confirmLabel}
+          onConfirm={confirm.onConfirm}
+        >
+          {confirm.preview}
+        </PreviewConfirmDialog>
+      )}
     </div>
   );
 
@@ -758,14 +829,52 @@ function LibraryPicker({
   );
 }
 
+/* ─── Preview nội dung cho popup xác nhận ───────────────────────── */
+
+function QuizPreview({ items }: { items: NonNullable<ChatMessage["quizItems"]> }) {
+  return (
+    <div className="space-y-3">
+      {items.map((q, i) => (
+        <div key={i} className="rounded-lg border border-border bg-card p-2.5">
+          <p className="text-sm font-medium text-foreground">{i + 1}. {q.content}</p>
+          <ul className="mt-1.5 space-y-1">
+            {q.quizOptions.map((opt, oi) => (
+              <li key={oi} className={cn("flex items-center gap-1.5 text-xs", oi === q.quizCorrect ? "font-medium text-success" : "text-muted-foreground")}>
+                {oi === q.quizCorrect ? <Check className="h-3.5 w-3.5 shrink-0" /> : <CircleDot className="h-3 w-3 shrink-0 opacity-40" />} {opt}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MaterialPreview({ mat }: { mat: GeneratedMaterial }) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-foreground">{mat.title}</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">{mat.description}</p>
+      <ul className="mt-2 space-y-1">
+        {mat.highlights.map((h, i) => (<li key={i} className="flex items-start gap-1.5 text-xs text-foreground"><Check className="mt-0.5 h-3 w-3 shrink-0 text-success" /> {h}</li>))}
+      </ul>
+    </div>
+  );
+}
+
 /* ─── Message bubble ────────────────────────────────────────────── */
 
+type ConfirmReq = { title: string; confirmLabel: string; preview: React.ReactNode; onConfirm: () => void };
+
 function MessageBubble({
-  message, onInsert, onSaveMaterial, scope, onFollowup, busy,
+  message, onInsert, onInsertQuiz, onEmbedMaterial, onSaveMaterial, onPreview, scope, onFollowup, busy,
 }: {
   message: ChatMessage;
   onInsert: (id: string, html: string) => void;
+  onInsertQuiz: (id: string, items: NonNullable<ChatMessage["quizItems"]>) => void;
+  onEmbedMaterial: (id: string, mat: GeneratedMaterial) => void;
   onSaveMaterial: (id: string, mat: GeneratedMaterial) => void;
+  onPreview: (req: ConfirmReq) => void;
   scope: BuilderScope;
   onFollowup: (f: Followup) => void;
   busy: boolean;
@@ -799,11 +908,42 @@ function MessageBubble({
 
         {message.insertContent && !message.streaming && (
           message.inserted ? (
-            <p className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã chèn vào bài</p>
+            <p className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã đưa vào bài</p>
           ) : (
-            <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs" onClick={() => onInsert(message.id, message.insertContent!)}>
-              <PenLine className="h-3.5 w-3.5" /> Chèn vào bài
+            <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs"
+              onClick={() => onPreview({
+                title: "Xem trước nội dung",
+                confirmLabel: "Đưa vào bài",
+                onConfirm: () => onInsert(message.id, message.insertContent!),
+                preview: <div className="prose prose-sm max-w-none text-sm text-foreground" dangerouslySetInnerHTML={{ __html: message.insertContent! }} />,
+              })}>
+              <PenLine className="h-3.5 w-3.5" /> Xem trước & đưa vào bài
             </Button>
+          )
+        )}
+
+        {message.quizItems && !message.streaming && (
+          message.inserted ? (
+            <p className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã đưa vào bài</p>
+          ) : (
+            <div className="gk-pop rounded-xl border border-border bg-card p-2.5">
+              <p className="text-[11px] font-semibold text-foreground">Xem trước · {message.quizItems.length} câu hỏi</p>
+              <ol className="mt-1 space-y-0.5">
+                {message.quizItems.slice(0, 2).map((q, i) => (
+                  <li key={i} className="truncate text-[11px] text-muted-foreground">{i + 1}. {q.content}</li>
+                ))}
+                {message.quizItems.length > 2 && <li className="text-[10px] text-muted-foreground">+{message.quizItems.length - 2} câu nữa…</li>}
+              </ol>
+              <Button size="sm" className="mt-2 h-7 gap-1.5 bg-primary text-xs text-primary-foreground hover:bg-primary-hover"
+                onClick={() => onPreview({
+                  title: "Xem trước câu hỏi",
+                  confirmLabel: "Đưa vào bài",
+                  onConfirm: () => onInsertQuiz(message.id, message.quizItems!),
+                  preview: <QuizPreview items={message.quizItems!} />,
+                })}>
+                <PenLine className="h-3.5 w-3.5" /> Xem trước & đưa vào bài
+              </Button>
+            </div>
           )
         )}
 
@@ -814,16 +954,26 @@ function MessageBubble({
             <ul className="mt-2 space-y-1">
               {message.material.highlights.map((h, i) => (<li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground"><Check className="mt-0.5 h-3 w-3 shrink-0 text-success" /> {h}</li>))}
             </ul>
-            <div className="mt-2.5 flex items-center gap-2">
-              {message.materialSaved ? (
-                <>
-                  <span className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã lưu vào kho</span>
-                  <Button asChild size="sm" variant="ghost" className="h-7 gap-1.5 text-xs">
-                    <Link to={scope === "org" ? "/org/library" : "/creator/library"}><Library className="h-3.5 w-3.5" /> Mở kho</Link>
-                  </Button>
-                </>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              {message.materialInserted ? (
+                <span className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã đưa vào bài</span>
               ) : (
-                <Button size="sm" className="h-7 gap-1.5 bg-primary text-xs text-primary-foreground hover:bg-primary-hover" onClick={() => onSaveMaterial(message.id, message.material!)}>
+                <Button size="sm" className="h-7 gap-1.5 bg-primary text-xs text-primary-foreground hover:bg-primary-hover"
+                  onClick={() => onPreview({
+                    title: "Xem trước học liệu",
+                    confirmLabel: "Đưa vào bài giảng",
+                    onConfirm: () => onEmbedMaterial(message.id, message.material!),
+                    preview: <MaterialPreview mat={message.material!} />,
+                  })}>
+                  <ArrowUpRight className="h-3.5 w-3.5" /> Đưa vào bài giảng
+                </Button>
+              )}
+              {message.materialSaved ? (
+                <Button asChild size="sm" variant="ghost" className="h-7 gap-1.5 text-xs">
+                  <Link to={scope === "org" ? "/org/library" : "/creator/library"}><Library className="h-3.5 w-3.5" /> Mở kho</Link>
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs" onClick={() => onSaveMaterial(message.id, message.material!)}>
                   <Library className="h-3.5 w-3.5" /> Lưu vào kho
                 </Button>
               )}
