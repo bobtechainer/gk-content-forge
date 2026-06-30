@@ -1,4 +1,4 @@
-import type { AiChatMode, GeneratedMaterial } from "@/lib/ai/types";
+import type { AiChatMode, GeneratedMaterial, CourseOutline, Storyboard } from "@/lib/ai/types";
 import type { StepStatus } from "@/lib/ai/stream";
 
 export type Followup = { mode: AiChatMode; text: string };
@@ -17,5 +17,11 @@ export interface ChatMessage {
   materialInserted?: boolean;
   /** Câu hỏi đã soạn — xem trước, chưa chèn. */
   quizItems?: { content: string; quizOptions: string[]; quizCorrect: number; quizExplanation: string }[];
+  /** Dàn ý khoá học đã phác — xem trước, chưa dựng vào cây nội dung. */
+  courseOutline?: CourseOutline;
+  courseBuilt?: boolean;
+  /** Nội dung bài đã phác (storyboard) — xem trước, chưa đưa vào bài. */
+  lessonPlan?: { storyboard: Storyboard; topic: string };
+  lessonFilled?: boolean;
   followups?: Followup[];
 }

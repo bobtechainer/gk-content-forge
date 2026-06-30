@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { aiClient } from "@/lib/ai";
 import { streamText, runSteps, sleep, type StepStatus } from "@/lib/ai/stream";
-import type { AiChatMode, GeneratedMaterial, Storyboard } from "@/lib/ai/types";
+import type { AiChatMode, GeneratedMaterial, Storyboard, CourseOutline } from "@/lib/ai/types";
 import { useCourse, type CourseBlock, type CourseBlockType } from "@/stores/course";
 import { sceneSrc } from "@/lib/storyboard/scene-art";
 import { ramp } from "@/lib/theme/color";
@@ -235,8 +235,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         case "full-lesson": {
           let sbd = useStoryboard.getState().byLesson[lessonId!];
           if (!sbd) { sbd = await aiClient.generateStoryboard({ subject, grade, topic }); useStoryboard.getState().setStoryboard(lessonId!, sbd); }
-          await runFill(aid, sbd, topic);
-          patchMessage(aid, { text: `${reply.text.split(":")[0]}. Đã dựng xong ${sbd.sections.flatMap((s) => s.items).length} khối cho bài học.` });
+          // Không đổ ngay — phác rồi xem trước, xác nhận mới đưa vào bài.
+          patchMessage(aid, { lessonPlan: { storyboard: sbd, topic }, text: `${reply.text} Mình đã phác các khối cho bài — bạn xem trước rồi đưa vào bài nhé.` });
           break;
         }
         case "material": {
@@ -285,7 +285,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     e.target.value = "";
   };
 
-  /* ─── "Tạo dàn ý khoá học": dựng thẳng cây Phần/Chương/Bài ──────── */
+  /* ─── "Tạo dàn ý khoá học": PHÁC trước → xem trước → xác nhận mới dựng ─ */
   const runCourseOutline = useCallback(async (prompt: string, storyboard: Storyboard | undefined, labels: string[]) => {
     if (busy) return;
     setBusy(true);
@@ -297,9 +297,22 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       setMessages((c) => [...c, { id: aid, role: "assistant", text: "", streaming: true }]);
       const reply = await aiClient.chatReply({ prompt: topic, mode: "course", topic });
       await streamText(reply.text, (p) => patchMessage(aid, { text: p }));
-      patchMessage(aid, { streaming: false });
-
       const outline = await aiClient.generateCourseOutline({ prompt: topic, subject, grade, storyboard });
+      patchMessage(aid, { streaming: false, courseOutline: outline, text: `${reply.text} Mình đã phác dàn ý — bạn xem trước rồi dựng vào khoá học nhé.` });
+    } catch {
+      pushAssistant("Có lỗi khi phác dàn ý khoá học. Bạn thử lại giúp mình nhé.");
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, subject, grade, patchMessage]);
+
+  // Sau khi xác nhận: dựng dàn ý vào cây nội dung (agentic, có nhật ký bước).
+  const runOutlineBuild = useCallback(async (msgId: string, outline: CourseOutline) => {
+    if (busy) return;
+    setBusy(true);
+    patchMessage(msgId, { courseBuilt: true });
+    const aid = pushAssistant("Đang dựng khoá học vào cây nội dung…");
+    try {
       const cs = useCourse.getState();
       const steps = outline.parts.map((p) => ({ label: `Phần: ${p.title}`, status: "pending" as StepStatus }));
       patchMessage(aid, { steps });
@@ -319,16 +332,13 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
           },
         },
       );
-      patchMessage(aid, {
-        text: `Xong rồi! Mình đã dựng dàn ý: ${outline.parts.length} phần, ${lessons} bài. Bạn mở cây nội dung bên trái để xem và chỉnh — chọn một bài rồi dùng "Tạo nội dung bài học" để soạn chi tiết nhé.`,
-        followups: followupsFor("course"),
-      });
+      patchMessage(aid, { text: `Xong! Đã dựng ${outline.parts.length} phần, ${lessons} bài vào cây nội dung bên trái.`, followups: followupsFor("course") });
     } catch {
-      pushAssistant("Có lỗi khi dựng dàn ý khoá học. Bạn thử lại giúp mình nhé.");
+      patchMessage(aid, { text: "Có lỗi khi dựng khoá học. Bạn thử lại giúp mình nhé." });
     } finally {
       setBusy(false);
     }
-  }, [busy, subject, grade, courseId, patchMessage, patchStep]);
+  }, [busy, courseId, patchMessage, patchStep]);
 
   // Popup xem trước + xác nhận (preview-before-confirm) cho mọi thao tác thêm vào bài.
   const [confirm, setConfirm] = useState<{ title: string; confirmLabel: string; preview: React.ReactNode; onConfirm: () => void } | null>(null);
@@ -342,6 +352,21 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     insertBlock("embed", { embedTitle: mat.title, embedType: mat.kind });
     patchMessage(id, { materialInserted: true });
   }, [insertBlock, patchMessage]);
+  // Sau khi xác nhận: đổ nội dung (storyboard) vào bài đang chọn (agentic).
+  const handleFillLesson = useCallback(async (msgId: string, storyboard: Storyboard, topic: string) => {
+    if (busy || !lessonId) return;
+    setBusy(true);
+    patchMessage(msgId, { lessonFilled: true });
+    const aid = pushAssistant("Đang đưa nội dung vào bài…");
+    try {
+      await runFill(aid, storyboard, topic);
+      patchMessage(aid, { text: `Đã đưa ${storyboard.sections.flatMap((s) => s.items).length} khối vào bài.`, followups: followupsFor("full-lesson") });
+    } catch {
+      patchMessage(aid, { text: "Có lỗi khi đưa nội dung vào bài. Bạn thử lại nhé." });
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, lessonId, runFill, patchMessage]);
   const handleSaveMaterial = useCallback((id: string, mat: GeneratedMaterial) => {
     if (!roleId) return;
     const draftId = useContent.getState().createDraft("learning_material", roleId, { category: "learning_material", materialSubtype: mat.kind });
@@ -457,7 +482,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       ) : (
         <div className={cn("mx-auto space-y-3", expanded && "max-w-2xl")}>
           {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} onInsert={handleInsert} onInsertQuiz={handleInsertQuiz} onEmbedMaterial={handleEmbedMaterial} onSaveMaterial={handleSaveMaterial} onPreview={setConfirm} scope={scope} onFollowup={(f) => runMode(f.mode, f.text)} busy={busy} />
+            <MessageBubble key={m.id} message={m} onInsert={handleInsert} onInsertQuiz={handleInsertQuiz} onEmbedMaterial={handleEmbedMaterial} onSaveMaterial={handleSaveMaterial} onBuildOutline={runOutlineBuild} onFillLesson={handleFillLesson} onPreview={setConfirm} scope={scope} onFollowup={(f) => runMode(f.mode, f.text)} busy={busy} />
           ))}
         </div>
       )}
@@ -862,18 +887,57 @@ function MaterialPreview({ mat }: { mat: GeneratedMaterial }) {
   );
 }
 
+function OutlinePreview({ outline }: { outline: CourseOutline }) {
+  return (
+    <div className="space-y-2">
+      {outline.parts.map((p, pi) => (
+        <div key={pi} className="rounded-lg border border-border bg-card p-2.5">
+          <p className="text-sm font-semibold text-foreground">Phần {pi + 1}: {p.title}</p>
+          {p.chapters.map((ch, ci) => (
+            <div key={ci} className="mt-1.5 pl-2">
+              <p className="text-xs font-medium text-foreground">{ch.title}</p>
+              <ul className="mt-0.5 space-y-0.5 pl-2">
+                {ch.lessons.map((ls, li) => <li key={li} className="text-[11px] text-muted-foreground">• {ls.title}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LessonPlanPreview({ storyboard }: { storyboard: Storyboard }) {
+  const frames = storyboard.sections.flatMap((s) => s.items);
+  return (
+    <div className="space-y-2">
+      {frames.map((f, i) => (
+        <div key={i} className="flex gap-2 rounded-lg border border-border bg-card p-2.5">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[10px] font-bold text-primary">{i + 1}</span>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-foreground">{f.title || BLOCK_LABELS[f.blockType] || f.blockType}</p>
+            <p className="text-[11px] text-muted-foreground">{f.intent}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Message bubble ────────────────────────────────────────────── */
 
 type ConfirmReq = { title: string; confirmLabel: string; preview: React.ReactNode; onConfirm: () => void };
 
 function MessageBubble({
-  message, onInsert, onInsertQuiz, onEmbedMaterial, onSaveMaterial, onPreview, scope, onFollowup, busy,
+  message, onInsert, onInsertQuiz, onEmbedMaterial, onSaveMaterial, onBuildOutline, onFillLesson, onPreview, scope, onFollowup, busy,
 }: {
   message: ChatMessage;
   onInsert: (id: string, html: string) => void;
   onInsertQuiz: (id: string, items: NonNullable<ChatMessage["quizItems"]>) => void;
   onEmbedMaterial: (id: string, mat: GeneratedMaterial) => void;
   onSaveMaterial: (id: string, mat: GeneratedMaterial) => void;
+  onBuildOutline: (id: string, outline: CourseOutline) => void;
+  onFillLesson: (id: string, storyboard: Storyboard, topic: string) => void;
   onPreview: (req: ConfirmReq) => void;
   scope: BuilderScope;
   onFollowup: (f: Followup) => void;
@@ -940,6 +1004,55 @@ function MessageBubble({
                   confirmLabel: "Đưa vào bài",
                   onConfirm: () => onInsertQuiz(message.id, message.quizItems!),
                   preview: <QuizPreview items={message.quizItems!} />,
+                })}>
+                <PenLine className="h-3.5 w-3.5" /> Xem trước & đưa vào bài
+              </Button>
+            </div>
+          )
+        )}
+
+        {message.courseOutline && !message.streaming && (
+          message.courseBuilt ? (
+            <p className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã dựng vào khoá học</p>
+          ) : (
+            <div className="gk-pop rounded-xl border border-border bg-card p-2.5">
+              <p className="text-[11px] font-semibold text-foreground">Xem trước dàn ý · {message.courseOutline.parts.length} phần</p>
+              <ul className="mt-1 space-y-0.5">
+                {message.courseOutline.parts.slice(0, 3).map((p, i) => (
+                  <li key={i} className="truncate text-[11px] text-muted-foreground">▸ {p.title}</li>
+                ))}
+                {message.courseOutline.parts.length > 3 && <li className="text-[10px] text-muted-foreground">+{message.courseOutline.parts.length - 3} phần nữa…</li>}
+              </ul>
+              <Button size="sm" className="mt-2 h-7 gap-1.5 bg-primary text-xs text-primary-foreground hover:bg-primary-hover"
+                onClick={() => onPreview({
+                  title: "Xem trước dàn ý khoá học",
+                  confirmLabel: "Dựng vào khoá học",
+                  onConfirm: () => onBuildOutline(message.id, message.courseOutline!),
+                  preview: <OutlinePreview outline={message.courseOutline!} />,
+                })}>
+                <PenLine className="h-3.5 w-3.5" /> Xem trước & dựng khoá học
+              </Button>
+            </div>
+          )
+        )}
+
+        {message.lessonPlan && !message.streaming && (
+          message.lessonFilled ? (
+            <p className="flex items-center gap-1 text-[11px] font-medium text-success"><Check className="h-3.5 w-3.5" /> Đã đưa vào bài</p>
+          ) : (
+            <div className="gk-pop rounded-xl border border-border bg-card p-2.5">
+              <p className="text-[11px] font-semibold text-foreground">Xem trước nội dung · {message.lessonPlan.storyboard.sections.flatMap((s) => s.items).length} khối</p>
+              <ul className="mt-1 space-y-0.5">
+                {message.lessonPlan.storyboard.sections.flatMap((s) => s.items).slice(0, 3).map((it, i) => (
+                  <li key={i} className="truncate text-[11px] text-muted-foreground">• {it.title || it.intent}</li>
+                ))}
+              </ul>
+              <Button size="sm" className="mt-2 h-7 gap-1.5 bg-primary text-xs text-primary-foreground hover:bg-primary-hover"
+                onClick={() => onPreview({
+                  title: "Xem trước nội dung bài",
+                  confirmLabel: "Đưa vào bài",
+                  onConfirm: () => onFillLesson(message.id, message.lessonPlan!.storyboard, message.lessonPlan!.topic),
+                  preview: <LessonPlanPreview storyboard={message.lessonPlan!.storyboard} />,
                 })}>
                 <PenLine className="h-3.5 w-3.5" /> Xem trước & đưa vào bài
               </Button>
