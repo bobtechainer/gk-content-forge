@@ -35,7 +35,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { builderHref, newModuleDraftId } from "@/lib/builder-url";
+import { builderHref } from "@/lib/builder-url";
+import { useModuleStart } from "@/stores/module-start";
+import { ModuleStartDialog } from "./shared/module-start-dialog";
 import { ACCOUNTS, CONTENT_REPORTS, VERIFICATION_REQUESTS, resolveDemoAccount } from "@/lib/mock-data";
 import type { CreationCategory, LearningMaterialSubtype, RoleId, SchoolRole } from "@/lib/types";
 import { resolveActiveOrgId } from "@/lib/use-scoped-content";
@@ -372,12 +374,9 @@ export function ContentStudioShell() {
     );
   };
 
-  // Module độc lập (Storyboard / UI System): không tạo ContentItem, mở trình tạo
-  // standalone trong tab mới bằng id tiền tố `mod_`.
+  // Module độc lập (Storyboard / UI System): hỏi cách bắt đầu qua dialog dùng chung.
   const handleCreateModule = (module: "storyboard" | "ui_system") => {
-    const base = scope === "org" ? "/org" : "/creator";
-    const segment = module === "storyboard" ? "storyboard" : "ui-system";
-    window.open(`${base}/builder/${segment}/${newModuleDraftId()}`, "_blank", "noopener");
+    useModuleStart.getState().request({ module, scope: scope === "org" ? "org" : "creator", newTab: true });
   };
 
   // Builder routes render full-screen.
@@ -516,6 +515,9 @@ export function ContentStudioShell() {
           onPickModule={handleCreateModule}
         />
       )}
+
+      {/* Module start dialog — Storyboard / UI System: continue sample vs blank */}
+      <ModuleStartDialog />
 
       {/* Course start dialog — choose between continuing demo or blank canvas */}
       <CourseStartDialog

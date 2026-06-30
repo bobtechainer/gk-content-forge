@@ -22,7 +22,8 @@ import { useUiSystemLibrary, allUiSystemItems } from "@/stores/ui-system-library
 import type { ContentItem, LearningMaterialSubtype } from "@/lib/types";
 import type { CourseTheme } from "@/lib/theme/resolve";
 import { LEARNING_MATERIAL_TYPES, MATERIAL_TYPE_LABELS, MATERIAL_TYPE_ICONS } from "@/lib/taxonomy";
-import { newModuleDraftId, type BuilderScope } from "@/lib/builder-url";
+import { type BuilderScope } from "@/lib/builder-url";
+import { useModuleStart } from "@/stores/module-start";
 import { cn } from "@/lib/utils";
 
 /* ─── Modes ─────────────────────────────────────────────────────── */
@@ -466,7 +467,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         </div>
       )}
 
-      {/* Quick-add: Storyboard & Giao diện — chỉ chọn 1; chọn xong "+" thành card, ✕ để gỡ. */}
+      {/* Quick-add: Storyboard — chỉ chọn 1; chọn xong "+" thành card, ✕ để gỡ.
+          (Giao diện là của cả khoá — chỉnh ở thanh "Giao diện khoá học" cột trái.) */}
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         <span className="text-[11px] text-muted-foreground">Đính kèm:</span>
         <QuickAttach
@@ -474,12 +476,6 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
           chosen={attachments.find((a) => a.kind === "storyboard")?.label}
           onAdd={() => setPicker("storyboard")}
           onRemove={() => setAttachments((a) => a.filter((x) => x.kind !== "storyboard"))}
-        />
-        <QuickAttach
-          icon={Palette} label="Giao diện"
-          chosen={attachments.find((a) => a.kind === "ui")?.label}
-          onAdd={() => setPicker("ui")}
-          onRemove={() => setAttachments((a) => a.filter((x) => x.kind !== "ui"))}
         />
       </div>
 
@@ -640,8 +636,8 @@ function LibraryPicker({
 
   const base = scope === "org" ? "/org" : "/creator";
   const openCreate = () => {
-    if (kind === "storyboard") window.open(`${base}/builder/storyboard/${newModuleDraftId()}`, "_blank", "noopener");
-    else if (kind === "ui") window.open(`${base}/builder/ui-system/${newModuleDraftId()}`, "_blank", "noopener");
+    if (kind === "storyboard") useModuleStart.getState().request({ module: "storyboard", scope, newTab: true });
+    else if (kind === "ui") useModuleStart.getState().request({ module: "ui_system", scope, newTab: true });
     else window.open(`${base}/library`, "_blank", "noopener");
   };
 

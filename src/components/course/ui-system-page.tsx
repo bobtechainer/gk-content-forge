@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Wand2, Loader2, Check, Sparkles, ArrowRight, Moon, Sun, Library, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,10 @@ import { useCourseTheme } from "@/stores/course-theme";
 import {
   useUiSystemLibrary, allUiSystemItems, type UiSystemLibraryItem,
 } from "@/stores/ui-system-library";
-import { ModuleStartChoice } from "./module-start-choice";
 import { getResolvedThemeVars, type CourseTheme } from "@/lib/theme/resolve";
 import { SYSTEM_THEMES, FONT_PAIRS } from "@/lib/theme/system-themes";
 import { contrastRatio, accessibleInk, mix, ramp } from "@/lib/theme/color";
-import { courseBuilderRoutePattern, uiSystemRoutePattern, type BuilderScope } from "@/lib/builder-url";
+import { courseBuilderRoutePattern, uiSystemRoutePattern, isSeededModuleId, type BuilderScope } from "@/lib/builder-url";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -69,8 +68,11 @@ export function UiSystemPage({ courseId, scope, standalone = false }: UiSystemPa
   const [vibe, setVibe] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<{ name: string; rationale: string; palette: string[] } | null>(null);
-  // Luồng: bắt đầu → khai báo → AI hỏi đáp → dựng (animation) → studio.
-  const [step, setStep] = useState<"start" | "intake" | "brainstorm" | "generating" | "studio">(pageMode === "new" ? "start" : "studio");
+  // Luồng: khai báo → AI hỏi đáp → dựng (animation) → studio.
+  // new + bản mẫu (mods_) → vào thẳng studio (seed sẵn); new trắng → khai báo.
+  const [step, setStep] = useState<"intake" | "brainstorm" | "generating" | "studio">(
+    pageMode === "new" ? (isSeededModuleId(courseId) ? "studio" : "intake") : "studio",
+  );
   // Studio: chỉnh riêng từng component + ô AI sửa nhanh.
   const [selectedComp, setSelectedComp] = useState<string | null>(null);
   const [compRadius, setCompRadius] = useState<Record<string, number>>({});
@@ -128,6 +130,15 @@ export function UiSystemPage({ courseId, scope, standalone = false }: UiSystemPa
     setResult({ name: "Giao diện mẫu STEM", rationale: "Bản nháp mẫu — bạn tinh chỉnh lại tuỳ ý rồi lưu vào kho.", palette: [] });
     setStep("studio");
   };
+
+  // Bản nháp mẫu (id `mods_…`): nạp sẵn giao diện mẫu một lần khi mở.
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current || pageMode !== "new" || !isSeededModuleId(courseId)) return;
+    seededRef.current = true;
+    loadSample();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Ô AI sửa nhanh: ánh xạ lời mô tả → patch token (mock).
   const applyAiEdit = async () => {
@@ -256,9 +267,7 @@ export function UiSystemPage({ courseId, scope, standalone = false }: UiSystemPa
         </div>
       </header>
 
-      {step === "start" ? (
-        <ModuleStartChoice kind="ui" onContinueDraft={loadSample} onBlank={() => setStep("intake")} />
-      ) : step === "intake" ? (
+      {step === "intake" ? (
         <IntakeStep
           name={name} setName={setName}
           description={description} setDescription={setDescription}

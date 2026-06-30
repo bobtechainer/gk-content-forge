@@ -6,7 +6,8 @@ import { useUiSystemLibrary, allUiSystemItems } from "@/stores/ui-system-library
 import { ramp } from "@/lib/theme/color";
 import { sceneSrc } from "@/lib/storyboard/scene-art";
 import { FONT_PAIRS } from "@/lib/theme/system-themes";
-import { newModuleDraftId, type BuilderScope } from "@/lib/builder-url";
+import { type BuilderScope } from "@/lib/builder-url";
+import { useModuleStart } from "@/stores/module-start";
 
 /**
  * Kho của MỘT module (Storyboard hoặc UI System) — hiển thị như một tab lớn trong
@@ -28,7 +29,7 @@ export function ModuleGallery({ module, scope }: { module: "storyboard" | "ui_sy
 
   // Mở trình tạo/sửa ở tab mới (đồng nhất với cách mở builder khác trong app).
   const openBuilder = (id: string) => window.open(`${base}/builder/${segment}/${id}`, "_blank", "noopener");
-  const openCreator = () => openBuilder(newModuleDraftId());
+  const openCreator = () => useModuleStart.getState().request({ module, scope, newTab: true });
 
   return (
     <div className="space-y-4">

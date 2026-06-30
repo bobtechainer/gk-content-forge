@@ -21,37 +21,64 @@ import { useCourse } from "@/stores/course";
 import type { CourseBlockType } from "@/stores/course";
 import { useContent } from "@/stores/content";
 import { useCourseTheme } from "@/stores/course-theme";
-import { useUiSystemLibrary, allUiSystemItems } from "@/stores/ui-system-library";
+import { useUiSystemLibrary, allUiSystemItems, type UiSystemLibraryItem } from "@/stores/ui-system-library";
+import { getResolvedThemeVars, type CourseTheme } from "@/lib/theme/resolve";
+import { PreviewConfirmDialog } from "./preview-confirm-dialog";
 import type { ContentItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type Viewport } from "@/lib/preview/viewport";
 import { type BuilderScope } from "@/lib/builder-url";
 
-/** Nút "Giao diện" ở header trái — popup chọn UI System áp cho TOÀN khoá học. */
+/** Mẫu xem trước nhỏ áp theme — cho popup xác nhận đổi giao diện. */
+function ThemeSamplePreview({ theme }: { theme: CourseTheme }) {
+  const vars = getResolvedThemeVars(theme) as React.CSSProperties;
+  return (
+    <div data-course-theme style={vars}>
+      <div className="overflow-hidden rounded-xl border p-4" style={{ background: "var(--course-surface)", borderColor: "color-mix(in srgb, var(--course-ink) 12%, transparent)", fontFamily: "var(--course-font-body)" }}>
+        <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--course-accent)" }}>Chương 2</span>
+        <h3 className="mt-1 text-lg font-extrabold" style={{ fontFamily: "var(--course-font-heading)", color: "var(--course-ink)" }}>Tốc độ phản ứng</h3>
+        <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--course-ink)", opacity: 0.82 }}>Nhiệt độ, nồng độ và chất xúc tác đều ảnh hưởng đến tốc độ phản ứng hoá học.</p>
+        <div className="mt-3 flex gap-2">
+          <span className="px-3 py-1.5 text-xs font-semibold" style={{ background: "var(--course-accent)", color: "var(--course-accent-fg)", borderRadius: "var(--course-radius)" }}>Tiếp tục học</span>
+          <span className="border px-3 py-1.5 text-xs font-medium" style={{ borderColor: "var(--course-accent)", color: "var(--course-accent)", borderRadius: "var(--course-radius)" }}>Làm bài tập</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Thanh "Giao diện khoá học" — đặt trên cây nội dung; chọn UI System, xem trước rồi xác nhận. */
 function CourseThemePicker({ courseId }: { courseId: string }) {
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState<UiSystemLibraryItem | null>(null);
   const items = allUiSystemItems(useUiSystemLibrary((s) => s.items));
   const setTheme = useCourseTheme((s) => s.setTheme);
   const current = useCourseTheme((s) => s.byCourse[courseId]);
+  const currentName = items.find((it) => current && it.theme.accentSeed.toLowerCase() === current.accentSeed.toLowerCase() && it.theme.fontPairId === current.fontPairId)?.name;
 
   return (
-    <div className="relative">
-      <Button variant="ghost" size="sm" className="hidden h-8 gap-1.5 text-xs text-muted-foreground sm:flex" onClick={() => setOpen((v) => !v)}>
-        <Palette className="h-3.5 w-3.5" /> Giao diện
-      </Button>
+    <div className="relative border-b border-border bg-card p-2">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5 text-left transition hover:border-primary">
+        <span className="h-6 w-6 shrink-0 rounded-md border border-border" style={{ background: current?.accentSeed ?? "var(--primary)" }} />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[9px] font-medium uppercase tracking-wide text-muted-foreground">Giao diện khoá học</span>
+          <span className="block truncate text-xs font-semibold text-foreground">{currentName ?? "Mặc định"}</span>
+        </span>
+        <Palette className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full z-50 mt-1 w-[268px] rounded-xl border border-border bg-card p-2 shadow-xl">
-            <p className="px-1.5 pb-1.5 text-[11px] text-muted-foreground">Áp một giao diện cho cả khoá học</p>
-            <div className="max-h-[320px] space-y-1 overflow-y-auto">
+          <div className="absolute inset-x-2 top-full z-50 mt-1 rounded-xl border border-border bg-card p-2 shadow-xl">
+            <p className="px-1.5 pb-1.5 text-[11px] text-muted-foreground">Chọn giao diện cho cả khoá — xem trước rồi xác nhận.</p>
+            <div className="max-h-[300px] space-y-1 overflow-y-auto">
               {items.map((it) => {
-                const active = current?.accentSeed?.toLowerCase() === it.theme.accentSeed.toLowerCase() && current?.fontPairId === it.theme.fontPairId;
+                const active = currentName === it.name;
                 return (
                   <button
                     key={it.id}
                     type="button"
-                    onClick={() => { setTheme(courseId, it.theme); toast.success(`Đã áp giao diện "${it.name}" cho khoá học`); setOpen(false); }}
+                    onClick={() => { setPending(it); setOpen(false); }}
                     className={cn("flex w-full items-center gap-2 rounded-lg border p-2 text-left transition", active ? "border-primary bg-accent" : "border-border hover:border-primary hover:bg-accent")}
                   >
                     <span className="h-7 w-7 shrink-0 rounded-md border border-border" style={{ background: it.theme.accentSeed }} />
@@ -67,6 +94,17 @@ function CourseThemePicker({ courseId }: { courseId: string }) {
           </div>
         </>
       )}
+
+      <PreviewConfirmDialog
+        open={!!pending}
+        onOpenChange={(o) => { if (!o) setPending(null); }}
+        title="Đổi giao diện khoá học"
+        description={pending ? `Áp “${pending.name}” cho toàn bộ khoá học?` : undefined}
+        confirmLabel="Đổi giao diện"
+        onConfirm={() => { if (pending) { setTheme(courseId, pending.theme); toast.success(`Đã đổi giao diện sang “${pending.name}”`); } setPending(null); }}
+      >
+        {pending && <ThemeSamplePreview theme={pending.theme} />}
+      </PreviewConfirmDialog>
     </div>
   );
 }
@@ -255,7 +293,6 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
             </Button>
           )}
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-[10px] font-bold text-primary-foreground">C</div>
-          {!previewMode && <CourseThemePicker courseId={id} />}
           <div className="flex min-w-0 flex-1 items-center gap-1">
             <input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={saveTitle}
               aria-label="Tiêu đề khóa học"
@@ -327,12 +364,17 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 transition={{ type: "spring", stiffness: 320, damping: 34 }}
                 className="hidden shrink-0 overflow-hidden md:block"
               >
-                <LessonTree
-                  courseId={id}
-                  activeLessonId={activeLessonId}
-                  onSelectLesson={setActiveLesson}
-                  getPublishState={getPublishState}
-                />
+                <div className="flex h-full w-[268px] flex-col">
+                  <CourseThemePicker courseId={id} />
+                  <div className="min-h-0 flex-1 overflow-hidden">
+                    <LessonTree
+                      courseId={id}
+                      activeLessonId={activeLessonId}
+                      onSelectLesson={setActiveLesson}
+                      getPublishState={getPublishState}
+                    />
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

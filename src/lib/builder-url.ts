@@ -56,13 +56,24 @@ export function uiSystemRoutePattern(scope: BuilderScope) {
  * ────────────────────────────────────────────────────────────────── */
 
 const MODULE_DRAFT_PREFIX = "mod_";
+const MODULE_SEED_PREFIX = "mods_";
 
-/** Id nháp cho một module độc lập, mở trình tạo ở chế độ standalone. */
+/** Id nháp cho một module độc lập (trang trắng). */
 export function newModuleDraftId(): string {
   return `${MODULE_DRAFT_PREFIX}${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 }
 
+/** Id nháp "bản mẫu" — trang trình tạo sẽ seed sẵn nội dung mẫu. */
+export function newSeededModuleId(): string {
+  return `${MODULE_SEED_PREFIX}${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
 /** Trang trình tạo dùng id này có phải module độc lập (không khoá học) không. */
 export function isStandaloneModuleId(id: string): boolean {
-  return id.startsWith(MODULE_DRAFT_PREFIX);
+  return id.startsWith(MODULE_DRAFT_PREFIX) || id.startsWith(MODULE_SEED_PREFIX);
+}
+
+/** Id này có yêu cầu seed sẵn bản mẫu không. */
+export function isSeededModuleId(id: string): boolean {
+  return id.startsWith(MODULE_SEED_PREFIX);
 }
