@@ -27,6 +27,7 @@ import { LEARNING_MATERIAL_TYPES, MATERIAL_TYPE_LABELS, MATERIAL_TYPE_ICONS } fr
 import { type BuilderScope } from "@/lib/builder-url";
 import { useModuleStart } from "@/stores/module-start";
 import { PreviewConfirmDialog } from "./preview-confirm-dialog";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 /* ─── Modes ─────────────────────────────────────────────────────── */
@@ -118,6 +119,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   const [expanded, setExpanded] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [convId, setConvId] = useState(() => newId());
+  // "Tạo học liệu": chọn loại trước, gõ yêu cầu, bấm Gửi mới tạo (không auto).
+  const [materialKind, setMaterialKind] = useState<LearningMaterialSubtype | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -381,6 +384,12 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     const hasPrompt = prompt.trim().length > 0;
     if (!hasPrompt && atts.length === 0 && mode !== "full-lesson" && mode !== "course") return;
 
+    // Tạo học liệu: phải chọn loại + gõ yêu cầu (không tự tạo khi chỉ chọn loại).
+    if (mode === "material") {
+      if (!materialKind) { toast("Bạn chọn loại học liệu muốn tạo trước nhé."); return; }
+      if (!hasPrompt) { toast("Nhập yêu cầu/chủ đề cho học liệu rồi gửi nhé."); return; }
+    }
+
     // Tạo dàn ý khoá học: dựng thẳng cây nội dung (áp giao diện nếu có đính kèm).
     if (mode === "course") {
       const sbAtt = atts.find((a) => a.kind === "storyboard");
@@ -398,7 +407,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
     try {
       // Bong bóng người dùng gộp (câu lệnh + các tag đính kèm)
       const labels = atts.map((a) => a.label);
-      const userText = [prompt.trim(), labels.length ? `đính kèm: ${labels.join(", ")}` : ""].filter(Boolean).join("  ·  ") || MODES.find((m) => m.id === mode)!.label;
+      const userText = [prompt.trim(), labels.length ? `đính kèm: ${labels.join(", ")}` : ""].filter(Boolean).join("  ·  ") || MODES.find((m) => m.id === mode)?.label || "Trợ lý AI";
       setMessages((c) => [...c, { id: newId(), role: "user", text: userText }]);
 
       // 1) Giao diện
@@ -423,8 +432,9 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
         await runFill(aid, a.storyboard, subject || a.label);
         patchMessage(aid, { text: `Đã áp dàn ý "${a.label}" — thêm ${a.storyboard.sections.flatMap((s) => s.items).length} khối.`, followups: followupsFor("full-lesson") });
       }
-      // 5) Câu lệnh chữ (không chọn mode → soạn nội dung chung)
-      if (hasPrompt || mode === "full-lesson") await _run(mode ?? "content", prompt, undefined, false);
+      // 5) Câu lệnh chữ
+      if (mode === "material") await _run("material", prompt, materialKind ?? undefined, false);
+      else if (hasPrompt || mode === "full-lesson") await _run(mode ?? "content", prompt, undefined, false);
     } finally {
       setBusy(false);
     }
@@ -491,17 +501,18 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
 
   const composer = (
     <div className="border-t border-border p-2.5">
-      {/* material kinds */}
+      {/* material kinds — chọn loại rồi nhập yêu cầu và Gửi */}
       {mode === "material" && (
         <div className="mb-2">
-          <p className="mb-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Chọn loại học liệu để tạo</p>
+          <p className="mb-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Chọn loại học liệu, nhập yêu cầu rồi bấm Gửi</p>
           <div className="flex flex-wrap gap-1.5">
             {LEARNING_MATERIAL_TYPES.map((kind) => {
               const Icon = MATERIAL_TYPE_ICONS[kind];
+              const active = materialKind === kind;
               return (
-                <button key={kind} type="button" disabled={busy} onClick={() => void runMode("material", input, kind)}
-                  className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:border-primary hover:bg-accent disabled:opacity-50">
-                  <Icon className="h-3.5 w-3.5 text-primary" />{MATERIAL_TYPE_LABELS[kind]}
+                <button key={kind} type="button" onClick={() => setMaterialKind((k) => (k === kind ? null : kind))}
+                  className={cn("flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition", active ? "border-primary bg-accent text-primary" : "border-border bg-card text-foreground hover:border-primary hover:bg-accent")}>
+                  <Icon className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-primary")} />{MATERIAL_TYPE_LABELS[kind]}
                 </button>
               );
             })}
@@ -717,6 +728,7 @@ function LibraryPicker({
 }) {
   const [tab, setTab] = useState<"system" | "user">("system");
   const [q, setQ] = useState("");
+  const [selId, setSelId] = useState<string | null>(null);
   const sysTab = tab === "system";
   const match = (s: string) => !q.trim() || s.toLowerCase().includes(q.trim().toLowerCase());
   const isModule = kind === "storyboard" || kind === "ui";
@@ -737,9 +749,23 @@ function LibraryPicker({
     else window.open(`${base}/library`, "_blank", "noopener");
   };
 
+  // Master–detail: chọn ở danh sách trái → xem trước phải → "Đính kèm".
+  const ids = (kind === "storyboard" ? sb : kind === "ui" ? ui : kind === "book" ? bk : mat).map((x) => x.id);
+  const effId = selId && ids.includes(selId) ? selId : ids[0];
+  const selSb = sb.find((x) => x.id === effId);
+  const selUi = ui.find((x) => x.id === effId);
+  const selMat = mat.find((x) => x.id === effId);
+  const selBk = bk.find((x) => x.id === effId);
+  const onAttach = () => {
+    if (kind === "storyboard" && selSb) onPickStoryboard(selSb);
+    else if (kind === "ui" && selUi) onPickUiSystem(selUi);
+    else if (kind === "book" && selBk) onPickBook(selBk);
+    else if (kind === "material" && selMat) onPickMaterial(selMat);
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-foreground/30 p-4" onClick={onClose}>
-      <div className="flex max-h-[78vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2.5 border-b border-border px-4 py-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-primary"><TitleIcon className="h-4 w-4" /></span>
           <div className="min-w-0 flex-1">
@@ -752,94 +778,50 @@ function LibraryPicker({
         {/* Tabs + search */}
         <div className="flex items-center gap-1 border-b border-border px-3">
           {([["system", "Kho hệ thống"], ["user", "Thư viện của tôi"]] as const).map(([id, label]) => (
-            <button key={id} type="button" onClick={() => setTab(id)}
+            <button key={id} type="button" onClick={() => { setTab(id); setSelId(null); }}
               className={cn("relative px-3 py-2.5 text-xs font-semibold transition", tab === id ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
               {label}{tab === id && <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" />}
             </button>
           ))}
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm theo tên…"
+          <input value={q} onChange={(e) => { setQ(e.target.value); setSelId(null); }} placeholder="Tìm theo tên…"
             className="ml-auto my-1.5 w-[150px] rounded-lg border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-primary" />
         </div>
 
-        {/* Gallery / list */}
-        <div className="min-h-[200px] flex-1 overflow-y-auto p-3">
-          {empty && <p className="px-1 py-12 text-center text-xs text-muted-foreground">Không tìm thấy mục nào ở đây.</p>}
+        {/* Master–detail */}
+        <div className="flex min-h-[280px] flex-1 overflow-hidden">
+          {/* Danh sách trái */}
+          <div className="w-[220px] shrink-0 space-y-1 overflow-y-auto border-r border-border p-2">
+            {empty && <p className="px-1 py-12 text-center text-xs text-muted-foreground">Không có mục nào.</p>}
+            {kind === "storyboard" && sb.map((it) => (
+              <PickRow key={it.id} name={it.name} meta={`${it.storyboard.sections.flatMap((s) => s.items).length} khung`} icon={<LayoutList className="h-4 w-4 text-primary" />} selected={effId === it.id} onClick={() => setSelId(it.id)} />
+            ))}
+            {kind === "ui" && ui.map((it) => (
+              <PickRow key={it.id} name={it.name} meta={it.source === "system" ? "Hệ thống" : "Của tôi"} icon={<span className="h-4 w-4 shrink-0 rounded border border-border" style={{ background: it.theme.accentSeed }} />} selected={effId === it.id} onClick={() => setSelId(it.id)} />
+            ))}
+            {kind === "material" && mat.map((m) => (
+              <PickRow key={m.id} name={m.title} meta={MATERIAL_TYPE_LABELS[(m.materialSubtype ?? "document")]} icon={<BookOpen className="h-4 w-4 text-primary" />} selected={effId === m.id} onClick={() => setSelId(m.id)} />
+            ))}
+            {kind === "book" && bk.map((m) => (
+              <PickRow key={m.id} name={m.title} meta="Sách" icon={<BookText className="h-4 w-4 text-primary" />} selected={effId === m.id} onClick={() => setSelId(m.id)} />
+            ))}
+          </div>
 
-          {kind === "storyboard" && (
-            <div className="grid grid-cols-2 gap-2.5">
-              {sb.map((it) => {
-                const frames = it.storyboard.sections.flatMap((s) => s.items);
-                return (
-                  <button key={it.id} type="button" onClick={() => onPickStoryboard(it)} className="group overflow-hidden rounded-xl border border-border bg-card text-left transition hover:border-primary hover:shadow-md">
-                    <div className="flex gap-0.5 bg-muted/30 p-1">
-                      {frames.slice(0, 3).map((f, i) => (
-                        <div key={i} className="h-12 flex-1 rounded bg-cover bg-center" style={{ backgroundImage: `url("${sceneSrc(f.image)}")` }} />
-                      ))}
-                      {frames.length === 0 && <div className="h-12 flex-1 rounded bg-muted" />}
-                    </div>
-                    <div className="p-2">
-                      <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
-                      <span className="block truncate text-[11px] text-muted-foreground">{frames.length} khung</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {kind === "ui" && (
-            <div className="grid grid-cols-2 gap-2.5">
-              {ui.map((it) => {
-                const r = ramp(it.theme.accentSeed);
-                return (
-                  <button key={it.id} type="button" onClick={() => onPickUiSystem(it)} className="group overflow-hidden rounded-xl border border-border bg-card text-left transition hover:border-primary hover:shadow-md">
-                    <div className="flex h-12 items-stretch" style={{ background: r.soft }}>
-                      <div className="flex flex-1 items-center justify-center text-[11px] font-bold" style={{ color: it.theme.accentSeed }}>Aa</div>
-                      <div className="w-7" style={{ background: it.theme.accentSeed }} />
-                      <div className="w-4" style={{ background: r.strong }} />
-                    </div>
-                    <div className="p-2">
-                      <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
-                      <span className="block truncate text-[11px] text-muted-foreground">{it.description ?? "Giao diện khoá học"}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {kind === "material" && (
-            <div className="space-y-1.5">
-              {mat.map((m) => (
-                <button key={m.id} type="button" onClick={() => onPickMaterial(m)} className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
-                  <BookOpen className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium text-foreground">{m.title}</span>
-                    <span className="block truncate text-[11px] text-muted-foreground">{MATERIAL_TYPE_LABELS[(m.materialSubtype ?? "document")]} · {m.subject}</span>
-                  </span>
-                  <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {kind === "book" && (
-            <div className="space-y-1.5">
-              {bk.map((m) => (
-                <button key={m.id} type="button" onClick={() => onPickBook(m)} className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-card p-2.5 text-left transition hover:border-primary hover:bg-accent">
-                  <BookText className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium text-foreground">{m.title}</span>
-                    <span className="block truncate text-[11px] text-muted-foreground">Sách{m.subject ? ` · ${m.subject}` : ""}</span>
-                  </span>
-                  <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Xem trước phải */}
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            {!effId ? (
+              <p className="py-12 text-center text-xs text-muted-foreground">Chọn một mục bên trái để xem trước.</p>
+            ) : (
+              <>
+                {kind === "storyboard" && selSb && <StoryboardPreviewPane name={selSb.name} storyboard={selSb.storyboard} />}
+                {kind === "ui" && selUi && <UiPreviewPane name={selUi.name} theme={selUi.theme} description={selUi.description} />}
+                {kind === "material" && selMat && <ContentPreviewPane item={selMat} label={MATERIAL_TYPE_LABELS[(selMat.materialSubtype ?? "document")]} />}
+                {kind === "book" && selBk && <ContentPreviewPane item={selBk} label="Sách" />}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Footer: tạo mới / mở thư viện ở tab mới */}
+        {/* Footer */}
         <div className="flex items-center gap-2 border-t border-border px-4 py-3">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={openCreate}>
             <Plus className="h-3.5 w-3.5" />
@@ -847,10 +829,80 @@ function LibraryPicker({
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="sm" className="ml-auto text-xs" onClick={onClose}>Đóng</Button>
+          <Button size="sm" className="gap-1.5 bg-primary text-xs text-primary-foreground hover:bg-primary-hover" disabled={!effId} onClick={onAttach}>
+            <Plus className="h-3.5 w-3.5" /> Đính kèm
+          </Button>
         </div>
       </div>
     </div>,
     document.body,
+  );
+}
+
+/* ─── Hàng chọn + các khung xem trước cho LibraryPicker ─────────── */
+
+function PickRow({ name, meta, icon, selected, onClick }: { name: string; meta?: string; icon: React.ReactNode; selected: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className={cn("flex w-full items-center gap-2 rounded-lg border p-2 text-left transition", selected ? "border-primary bg-accent" : "border-transparent hover:bg-muted")}>
+      <span className="shrink-0">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-medium text-foreground">{name}</span>
+        {meta && <span className="block truncate text-[10px] text-muted-foreground">{meta}</span>}
+      </span>
+    </button>
+  );
+}
+
+function StoryboardPreviewPane({ name, storyboard }: { name: string; storyboard: Storyboard }) {
+  const frames = storyboard.sections.flatMap((s) => s.items);
+  return (
+    <div>
+      <p className="text-sm font-semibold text-foreground">{name}</p>
+      <p className="mb-2 text-[11px] text-muted-foreground">{frames.length} khung cảnh</p>
+      <div className="grid grid-cols-2 gap-2">
+        {frames.map((f, i) => (
+          <div key={i} className="overflow-hidden rounded-lg border border-border">
+            <div className="h-20 bg-cover bg-center" style={{ backgroundImage: `url("${sceneSrc(f.image)}")` }} />
+            <p className="truncate px-2 py-1 text-[11px] font-medium text-foreground">{i + 1}. {f.title || f.intent}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UiPreviewPane({ name, theme, description }: { name: string; theme: CourseTheme; description?: string }) {
+  const r = ramp(theme.accentSeed);
+  return (
+    <div>
+      <p className="text-sm font-semibold text-foreground">{name}</p>
+      {description && <p className="text-[11px] text-muted-foreground">{description}</p>}
+      <div className="mt-3 flex gap-1.5">
+        {[r.soft, r.accent, r.strong].map((c) => <span key={c} className="h-8 w-12 rounded-md border border-border" style={{ background: c }} />)}
+      </div>
+      <div className="mt-3 rounded-xl border border-border p-3" style={{ background: theme.mode === "dark" ? "#0f1729" : "#ffffff" }}>
+        <div className="text-lg font-extrabold" style={{ color: theme.accentSeed }}>Aa Tốc độ phản ứng</div>
+        <div className="mt-2 flex gap-2">
+          <span className="rounded-md px-3 py-1.5 text-xs font-semibold text-white" style={{ background: theme.accentSeed }}>Tiếp tục học</span>
+          <span className="rounded-md border px-3 py-1.5 text-xs font-medium" style={{ borderColor: theme.accentSeed, color: theme.accentSeed }}>Làm bài tập</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContentPreviewPane({ item, label }: { item: ContentItem; label: string }) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-foreground">{item.title}</p>
+      <p className="text-[11px] text-muted-foreground">{label}{item.subject ? ` · ${item.subject}` : ""}{item.grade ? ` · ${item.grade}` : ""}</p>
+      {item.description && <p className="mt-2 text-xs leading-relaxed text-foreground">{item.description}</p>}
+      {item.tags && item.tags.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {item.tags.map((t) => <span key={t} className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{t}</span>)}
+        </div>
+      )}
+    </div>
   );
 }
 
