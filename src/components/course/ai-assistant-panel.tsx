@@ -11,13 +11,13 @@ import { aiClient } from "@/lib/ai";
 import { streamText, runSteps, sleep, type StepStatus } from "@/lib/ai/stream";
 import type { AiChatMode, GeneratedMaterial, Storyboard, CourseOutline } from "@/lib/ai/types";
 import { useCourse, type CourseBlock, type CourseBlockType } from "@/stores/course";
-import { sceneSrc } from "@/lib/storyboard/scene-art";
 import { ramp } from "@/lib/theme/color";
 import { useContent } from "@/stores/content";
 import { useSession } from "@/stores/session";
 import { useStoryboard } from "@/stores/storyboard";
 import { useCourseTheme } from "@/stores/course-theme";
-import { useStoryboardLibrary, allStoryboardItems } from "@/stores/storyboard-library";
+import { useInsertStoryboard } from "@/stores/insert-storyboard";
+import { useBlockFocus } from "@/stores/block-focus";
 import { useUiSystemLibrary, allUiSystemItems } from "@/stores/ui-system-library";
 import type { ContentItem, LearningMaterialSubtype } from "@/lib/types";
 import type { ChatMessage, Followup } from "./ai-chat-types";
@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 interface ModeDef { id: AiChatMode; label: string; icon: typeof PenLine; placeholder: string; }
 
 const MODES: ModeDef[] = [
-  { id: "course", label: "Tạo dàn ý khoá học", icon: GraduationCap, placeholder: "Mô tả khoá học để AI dựng dàn ý Phần/Chương/Bài… (đính kèm 1 storyboard, 1 giao diện nếu muốn)" },
+  { id: "course", label: "Tạo dàn ý khoá học", icon: GraduationCap, placeholder: "Mô tả khoá học để AI dựng dàn ý Phần/Chương/Bài…" },
   { id: "full-lesson", label: "Tạo nội dung bài học", icon: Wand2, placeholder: "Nhập chủ đề để AI soạn nội dung cho bài đang chọn…" },
   { id: "quiz", label: "Tạo câu hỏi", icon: ListChecks, placeholder: "Chủ đề câu hỏi ôn tập…" },
   { id: "material", label: "Tạo học liệu", icon: Boxes, placeholder: "Nhập chủ đề rồi chọn loại học liệu bên dưới…" },
@@ -75,12 +75,11 @@ function followupsFor(mode: AiChatMode): Followup[] {
 /* ─── Message model ─────────────────────────────────────────────── */
 
 type Attachment =
-  | { kind: "storyboard"; label: string; storyboard: Storyboard }
   | { kind: "ui"; label: string; theme: CourseTheme }
   | { kind: "material"; label: string; material: ContentItem }
   | { kind: "book"; label: string; book: ContentItem }
   | { kind: "file"; label: string };
-type PickerKind = "storyboard" | "ui" | "material" | "book" | null;
+type PickerKind = "ui" | "material" | "book" | null;
 
 let msgSeq = 0;
 const newId = () => `m_${Date.now()}_${msgSeq++}`;
@@ -130,8 +129,8 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   const subject = contentItem?.subject ?? "";
   const grade = contentItem?.grade ?? "";
 
-  const storyboardLib = useStoryboardLibrary((s) => s.items);
   const uiSystemLib = useUiSystemLibrary((s) => s.items);
+  const openInsertStoryboard = useInsertStoryboard((s) => s.openPanel);
   const materials = useContent((s) => s.items);
 
   const saveChat = useAiChats((s) => s.save);
@@ -180,7 +179,11 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   const insertBlock = useCallback((type: CourseBlockType, patch: Partial<CourseBlock>) => {
     if (!lessonId) return;
     const bid = useCourse.getState().addBlock(courseId, lessonId, type);
-    if (bid) useCourse.getState().updateBlock(courseId, lessonId, bid, { ...patch, aiGenerated: true });
+    if (bid) {
+      useCourse.getState().updateBlock(courseId, lessonId, bid, { ...patch, aiGenerated: true });
+      // Cuộn tới khối vừa đưa vào + nháy viền (canvas theo dõi tiêu điểm này).
+      useBlockFocus.getState().focus(bid);
+    }
   }, [courseId, lessonId]);
 
   const lessonSourceText = useCallback(() => {
@@ -264,11 +267,6 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   }, [busy, _run]);
 
   /* ─── "+" → chỉ ĐÍNH KÈM (tag), KHÔNG thực thi. Thực thi khi bấm Gửi. ─ */
-  // Storyboard & Giao diện: tối đa 1 mỗi loại — chọn cái mới thay cái cũ.
-  const onPickStoryboard = (item: { name: string; storyboard: Storyboard }) => {
-    setPicker(null);
-    setAttachments((a) => [...a.filter((x) => x.kind !== "storyboard"), { kind: "storyboard", label: item.name, storyboard: item.storyboard }]);
-  };
   const onPickUiSystem = (item: { name: string; theme: CourseTheme }) => {
     setPicker(null);
     setAttachments((a) => [...a.filter((x) => x.kind !== "ui"), { kind: "ui", label: item.name, theme: item.theme }]);
@@ -289,7 +287,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
   };
 
   /* ─── "Tạo dàn ý khoá học": PHÁC trước → xem trước → xác nhận mới dựng ─ */
-  const runCourseOutline = useCallback(async (prompt: string, storyboard: Storyboard | undefined, labels: string[]) => {
+  const runCourseOutline = useCallback(async (prompt: string, labels: string[]) => {
     if (busy) return;
     setBusy(true);
     try {
@@ -300,7 +298,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       setMessages((c) => [...c, { id: aid, role: "assistant", text: "", streaming: true }]);
       const reply = await aiClient.chatReply({ prompt: topic, mode: "course", topic });
       await streamText(reply.text, (p) => patchMessage(aid, { text: p }));
-      const outline = await aiClient.generateCourseOutline({ prompt: topic, subject, grade, storyboard });
+      const outline = await aiClient.generateCourseOutline({ prompt: topic, subject, grade });
       patchMessage(aid, { streaming: false, courseOutline: outline, text: `${reply.text} Mình đã phác dàn ý — bạn xem trước rồi dựng vào khoá học nhé.` });
     } catch {
       pushAssistant("Có lỗi khi phác dàn ý khoá học. Bạn thử lại giúp mình nhé.");
@@ -392,12 +390,11 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
 
     // Tạo dàn ý khoá học: dựng thẳng cây nội dung (áp giao diện nếu có đính kèm).
     if (mode === "course") {
-      const sbAtt = atts.find((a) => a.kind === "storyboard");
       const uiAtt = atts.find((a) => a.kind === "ui");
       setInput("");
       setAttachments([]);
       if (uiAtt?.kind === "ui") useCourseTheme.getState().setTheme(courseId, uiAtt.theme);
-      await runCourseOutline(prompt, sbAtt?.kind === "storyboard" ? sbAtt.storyboard : undefined, atts.map((a) => a.label));
+      await runCourseOutline(prompt, atts.map((a) => a.label));
       return;
     }
 
@@ -424,15 +421,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       for (const a of atts) if (a.kind === "file") pushAssistant(`Đã tham khảo tệp "${a.label}" (mô phỏng).`);
       // 3b) Sách — làm ngữ cảnh cho AI
       for (const a of atts) if (a.kind === "book") pushAssistant(`Đã lấy sách "${a.label}" làm ngữ cảnh — mình sẽ bám theo khi soạn.`);
-      // 4) Dàn ý (agentic, có nhật ký bước)
-      for (const a of atts) if (a.kind === "storyboard") {
-        if (!lessonId) { pushAssistant("Hãy chọn một bài học trước khi áp dàn ý nhé."); continue; }
-        const aid = pushAssistant(`Đang áp dàn ý "${a.label}" vào bài…`);
-        useStoryboard.getState().setStoryboard(lessonId, a.storyboard);
-        await runFill(aid, a.storyboard, subject || a.label);
-        patchMessage(aid, { text: `Đã áp dàn ý "${a.label}" — thêm ${a.storyboard.sections.flatMap((s) => s.items).length} khối.`, followups: followupsFor("full-lesson") });
-      }
-      // 5) Câu lệnh chữ
+      // 4) Câu lệnh chữ
       if (mode === "material") await _run("material", prompt, materialKind ?? undefined, false);
       else if (hasPrompt || mode === "full-lesson") await _run(mode ?? "content", prompt, undefined, false);
     } finally {
@@ -480,7 +469,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
           <div className="mt-3 grid w-full gap-1.5 sm:grid-cols-2">
             {suggestions.map((s) => (
               <button key={s.text} type="button" disabled={busy} onClick={() => {
-                if (s.mode === "course") { void runCourseOutline(s.text, undefined, []); return; }
+                if (s.mode === "course") { void runCourseOutline(s.text, []); return; }
                 setMode(s.mode); void runMode(s.mode, s.text);
               }}
                 className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left text-xs text-foreground transition hover:border-primary hover:bg-accent disabled:opacity-50">
@@ -523,7 +512,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
       {/* attachments khác (học liệu / sách / tệp) — nhiều được */}
       {attachments.some((a) => a.kind === "material" || a.kind === "book" || a.kind === "file") && (
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {attachments.map((a, i) => (a.kind === "storyboard" || a.kind === "ui") ? null : (
+          {attachments.map((a, i) => a.kind === "ui" ? null : (
             <span key={i} className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-2 py-1 text-[11px] font-medium text-primary">
               {a.kind === "file" ? <Paperclip className="h-3 w-3" /> : a.kind === "book" ? <BookText className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}
               {a.label}
@@ -532,18 +521,6 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
           ))}
         </div>
       )}
-
-      {/* Quick-add: Storyboard — chỉ chọn 1; chọn xong "+" thành card, ✕ để gỡ.
-          (Giao diện là của cả khoá — chỉnh ở thanh "Giao diện khoá học" cột trái.) */}
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className="text-[11px] text-muted-foreground">Đính kèm:</span>
-        <QuickAttach
-          icon={LayoutList} label="Storyboard"
-          chosen={attachments.find((a) => a.kind === "storyboard")?.label}
-          onAdd={() => setPicker("storyboard")}
-          onRemove={() => setAttachments((a) => a.filter((x) => x.kind !== "storyboard"))}
-        />
-      </div>
 
       <div className="relative rounded-2xl border border-border bg-background p-2 focus-within:border-primary">
         {/* mode chip */}
@@ -583,6 +560,7 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setPlusOpen(false)} />
                 <div className="absolute bottom-full left-0 z-50 mb-1.5 w-[210px] rounded-xl border border-border bg-card p-1.5 shadow-xl">
+                  <PlusItem icon={LayoutList} label="Chèn storyboard" onClick={() => { setPlusOpen(false); openInsertStoryboard(); }} />
                   <PlusItem icon={BookText} label="Chèn sách" onClick={() => { setPlusOpen(false); setPicker("book"); }} />
                   <PlusItem icon={BookOpen} label="Chèn học liệu từ kho" onClick={() => { setPlusOpen(false); setPicker("material"); }} />
                   <PlusItem icon={FileUp} label="Tải tệp lên" onClick={() => { setPlusOpen(false); fileRef.current?.click(); }} />
@@ -607,11 +585,9 @@ export function AiAssistantPanel({ courseId, lessonId, scope }: AiAssistantPanel
           scope={scope}
           roleId={roleId}
           onClose={() => setPicker(null)}
-          storyboards={allStoryboardItems(storyboardLib)}
           uiSystems={allUiSystemItems(uiSystemLib)}
           materials={myMaterials}
           books={books}
-          onPickStoryboard={onPickStoryboard}
           onPickUiSystem={onPickUiSystem}
           onPickMaterial={onPickMaterial}
           onPickBook={onPickBook}
@@ -693,35 +669,16 @@ function PlusItem({ icon: Icon, label, onClick }: { icon: typeof Plus; label: st
 }
 
 /** Nút đính kèm nhanh: chưa chọn = "+", đã chọn = card có ✕ (chỉ 1 mỗi loại). */
-function QuickAttach({ icon: Icon, label, chosen, onAdd, onRemove }: { icon: typeof Plus; label: string; chosen?: string; onAdd: () => void; onRemove: () => void }) {
-  if (chosen) {
-    return (
-      <span className="inline-flex max-w-[180px] items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-primary">
-        <Icon className="h-3 w-3 shrink-0" /> <span className="truncate">{chosen}</span>
-        <button type="button" onClick={onRemove} aria-label={`Bỏ ${label}`} className="shrink-0"><X className="h-3 w-3" /></button>
-      </span>
-    );
-  }
-  return (
-    <button type="button" onClick={onAdd}
-      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-primary hover:text-primary">
-      <Plus className="h-3 w-3" /> <Icon className="h-3 w-3" /> {label}
-    </button>
-  );
-}
-
 function LibraryPicker({
-  kind, scope, roleId, onClose, storyboards, uiSystems, materials, books, onPickStoryboard, onPickUiSystem, onPickMaterial, onPickBook,
+  kind, scope, roleId, onClose, uiSystems, materials, books, onPickUiSystem, onPickMaterial, onPickBook,
 }: {
   kind: Exclude<PickerKind, null>;
   scope: BuilderScope;
   roleId: string | null;
   onClose: () => void;
-  storyboards: { id: string; name: string; source: string; description?: string; storyboard: Storyboard }[];
   uiSystems: { id: string; name: string; source: string; description?: string; theme: CourseTheme }[];
   materials: ContentItem[];
   books: ContentItem[];
-  onPickStoryboard: (i: { name: string; storyboard: Storyboard }) => void;
   onPickUiSystem: (i: { name: string; theme: CourseTheme }) => void;
   onPickMaterial: (m: ContentItem) => void;
   onPickBook: (m: ContentItem) => void;
@@ -731,34 +688,30 @@ function LibraryPicker({
   const [selId, setSelId] = useState<string | null>(null);
   const sysTab = tab === "system";
   const match = (s: string) => !q.trim() || s.toLowerCase().includes(q.trim().toLowerCase());
-  const isModule = kind === "storyboard" || kind === "ui";
+  const isModule = kind === "ui";
 
-  const sb = storyboards.filter((it) => (sysTab ? it.source === "system" : it.source === "user")).filter((it) => match(it.name));
   const ui = uiSystems.filter((it) => (sysTab ? it.source === "system" : it.source === "user")).filter((it) => match(it.name));
   const mat = materials.filter((m) => (sysTab ? m.ownerId !== roleId : m.ownerId === roleId)).filter((m) => match(m.title));
   const bk = books.filter((m) => (sysTab ? m.ownerId !== roleId : m.ownerId === roleId)).filter((m) => match(m.title));
-  const empty = (kind === "storyboard" ? sb.length : kind === "ui" ? ui.length : kind === "book" ? bk.length : mat.length) === 0;
+  const empty = (kind === "ui" ? ui.length : kind === "book" ? bk.length : mat.length) === 0;
 
-  const title = kind === "storyboard" ? "Chọn Storyboard" : kind === "ui" ? "Chọn Giao diện" : kind === "book" ? "Chọn sách" : "Chọn học liệu";
-  const TitleIcon = kind === "ui" ? Palette : kind === "material" ? BookOpen : kind === "book" ? BookText : LayoutList;
+  const title = kind === "ui" ? "Chọn Giao diện" : kind === "book" ? "Chọn sách" : "Chọn học liệu";
+  const TitleIcon = kind === "ui" ? Palette : kind === "book" ? BookText : BookOpen;
 
   const base = scope === "org" ? "/org" : "/creator";
   const openCreate = () => {
-    if (kind === "storyboard") useModuleStart.getState().request({ module: "storyboard", scope, newTab: true });
-    else if (kind === "ui") useModuleStart.getState().request({ module: "ui_system", scope, newTab: true });
+    if (kind === "ui") useModuleStart.getState().request({ module: "ui_system", scope, newTab: true });
     else window.open(`${base}/library`, "_blank", "noopener");
   };
 
   // Master–detail: chọn ở danh sách trái → xem trước phải → "Đính kèm".
-  const ids = (kind === "storyboard" ? sb : kind === "ui" ? ui : kind === "book" ? bk : mat).map((x) => x.id);
+  const ids = (kind === "ui" ? ui : kind === "book" ? bk : mat).map((x) => x.id);
   const effId = selId && ids.includes(selId) ? selId : ids[0];
-  const selSb = sb.find((x) => x.id === effId);
   const selUi = ui.find((x) => x.id === effId);
   const selMat = mat.find((x) => x.id === effId);
   const selBk = bk.find((x) => x.id === effId);
   const onAttach = () => {
-    if (kind === "storyboard" && selSb) onPickStoryboard(selSb);
-    else if (kind === "ui" && selUi) onPickUiSystem(selUi);
+    if (kind === "ui" && selUi) onPickUiSystem(selUi);
     else if (kind === "book" && selBk) onPickBook(selBk);
     else if (kind === "material" && selMat) onPickMaterial(selMat);
   };
@@ -792,9 +745,6 @@ function LibraryPicker({
           {/* Danh sách trái */}
           <div className="w-[220px] shrink-0 space-y-1 overflow-y-auto border-r border-border p-2">
             {empty && <p className="px-1 py-12 text-center text-xs text-muted-foreground">Không có mục nào.</p>}
-            {kind === "storyboard" && sb.map((it) => (
-              <PickRow key={it.id} name={it.name} meta={`${it.storyboard.sections.flatMap((s) => s.items).length} khung`} icon={<LayoutList className="h-4 w-4 text-primary" />} selected={effId === it.id} onClick={() => setSelId(it.id)} />
-            ))}
             {kind === "ui" && ui.map((it) => (
               <PickRow key={it.id} name={it.name} meta={it.source === "system" ? "Hệ thống" : "Của tôi"} icon={<span className="h-4 w-4 shrink-0 rounded border border-border" style={{ background: it.theme.accentSeed }} />} selected={effId === it.id} onClick={() => setSelId(it.id)} />
             ))}
@@ -812,7 +762,6 @@ function LibraryPicker({
               <p className="py-12 text-center text-xs text-muted-foreground">Chọn một mục bên trái để xem trước.</p>
             ) : (
               <>
-                {kind === "storyboard" && selSb && <StoryboardPreviewPane name={selSb.name} storyboard={selSb.storyboard} />}
                 {kind === "ui" && selUi && <UiPreviewPane name={selUi.name} theme={selUi.theme} description={selUi.description} />}
                 {kind === "material" && selMat && <ContentPreviewPane item={selMat} label={MATERIAL_TYPE_LABELS[(selMat.materialSubtype ?? "document")]} />}
                 {kind === "book" && selBk && <ContentPreviewPane item={selBk} label="Sách" />}
@@ -850,24 +799,6 @@ function PickRow({ name, meta, icon, selected, onClick }: { name: string; meta?:
         {meta && <span className="block truncate text-[10px] text-muted-foreground">{meta}</span>}
       </span>
     </button>
-  );
-}
-
-function StoryboardPreviewPane({ name, storyboard }: { name: string; storyboard: Storyboard }) {
-  const frames = storyboard.sections.flatMap((s) => s.items);
-  return (
-    <div>
-      <p className="text-sm font-semibold text-foreground">{name}</p>
-      <p className="mb-2 text-[11px] text-muted-foreground">{frames.length} khung cảnh</p>
-      <div className="grid grid-cols-2 gap-2">
-        {frames.map((f, i) => (
-          <div key={i} className="overflow-hidden rounded-lg border border-border">
-            <div className="h-20 bg-cover bg-center" style={{ backgroundImage: `url("${sceneSrc(f.image)}")` }} />
-            <p className="truncate px-2 py-1 text-[11px] font-medium text-foreground">{i + 1}. {f.title || f.intent}</p>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 

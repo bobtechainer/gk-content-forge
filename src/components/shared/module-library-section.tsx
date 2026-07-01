@@ -42,7 +42,7 @@ export function ModuleGallery({ module, scope }: { module: "storyboard" | "ui_sy
           <h2 className="text-sm font-semibold text-foreground">{isSb ? "Storyboard" : "Giao diện"}</h2>
           <p className="text-xs text-muted-foreground">
             {isSb
-              ? "Những khung cảnh bạn đã phác cho bài giảng. Mở trợ lý AI để chèn vào bài bất cứ lúc nào."
+              ? "Những dàn ý bạn đã phác cho khoá và bài. Trong builder, bấm “Chèn storyboard” để xem trước rồi áp vào mục lục khoá hoặc bài."
               : "Những bộ màu, phông, bố cục bạn đã dựng. Chọn một bộ để áp cho cả khoá học."}
           </p>
         </div>

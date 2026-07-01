@@ -8,13 +8,16 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Eye, Edit3, Monitor, Tablet, Smartphone,
-  PanelLeft, Sparkles, LayoutList, Palette,
+  PanelLeft, Sparkles, LayoutList, Palette, Plus, ArrowUpRight, Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BLOCK_TYPES } from "./course-palette";
 import { PageCanvas } from "./page-canvas";
 import { LessonTree } from "./lesson-tree";
 import { AiAssistantPanel } from "./ai-assistant-panel";
+import { InsertStoryboardPanel } from "./insert-storyboard-panel";
+import { useInsertStoryboard } from "@/stores/insert-storyboard";
+import { useBlockFocus } from "@/stores/block-focus";
 import { PublishSheet } from "@/components/publish-sheet";
 import { toast } from "sonner";
 import { useCourse } from "@/stores/course";
@@ -22,43 +25,75 @@ import type { CourseBlockType } from "@/stores/course";
 import { useContent } from "@/stores/content";
 import { useCourseTheme } from "@/stores/course-theme";
 import { useUiSystemLibrary, allUiSystemItems, type UiSystemLibraryItem } from "@/stores/ui-system-library";
+import { useModuleStart } from "@/stores/module-start";
 import { getResolvedThemeVars, type CourseTheme } from "@/lib/theme/resolve";
-import { PreviewConfirmDialog } from "./preview-confirm-dialog";
+import { ramp } from "@/lib/theme/color";
+import { FONT_PAIRS } from "@/lib/theme/system-themes";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { ContentItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { type Viewport } from "@/lib/preview/viewport";
 import { type BuilderScope } from "@/lib/builder-url";
 
-/** Mẫu xem trước nhỏ áp theme — cho popup xác nhận đổi giao diện. */
-function ThemeSamplePreview({ theme }: { theme: CourseTheme }) {
+/** Khung xem trước giao diện trực tiếp: swatch màu, phông, và mẫu bài học áp theme. */
+function ThemePreviewPane({ theme, name, description }: { theme: CourseTheme; name: string; description?: string }) {
   const vars = getResolvedThemeVars(theme) as React.CSSProperties;
+  const r = ramp(theme.accentSeed);
+  const font = FONT_PAIRS.find((f) => f.id === theme.fontPairId)?.label ?? "Hệ thống";
   return (
-    <div data-course-theme style={vars}>
-      <div className="overflow-hidden rounded-xl border p-4" style={{ background: "var(--course-surface)", borderColor: "color-mix(in srgb, var(--course-ink) 12%, transparent)", fontFamily: "var(--course-font-body)" }}>
-        <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--course-accent)" }}>Chương 2</span>
-        <h3 className="mt-1 text-lg font-extrabold" style={{ fontFamily: "var(--course-font-heading)", color: "var(--course-ink)" }}>Tốc độ phản ứng</h3>
-        <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--course-ink)", opacity: 0.82 }}>Nhiệt độ, nồng độ và chất xúc tác đều ảnh hưởng đến tốc độ phản ứng hoá học.</p>
-        <div className="mt-3 flex gap-2">
-          <span className="px-3 py-1.5 text-xs font-semibold" style={{ background: "var(--course-accent)", color: "var(--course-accent-fg)", borderRadius: "var(--course-radius)" }}>Tiếp tục học</span>
-          <span className="border px-3 py-1.5 text-xs font-medium" style={{ borderColor: "var(--course-accent)", color: "var(--course-accent)", borderRadius: "var(--course-radius)" }}>Làm bài tập</span>
+    <div>
+      <p className="text-sm font-semibold text-foreground">{name}</p>
+      <p className="text-[11px] text-muted-foreground">{description ? `${description} · ` : ""}Phông {font} · {theme.mode === "dark" ? "Nền tối" : "Nền sáng"}</p>
+
+      <div className="mt-3 flex items-center gap-1.5">
+        {[r.soft, r.accent, r.strong].map((c) => (
+          <span key={c} className="h-8 w-12 rounded-md border border-border" style={{ background: c }} />
+        ))}
+      </div>
+
+      {/* Mẫu bài học áp theme (xem trước trực tiếp) */}
+      <div data-course-theme style={vars} className="mt-3">
+        <div className="overflow-hidden rounded-xl border p-4" style={{ background: "var(--course-surface)", borderColor: "color-mix(in srgb, var(--course-ink) 12%, transparent)", fontFamily: "var(--course-font-body)" }}>
+          <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--course-accent)" }}>Chương 2</span>
+          <h3 className="mt-1 text-lg font-extrabold" style={{ fontFamily: "var(--course-font-heading)", color: "var(--course-ink)" }}>Tốc độ phản ứng</h3>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--course-ink)", opacity: 0.82 }}>Nhiệt độ, nồng độ và chất xúc tác đều ảnh hưởng đến tốc độ phản ứng hoá học.</p>
+          <div className="mt-3 flex gap-2">
+            <span className="px-3 py-1.5 text-xs font-semibold" style={{ background: "var(--course-accent)", color: "var(--course-accent-fg)", borderRadius: "var(--course-radius)" }}>Tiếp tục học</span>
+            <span className="border px-3 py-1.5 text-xs font-medium" style={{ borderColor: "var(--course-accent)", color: "var(--course-accent)", borderRadius: "var(--course-radius)" }}>Làm bài tập</span>
+          </div>
+          <div className="mt-3 rounded-lg p-2.5 text-xs" style={{ background: "var(--course-callout-tip)", color: "var(--course-callout-tip-fg)" }}>
+            Mẹo: đọc kỹ ví dụ trước khi làm bài tập vận dụng.
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/** Thanh "Giao diện khoá học" — đặt trên cây nội dung; chọn UI System, xem trước rồi xác nhận. */
-function CourseThemePicker({ courseId }: { courseId: string }) {
+/** Thanh "Giao diện khoá học" — bấm mở popup: vừa chọn vừa xem trước trực tiếp, có "Tạo mới". */
+function CourseThemePicker({ courseId, scope }: { courseId: string; scope: BuilderScope }) {
   const [open, setOpen] = useState(false);
-  const [pending, setPending] = useState<UiSystemLibraryItem | null>(null);
+  const [selId, setSelId] = useState<string | null>(null);
   const items = allUiSystemItems(useUiSystemLibrary((s) => s.items));
   const setTheme = useCourseTheme((s) => s.setTheme);
   const current = useCourseTheme((s) => s.byCourse[courseId]);
-  const currentName = items.find((it) => current && it.theme.accentSeed.toLowerCase() === current.accentSeed.toLowerCase() && it.theme.fontPairId === current.fontPairId)?.name;
+  const currentItem = items.find((it) => current && it.theme.accentSeed.toLowerCase() === current.accentSeed.toLowerCase() && it.theme.fontPairId === current.fontPairId);
+  const currentName = currentItem?.name;
+
+  // Mục đang xem trước: ưu tiên mục vừa chọn, mặc định giao diện đang dùng, rồi mục đầu.
+  const sel = items.find((it) => it.id === selId) ?? currentItem ?? items[0];
+
+  const apply = () => {
+    if (!sel) return;
+    setTheme(courseId, sel.theme);
+    toast.success(`Đã đổi giao diện sang “${sel.name}”`);
+    setOpen(false);
+  };
+  const createNew = () => useModuleStart.getState().request({ module: "ui_system", scope, newTab: true });
 
   return (
-    <div className="relative border-b border-border bg-card p-2">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5 text-left transition hover:border-primary">
+    <div className="border-b border-border bg-card p-2">
+      <button type="button" onClick={() => { setSelId(null); setOpen(true); }} className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5 text-left transition hover:border-primary">
         <span className="h-6 w-6 shrink-0 rounded-md border border-border" style={{ background: current?.accentSeed ?? "var(--primary)" }} />
         <span className="min-w-0 flex-1">
           <span className="block text-[9px] font-medium uppercase tracking-wide text-muted-foreground">Giao diện khoá học</span>
@@ -66,45 +101,62 @@ function CourseThemePicker({ courseId }: { courseId: string }) {
         </span>
         <Palette className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute inset-x-2 top-full z-50 mt-1 rounded-xl border border-border bg-card p-2 shadow-xl">
-            <p className="px-1.5 pb-1.5 text-[11px] text-muted-foreground">Chọn giao diện cho cả khoá — xem trước rồi xác nhận.</p>
-            <div className="max-h-[300px] space-y-1 overflow-y-auto">
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="gap-0 p-0 sm:max-w-3xl">
+          <DialogHeader className="px-5 pb-3 pt-5 pr-10 text-left">
+            <DialogTitle>Giao diện khoá học</DialogTitle>
+            <DialogDescription>Chọn một bộ giao diện — xem trước trực tiếp bên phải rồi áp cho cả khoá.</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex h-[440px] border-t border-border">
+            {/* Danh sách chọn */}
+            <div className="w-[248px] shrink-0 space-y-1 overflow-y-auto border-r border-border p-2">
               {items.map((it) => {
-                const active = currentName === it.name;
+                const active = sel?.id === it.id;
+                const isCurrent = currentName === it.name;
                 return (
                   <button
                     key={it.id}
                     type="button"
-                    onClick={() => { setPending(it); setOpen(false); }}
-                    className={cn("flex w-full items-center gap-2 rounded-lg border p-2 text-left transition", active ? "border-primary bg-accent" : "border-border hover:border-primary hover:bg-accent")}
+                    onClick={() => setSelId(it.id)}
+                    className={cn("flex w-full items-center gap-2 rounded-lg border p-2 text-left transition", active ? "border-primary bg-accent" : "border-transparent hover:border-primary hover:bg-accent")}
                   >
                     <span className="h-7 w-7 shrink-0 rounded-md border border-border" style={{ background: it.theme.accentSeed }} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-xs font-medium text-foreground">{it.name}</span>
                       <span className="block truncate text-[10px] text-muted-foreground">{it.source === "system" ? "Hệ thống" : "Của tôi"}{it.description ? ` · ${it.description}` : ""}</span>
                     </span>
-                    {active && <span className="text-[10px] font-semibold text-primary">Đang dùng</span>}
+                    {isCurrent && <span className="shrink-0 text-[10px] font-semibold text-primary">Đang dùng</span>}
                   </button>
                 );
               })}
             </div>
-          </div>
-        </>
-      )}
 
-      <PreviewConfirmDialog
-        open={!!pending}
-        onOpenChange={(o) => { if (!o) setPending(null); }}
-        title="Đổi giao diện khoá học"
-        description={pending ? `Áp “${pending.name}” cho toàn bộ khoá học?` : undefined}
-        confirmLabel="Đổi giao diện"
-        onConfirm={() => { if (pending) { setTheme(courseId, pending.theme); toast.success(`Đã đổi giao diện sang “${pending.name}”`); } setPending(null); }}
-      >
-        {pending && <ThemeSamplePreview theme={pending.theme} />}
-      </PreviewConfirmDialog>
+            {/* Xem trước trực tiếp */}
+            <div className="min-h-0 flex-1 overflow-y-auto p-5">
+              {sel ? (
+                <ThemePreviewPane theme={sel.theme} name={sel.name} description={sel.description} />
+              ) : (
+                <p className="py-12 text-center text-xs text-muted-foreground">Chọn một giao diện bên trái để xem trước.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center gap-2 border-t border-border px-5 py-3">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={createNew}>
+              <Plus className="h-3.5 w-3.5" /> Tạo mới giao diện <ArrowUpRight className="h-3.5 w-3.5" />
+            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="text-xs" onClick={() => setOpen(false)}>Huỷ</Button>
+              <Button size="sm" className="gap-1.5 bg-primary text-xs text-primary-foreground hover:bg-primary-hover" disabled={!sel} onClick={apply}>
+                <Check className="h-3.5 w-3.5" /> Áp dụng giao diện
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -126,6 +178,9 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
   const moveBlockToIndex = useCourse((s) => s.moveBlockToIndex);
   const publishLesson = useCourse((s) => s.publishLesson);
   const getLessonPublishState = useCourse((s) => s.getLessonPublishState);
+  const openInsertStoryboard = useInsertStoryboard((s) => s.openPanel);
+  const closeInsertStoryboard = useInsertStoryboard((s) => s.closePanel);
+  const insertStoryboardOpen = useInsertStoryboard((s) => s.open);
 
   const item = useContent((s) => s.items.find((x) => x.id === id));
   const updateItem = useContent((s) => s.updateItem);
@@ -250,7 +305,8 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
 
   const handleAddBlock = useCallback((type: CourseBlockType, atIndex?: number) => {
     if (!activeLessonId) { toast.info("Hãy chọn bài học trước"); return; }
-    addBlock(id, activeLessonId, type, atIndex);
+    const bid = addBlock(id, activeLessonId, type, atIndex);
+    if (bid) useBlockFocus.getState().focus(bid);
   }, [id, activeLessonId, addBlock]);
 
   const handleDuplicateBlock = useCallback((blockId: string) => {
@@ -335,6 +391,17 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
               </div>
             )}
 
+            {!previewMode && (
+              <Button
+                variant="outline" size="sm"
+                className={cn("h-8 gap-1.5 text-xs", insertStoryboardOpen && "border-primary text-primary")}
+                onClick={() => (insertStoryboardOpen ? closeInsertStoryboard() : openInsertStoryboard())}
+                title="Chèn dàn ý có sẵn vào khoá hoặc bài"
+              >
+                <LayoutList className="h-3.5 w-3.5" /> Chèn storyboard
+              </Button>
+            )}
+
             <Button size="sm" className="h-8 bg-primary text-xs text-primary-foreground hover:bg-primary-hover" onClick={() => setPublishOpen(true)}>
               Xuất bản khoá
             </Button>
@@ -342,9 +409,12 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
             {!previewMode && (
               <Button
                 variant="ghost" size="icon"
-                className={cn("h-8 w-8", showRightPanel && "text-primary")}
-                aria-label={showRightPanel ? "Ẩn trợ lý AI" : "Hiện trợ lý AI"}
-                onClick={() => setShowRightPanel((v) => !v)}
+                className={cn("h-8 w-8", showRightPanel && !insertStoryboardOpen && "text-primary")}
+                aria-label={showRightPanel && !insertStoryboardOpen ? "Ẩn trợ lý AI" : "Hiện trợ lý AI"}
+                onClick={() => {
+                  if (insertStoryboardOpen) { closeInsertStoryboard(); setShowRightPanel(true); }
+                  else setShowRightPanel((v) => !v);
+                }}
               >
                 <Sparkles className="h-4 w-4" />
               </Button>
@@ -365,7 +435,7 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 className="hidden shrink-0 overflow-hidden md:block"
               >
                 <div className="flex h-full w-[268px] flex-col">
-                  <CourseThemePicker courseId={id} />
+                  <CourseThemePicker courseId={id} scope={scope} />
                   <div className="min-h-0 flex-1 overflow-hidden">
                     <LessonTree
                       courseId={id}
@@ -430,9 +500,9 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
             </div>
           </div>
 
-          {/* Right: AI assistant */}
+          {/* Right: trợ lý AI HOẶC panel Chèn storyboard — dùng chung một khe, mở một trong hai */}
           <AnimatePresence initial={false}>
-            {showRightPanel && !previewMode && (
+            {(showRightPanel || insertStoryboardOpen) && !previewMode && (
               <motion.div
                 initial={{ width: 0, opacity: 0 }}
                 animate={{ width: 420, opacity: 1 }}
@@ -441,11 +511,15 @@ export function CourseBuilder({ courseId: id, backTo }: { courseId: string; back
                 className="hidden shrink-0 overflow-hidden border-l border-border lg:block"
               >
                 <div className="h-full w-[420px]">
-                  <AiAssistantPanel
-                    courseId={id}
-                    lessonId={activeLessonId ?? undefined}
-                    scope={scope}
-                  />
+                  {insertStoryboardOpen ? (
+                    <InsertStoryboardPanel courseId={id} scope={scope} />
+                  ) : (
+                    <AiAssistantPanel
+                      courseId={id}
+                      lessonId={activeLessonId ?? undefined}
+                      scope={scope}
+                    />
+                  )}
                 </div>
               </motion.div>
             )}

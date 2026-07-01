@@ -12,6 +12,7 @@ import { LayoutWrapper } from "@/components/blocks/block-views";
 import { BlockRenderer } from "@/components/blocks/block-renderer";
 import { cn } from "@/lib/utils";
 import { useCourseTheme } from "@/stores/course-theme";
+import { useBlockFocus } from "@/stores/block-focus";
 import { getResolvedThemeVars } from "@/lib/theme/resolve";
 
 /* ─── Scroll-reveal wrapper ────────────────────────────────────── */
@@ -227,7 +228,7 @@ function InsertButton({ onClick }: { onClick: () => void }) {
     <div className="group flex items-center justify-center py-0.5">
       <div className="h-px flex-1 bg-transparent transition group-hover:bg-border/50" />
       <button type="button" onClick={onClick}
-        className="flex h-5 w-5 items-center justify-center rounded-full border border-transparent text-muted-foreground/0 transition group-hover:border-border group-hover:bg-card group-hover:text-muted-foreground group-hover:shadow-sm hover:!border-primary hover:!text-primary">
+        className="flex h-5 w-5 items-center justify-center rounded-full border border-transparent text-muted-foreground/0 transition group-hover:border-border group-hover:bg-card group-hover:text-muted-foreground group-hover:shadow-sm hover:!border-[var(--course-accent)] hover:!text-[var(--course-accent)]">
         <Plus className="h-3 w-3" />
       </button>
       <div className="h-px flex-1 bg-transparent transition group-hover:bg-border/50" />
@@ -277,6 +278,18 @@ export function PageCanvas({
   const courseTheme = useCourseTheme((s) => courseId ? s.byCourse[courseId] : undefined);
   const themeVars = getResolvedThemeVars(courseTheme) as React.CSSProperties;
 
+  // Tiêu điểm khối vừa thêm (từ trợ lý AI hoặc thêm thủ công): cuộn tới + nháy viền.
+  const focusedId = useBlockFocus((s) => s.focusedId);
+  const clearBlockFocus = useBlockFocus((s) => s.clear);
+  useEffect(() => {
+    if (!focusedId || previewMode) return;
+    const raf = requestAnimationFrame(() => {
+      document.getElementById(`blk-${focusedId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    const t = setTimeout(() => clearBlockFocus(), 1600);
+    return () => { cancelAnimationFrame(raf); clearTimeout(t); };
+  }, [focusedId, previewMode, clearBlockFocus]);
+
   const handleSlashCommand = useCallback((index: number) => setSlashMenu({ index }), []);
   const handleSlashSelect = useCallback((type: CourseBlockType) => {
     if (slashMenu !== null) { onAddBlock(type, slashMenu.index); setSlashMenu(null); }
@@ -312,13 +325,13 @@ export function PageCanvas({
       data-course-theme
       style={themeVars}
       className={cn(
-        "relative flex min-h-full flex-1 flex-col transition",
-        isOver && "bg-accent/30 ring-2 ring-inset ring-dashed ring-primary/20",
+        "relative flex min-h-full flex-1 flex-col bg-[var(--course-surface)] transition-colors duration-300",
+        isOver && "ring-2 ring-inset ring-dashed ring-primary/20",
       )}
     >
       <div className="mx-auto w-full max-w-4xl flex-1 space-y-0.5 px-6 py-6">
         <div className="mb-6 px-1 mx-auto max-w-2xl">
-          <h2 className="text-xl font-bold text-foreground">{lessonTitle}</h2>
+          <h2 className="text-xl font-bold text-[var(--course-accent)]" style={{ fontFamily: "var(--course-font-heading)" }}>{lessonTitle}</h2>
           <p className="mt-1 text-xs text-muted-foreground/70">
             {blocks.length} block{blocks.length !== 1 ? "s" : ""} •{" "}
             <kbd className="rounded bg-muted px-1 font-mono text-[10px]">/</kbd> thêm block
@@ -330,13 +343,17 @@ export function PageCanvas({
         ) : (
           <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
             {blocks.map((block, i) => (
-              <div key={block.id}>
+              <div key={block.id} id={`blk-${block.id}`} className="scroll-mt-6">
                 {dropIndex === i && <DropIndicator />}
                 <InsertButton onClick={() => handleSlashCommand(i)} />
                 <ScrollReveal animation={block.animation} disabled>
                   <LayoutWrapper layout={block.type === "columns" ? "full" : block.layout}>
                     <motion.div layout initial={{ opacity: 0, scale: 0.85, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.96 }} transition={{ type: "spring", stiffness: 460, damping: 26 }}>
+                      exit={{ opacity: 0, scale: 0.96 }} transition={{ type: "spring", stiffness: 460, damping: 26 }}
+                      className={cn(
+                        "rounded-xl transition-shadow duration-700",
+                        focusedId === block.id && "ring-2 ring-primary/70 ring-offset-2 ring-offset-background",
+                      )}>
                       <BlockCard
                         block={block}
                         index={i}
@@ -379,8 +396,8 @@ function EmptyCanvasPlaceholder({ onAdd }: { onAdd: () => void }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className="mx-auto max-w-2xl flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/50 bg-card py-16 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50">
-        <Move className="h-7 w-7 text-primary" />
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--course-accent-soft)]">
+        <Move className="h-7 w-7" style={{ color: "var(--course-accent)" }} />
       </div>
       <div className="mt-4 text-base font-semibold text-foreground">Bài học trống</div>
       <p className="mt-2 max-w-xs text-sm text-muted-foreground">

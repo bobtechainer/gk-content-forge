@@ -183,9 +183,13 @@ export function BlockCard({ block, isActive, onSelect, onUpdate, onDelete, onDup
   };
 
   return (
-    <div ref={setNodeRef} style={style} onClick={onSelect}
+    <div ref={setNodeRef}
+      style={isActive
+        ? { ...style, borderColor: "color-mix(in srgb, var(--course-accent) 45%, transparent)", outline: "3px solid color-mix(in srgb, var(--course-accent) 18%, transparent)", outlineOffset: "1px" }
+        : style}
+      onClick={onSelect}
       className={cn("group relative rounded-xl border bg-card transition-all",
-        isActive ? "border-primary/40 ring-2 ring-primary/10 shadow-md" : "border-border/60 hover:border-border hover:shadow-sm",
+        isActive ? "shadow-md" : "border-border/60 hover:border-border hover:shadow-sm",
         isDragging && "z-50 opacity-50 shadow-xl")}>
       {/* TalentLMS-style floating control pill (right edge): số thứ tự + ▲▼ + nhân đôi + xoá + cài đặt */}
       <div className={cn(
@@ -577,8 +581,14 @@ function HtmlBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p
 function SectionBlockEditor({ block, onUpdate }: { block: CourseBlock; onUpdate: (p: Partial<CourseBlock>) => void }) {
   return (
     <div className="p-3" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-2.5">
-        <SplitSquareVertical className="h-4 w-4 shrink-0 text-primary" />
+      <div
+        className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2.5"
+        style={{
+          borderColor: "color-mix(in srgb, var(--course-accent) 40%, transparent)",
+          background: "color-mix(in srgb, var(--course-accent) 6%, transparent)",
+        }}
+      >
+        <SplitSquareVertical className="h-4 w-4 shrink-0" style={{ color: "var(--course-accent)" }} />
         <input value={block.content || ""} onChange={(e) => onUpdate({ content: e.target.value })}
           placeholder="Tên phần (vd: Chặng 1 · Cảm nhận thời gian)"
           className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground" />

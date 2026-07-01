@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter,
-  type DragEndEvent, type DragStartEvent,
+  DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners, useDroppable,
+  type DragEndEvent, type DragStartEvent, type DragOverEvent,
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, rectSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft, Plus, Trash2, Wand2, Loader2, GripVertical, ArrowRight, Sparkles,
-  ChevronDown, Library, BookOpen, BookText, ListTree, X, ImagePlus, Copy, Search,
+  ChevronDown, ChevronUp, Library, BookOpen, BookText, ListTree, X, ImagePlus, Copy, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { aiClient } from "@/lib/ai";
-import { fillStoryboard } from "@/lib/ai/fill-orchestrator";
-import type { Storyboard, StoryboardItem } from "@/lib/ai/types";
+import { applyStoryboardAsLessonOutline } from "@/lib/storyboard/apply-storyboard";
+import type { Storyboard, StoryboardItem, StoryboardSection } from "@/lib/ai/types";
 import { useCourse } from "@/stores/course";
 import { useContent } from "@/stores/content";
 import { useStoryboard } from "@/stores/storyboard";
@@ -34,11 +34,12 @@ import { toast } from "sonner";
 
 const makeId = (p: string) => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
-/* ─── Khung phẳng: storyboard lưu trong 1 section "Khung cảnh" ─────── */
-const flatFrames = (b?: Storyboard): StoryboardItem[] => b?.sections.flatMap((s) => s.items) ?? [];
-const boardFromFrames = (frames: StoryboardItem[]): Storyboard => ({
-  sections: [{ id: "sec_main", title: "Khung cảnh", items: frames }],
+const EMPTY_BOARD: Storyboard = { sections: [] };
+const countFrames = (b?: Storyboard): number => b?.sections.reduce((n, s) => n + s.items.length, 0) ?? 0;
+const newFrame = (n: number): StoryboardItem => ({
+  id: makeId("frame"), blockType: "text", title: `Cảnh ${n}`, intent: "Mô tả nội dung cảnh này…", learningGoal: "", image: "explain",
 });
+const newSection = (n: number): StoryboardSection => ({ id: makeId("sec"), title: `Phần ${n}`, items: [] });
 
 interface StoryboardPageProps {
   courseId: string;
@@ -92,16 +93,17 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
   const subject = contentItem?.subject ?? libItem?.subject ?? "";
   const grade = contentItem?.grade ?? "";
 
-  const frames = flatFrames(board);
-  const setFrames = (next: StoryboardItem[]) => {
-    if (effectiveLessonId) setStoryboard(effectiveLessonId, boardFromFrames(next));
+  const sections = board?.sections ?? [];
+  const totalFrames = countFrames(board);
+  const setBoard = (next: Storyboard) => {
+    if (effectiveLessonId) setStoryboard(effectiveLessonId, next);
   };
 
-  // Nạp dữ liệu mục đang sửa/xem vào slot làm việc (một lần).
+  // Nạp dữ liệu mục đang sửa/xem vào slot làm việc (một lần) — GIỮ NGUYÊN sections.
   useEffect(() => {
     if (!libItem || !effectiveLessonId) return;
     if (useStoryboard.getState().byLesson[effectiveLessonId]) return;
-    setStoryboard(effectiveLessonId, boardFromFrames(flatFrames(libItem.storyboard)));
+    setStoryboard(effectiveLessonId, libItem.storyboard);
     setTopic(libItem.name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [libItem?.id, effectiveLessonId]);
@@ -124,8 +126,8 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
         objectives: objectives.trim() || undefined,
         sourceText: src || undefined,
       });
-      setFrames(flatFrames(sb));
-      toast.success("Đã dựng storyboard — bạn chỉnh lại từng khung nếu cần nhé.");
+      setBoard(sb); // giữ nhiều phần
+      toast.success("Đã dựng storyboard — bạn chỉnh lại từng phần/khung nếu cần nhé.");
     } catch {
       toast.error("Chưa dựng được storyboard, bạn thử lại nhé.");
     } finally {
@@ -138,12 +140,12 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
   useEffect(() => {
     if (seededRef.current || pageMode !== "new" || !isSeededModuleId(courseId)) return;
     seededRef.current = true;
-    if (flatFrames(useStoryboard.getState().byLesson[courseId]).length) return;
+    if (countFrames(useStoryboard.getState().byLesson[courseId]) > 0) return;
     (async () => {
       setGenerating(true);
       try {
         const sb = await aiClient.generateStoryboard({ subject, grade, topic: subject || "Bài học mẫu" });
-        setFrames(flatFrames(sb));
+        setBoard(sb);
       } catch {
         toast.error("Chưa dựng được bản mẫu, bạn thử lại nhé.");
       } finally {
@@ -153,16 +155,15 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ─── Áp dụng vào bài (chỉ course mode) ─────────────────────────── */
+  /* ─── Áp dụng vào bài (chỉ course mode) — mỗi phần thành khối mục ── */
   const handleApply = async () => {
-    if (!frames.length || !effectiveLessonId || applying) return;
+    if (!totalFrames || !effectiveLessonId || applying || !board) return;
     setApplying(true);
     try {
-      await fillStoryboard({
-        storyboard: boardFromFrames(frames),
-        meta: { subject, grade, topic: topic.trim() || activeLesson?.title || subject },
-        addBlock: (type) => useCourse.getState().addBlock(courseId, effectiveLessonId, type),
-        updateBlock: (id, patch) => useCourse.getState().updateBlock(courseId, effectiveLessonId, id, patch),
+      await applyStoryboardAsLessonOutline(board, [effectiveLessonId], {
+        addBlock: (lid, type) => useCourse.getState().addBlock(courseId, lid, type),
+        updateBlock: (lid, bid, patch) => useCourse.getState().updateBlock(courseId, lid, bid, patch),
+        fillBlock: (it) => aiClient.fillBlock({ item: it, subject, grade, topic: topic.trim() || activeLesson?.title || subject }),
       });
       useCourse.getState().setActiveLesson(effectiveLessonId);
       toast.success("Đã áp storyboard vào bài học");
@@ -174,53 +175,109 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
     }
   };
 
-  /* ─── Lưu vào kho / cập nhật / nhân bản ─────────────────────────── */
+  /* ─── Lưu vào kho / cập nhật / nhân bản — GIỮ NGUYÊN sections ────── */
   const handleSave = () => {
-    if (!frames.length) {
+    if (!totalFrames || !board) {
       toast.error("Storyboard đang trống — tạo vài khung trước đã nhé.");
       return;
     }
     const name = topic.trim() || libItem?.name || "Storyboard chưa đặt tên";
-    const storyboard = boardFromFrames(frames);
     if (pageMode === "edit") {
-      updateLibrary(courseId, { name, subject, storyboard });
+      updateLibrary(courseId, { name, subject, storyboard: board });
       toast.success("Đã lưu thay đổi vào kho");
     } else {
-      addToLibrary({ name, subject, storyboard });
+      addToLibrary({ name, subject, storyboard: board });
       toast.success(`Đã lưu "${name}" vào kho storyboard`);
     }
   };
 
   const handleDuplicate = () => {
     const name = `${libItem?.name ?? topic.trim() ?? "Storyboard"} (bản sao)`;
-    const id = addToLibrary({ name, subject, storyboard: boardFromFrames(frames) });
+    const id = addToLibrary({ name, subject, storyboard: board ?? EMPTY_BOARD });
     toast.success("Đã tạo bản sao — bạn chỉnh thoải mái nhé.");
     navigate({ to: storyboardRoutePattern(scope), params: { id } });
   };
 
-  /* ─── Frame mutations ───────────────────────────────────────────── */
-  const addFrame = () => {
-    setFrames([
-      ...frames,
-      { id: makeId("frame"), blockType: "text", title: `Cảnh ${frames.length + 1}`, intent: "Mô tả nội dung cảnh này…", learningGoal: "", image: "explain" },
-    ]);
+  /* ─── Section CRUD ──────────────────────────────────────────────── */
+  const addSection = () => setBoard({ sections: [...sections, newSection(sections.length + 1)] });
+  const renameSection = (sid: string, title: string) =>
+    setBoard({ sections: sections.map((s) => (s.id === sid ? { ...s, title } : s)) });
+  const deleteSection = (sid: string) =>
+    setBoard({ sections: sections.filter((s) => s.id !== sid) });
+  const moveSection = (sid: string, dir: "up" | "down") => {
+    const idx = sections.findIndex((s) => s.id === sid);
+    const to = dir === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || to < 0 || to >= sections.length) return;
+    setBoard({ sections: arrayMove(sections, idx, to) });
   };
-  const updateFrame = (id: string, patch: Partial<StoryboardItem>) =>
-    setFrames(frames.map((f) => (f.id === id ? { ...f, ...patch } : f)));
-  const deleteFrame = (id: string) => setFrames(frames.filter((f) => f.id !== id));
+
+  /* ─── Frame CRUD (theo section) ─────────────────────────────────── */
+  const addFrame = (sid: string) =>
+    setBoard({
+      sections: sections.map((s) =>
+        s.id === sid ? { ...s, items: [...s.items, newFrame(s.items.length + 1)] } : s,
+      ),
+    });
+  const updateFrame = (sid: string, fid: string, patch: Partial<StoryboardItem>) =>
+    setBoard({
+      sections: sections.map((s) =>
+        s.id === sid ? { ...s, items: s.items.map((f) => (f.id === fid ? { ...f, ...patch } : f)) } : s,
+      ),
+    });
+  const deleteFrame = (sid: string, fid: string) =>
+    setBoard({
+      sections: sections.map((s) => (s.id === sid ? { ...s, items: s.items.filter((f) => f.id !== fid) } : s)),
+    });
+
+  /* ─── Kéo-thả khung (trong phần & giữa các phần) ────────────────── */
+  const containerOf = (id: string): string | undefined => {
+    if (sections.some((s) => s.id === id)) return id; // id là section
+    return sections.find((s) => s.items.some((f) => f.id === id))?.id;
+  };
 
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
+
+  const onDragOver = (e: DragOverEvent) => {
+    const { active, over } = e;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const from = containerOf(activeId);
+    const to = containerOf(overId);
+    if (!from || !to || from === to) return;
+    // Chuyển khung sang phần khác ngay khi hover.
+    const fromSec = sections.find((s) => s.id === from)!;
+    const toSec = sections.find((s) => s.id === to)!;
+    const item = fromSec.items.find((f) => f.id === activeId);
+    if (!item) return;
+    const overIdx = toSec.items.findIndex((f) => f.id === overId);
+    const insertAt = overIdx >= 0 ? overIdx : toSec.items.length;
+    setBoard({
+      sections: sections.map((s) => {
+        if (s.id === from) return { ...s, items: s.items.filter((f) => f.id !== activeId) };
+        if (s.id === to) return { ...s, items: [...s.items.slice(0, insertAt), item, ...s.items.slice(insertAt)] };
+        return s;
+      }),
+    });
+  };
+
   const onDragEnd = (e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const oldIdx = frames.findIndex((f) => f.id === active.id);
-    const newIdx = frames.findIndex((f) => f.id === over.id);
-    if (oldIdx < 0 || newIdx < 0) return;
-    setFrames(arrayMove(frames, oldIdx, newIdx));
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const from = containerOf(activeId);
+    const to = containerOf(overId);
+    if (!from || !to || from !== to) return; // chuyển giữa phần đã xử lý ở onDragOver
+    const sec = sections.find((s) => s.id === from)!;
+    const oldIdx = sec.items.findIndex((f) => f.id === activeId);
+    const newIdx = overId === sec.id ? sec.items.length - 1 : sec.items.findIndex((f) => f.id === overId);
+    if (oldIdx < 0 || newIdx < 0 || oldIdx === newIdx) return;
+    setBoard({ sections: sections.map((s) => (s.id === from ? { ...s, items: arrayMove(s.items, oldIdx, newIdx) } : s)) });
   };
 
-  const activeFrame = frames.find((f) => f.id === activeId);
+  const activeFrame = sections.flatMap((s) => s.items).find((f) => f.id === activeId);
   const readOnly = pageMode === "view";
 
   const headerTitle =
@@ -231,6 +288,9 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
   const headerSub =
     moduleMode ? (pageMode === "view" ? "Mẫu có sẵn — nhân bản để chỉnh theo ý bạn" : "Lưu vào thư viện để dùng cho nhiều bài")
     : (contentItem?.title ?? "Khoá học");
+
+  // Số thứ tự khung liên tục qua các phần.
+  let frameCounter = 0;
 
   return (
     <div className="flex h-screen flex-col bg-muted/30">
@@ -269,10 +329,10 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
 
         <div className="ml-auto flex items-center gap-2">
           <span className="hidden rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:inline">
-            {frames.length} khung
+            {sections.length} mục · {totalFrames} khung
           </span>
           {readOnly ? (
-            <Button size="sm" className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleDuplicate} disabled={!frames.length}>
+            <Button size="sm" className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" onClick={handleDuplicate} disabled={!totalFrames}>
               <Copy className="h-4 w-4" /> Nhân bản để chỉnh sửa
             </Button>
           ) : (
@@ -280,14 +340,14 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
               variant={moduleMode ? "default" : "outline"}
               size="sm"
               className={cn("gap-2", moduleMode && "bg-primary text-primary-foreground hover:bg-primary-hover")}
-              disabled={!frames.length}
+              disabled={!totalFrames}
               onClick={handleSave}
             >
               <Library className="h-4 w-4" /> {pageMode === "edit" ? "Lưu thay đổi" : "Lưu vào kho"}
             </Button>
           )}
           {!moduleMode && (
-            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" size="sm" disabled={!frames.length || applying} onClick={handleApply}>
+            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" size="sm" disabled={!totalFrames || applying} onClick={handleApply}>
               {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
               Áp dụng vào bài
             </Button>
@@ -340,51 +400,54 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
 
             <details>
               <summary className="cursor-pointer text-xs font-semibold text-foreground">Hướng dẫn AI nên làm thế nào <span className="font-normal text-muted-foreground">(tuỳ chọn)</span></summary>
-              <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="Vd: chia 6 cảnh, mỗi cảnh một ý chính, giọng gần gũi, có ví dụ thực tế…" className="mt-1.5 min-h-[80px] text-xs" />
+              <Textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="Vd: chia 5 phần theo 5E, mỗi phần vài khung, giọng gần gũi, có ví dụ thực tế…" className="mt-1.5 min-h-[80px] text-xs" />
             </details>
 
             <Button className="mt-auto w-full gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={generating || !effectiveLessonId} onClick={handleGenerate}>
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              {frames.length ? "Tạo lại storyboard" : "Tạo storyboard"}
+              {totalFrames ? "Tạo lại storyboard" : "Tạo storyboard"}
             </Button>
           </aside>
         )}
 
-        {/* Main: scene grid */}
+        {/* Main: sections + scene grid */}
         <main className="min-h-0 flex-1 overflow-auto p-5">
-          {frames.length === 0 ? (
-            <EmptyBoard generating={generating} onGenerate={handleGenerate} />
+          {sections.length === 0 ? (
+            <EmptyBoard generating={generating} onGenerate={handleGenerate} onAddSection={addSection} readOnly={readOnly} />
           ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-              <SortableContext items={frames.map((f) => f.id)} strategy={rectSortingStrategy}>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {frames.map((frame, i) => (
-                    <motion.div
-                      key={frame.id}
-                      initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.28, ease: "easeOut" }}
-                    >
-                      <SortableScene
-                        frame={frame}
-                        index={i}
-                        readOnly={readOnly}
-                        onUpdate={(p) => updateFrame(frame.id, p)}
-                        onDelete={() => deleteFrame(frame.id)}
-                      />
-                    </motion.div>
-                  ))}
-                  {!readOnly && (
-                    <button
-                      type="button"
-                      onClick={addFrame}
-                      className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground transition hover:border-primary hover:bg-accent/40 hover:text-primary"
-                    >
-                      <Plus className="h-6 w-6" /> Thêm khung cảnh
-                    </button>
-                  )}
-                </div>
-              </SortableContext>
+            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
+              <div className="space-y-4">
+                {sections.map((section, si) => {
+                  const start = frameCounter;
+                  frameCounter += section.items.length;
+                  return (
+                    <SectionColumn
+                      key={section.id}
+                      section={section}
+                      index={si}
+                      total={sections.length}
+                      frameStart={start}
+                      readOnly={readOnly}
+                      reduceMotion={!!reduceMotion}
+                      onRename={(t) => renameSection(section.id, t)}
+                      onDelete={() => deleteSection(section.id)}
+                      onMove={(d) => moveSection(section.id, d)}
+                      onAddFrame={() => addFrame(section.id)}
+                      onUpdateFrame={(fid, p) => updateFrame(section.id, fid, p)}
+                      onDeleteFrame={(fid) => deleteFrame(section.id, fid)}
+                    />
+                  );
+                })}
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={addSection}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border py-3 text-sm font-medium text-muted-foreground transition hover:border-primary hover:bg-accent/40 hover:text-primary"
+                  >
+                    <Plus className="h-4 w-4" /> Thêm phần
+                  </button>
+                )}
+              </div>
               <DragOverlay>
                 {activeFrame && (
                   <div className="w-[260px] overflow-hidden rounded-xl border border-primary bg-card shadow-xl">
@@ -405,7 +468,14 @@ export function StoryboardPage({ courseId, scope, standalone = false }: Storyboa
 
 /* ─── Empty state ───────────────────────────────────────────────── */
 
-function EmptyBoard({ generating, onGenerate }: { generating: boolean; onGenerate: () => void }) {
+function EmptyBoard({
+  generating, onGenerate, onAddSection, readOnly,
+}: {
+  generating: boolean;
+  onGenerate: () => void;
+  onAddSection: () => void;
+  readOnly: boolean;
+}) {
   return (
     <div className="flex h-full flex-col items-center justify-center text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-primary">
@@ -413,12 +483,105 @@ function EmptyBoard({ generating, onGenerate }: { generating: boolean; onGenerat
       </div>
       <p className="mt-4 text-base font-semibold text-foreground">Bắt đầu một storyboard</p>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-        Nhập chủ đề bên trái rồi bấm <span className="font-medium text-foreground">Tạo storyboard</span> — AI sẽ phác các khung cảnh kèm ảnh minh hoạ sẵn.
+        Nhập chủ đề bên trái rồi bấm <span className="font-medium text-foreground">Tạo storyboard</span> — AI sẽ phác các phần kèm khung cảnh có ảnh sẵn.
       </p>
-      <Button className="mt-4 gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={generating} onClick={onGenerate}>
-        {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-        Tạo storyboard
-      </Button>
+      {!readOnly && (
+        <div className="mt-4 flex items-center gap-2">
+          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover" disabled={generating} onClick={onGenerate}>
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            Tạo storyboard
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={onAddSection}>
+            <Plus className="h-4 w-4" /> Thêm phần thủ công
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Phần (section) — vùng thả kéo-thả khung ───────────────────── */
+
+function SectionColumn({
+  section, index, total, frameStart, readOnly, reduceMotion,
+  onRename, onDelete, onMove, onAddFrame, onUpdateFrame, onDeleteFrame,
+}: {
+  section: StoryboardSection;
+  index: number;
+  total: number;
+  frameStart: number;
+  readOnly: boolean;
+  reduceMotion: boolean;
+  onRename: (title: string) => void;
+  onDelete: () => void;
+  onMove: (dir: "up" | "down") => void;
+  onAddFrame: () => void;
+  onUpdateFrame: (frameId: string, patch: Partial<StoryboardItem>) => void;
+  onDeleteFrame: (frameId: string) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: section.id });
+  return (
+    <div className="rounded-xl border border-border bg-card/50 p-3">
+      {/* Tiêu đề phần + điều khiển */}
+      <div className="mb-2.5 flex items-center gap-2">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-50 text-[11px] font-bold text-primary">{index + 1}</span>
+        {readOnly ? (
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{section.title}</p>
+        ) : (
+          <input
+            value={section.title}
+            onChange={(e) => onRename(e.target.value)}
+            placeholder="Tên phần"
+            aria-label="Tên phần"
+            className="min-w-0 flex-1 rounded bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none hover:bg-muted/50 focus:bg-muted/50"
+          />
+        )}
+        <span className="shrink-0 text-[11px] text-muted-foreground">{section.items.length} khung</span>
+        {!readOnly && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button type="button" onClick={() => onMove("up")} disabled={index === 0} className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30" aria-label="Chuyển phần lên"><ChevronUp className="h-4 w-4" /></button>
+            <button type="button" onClick={() => onMove("down")} disabled={index === total - 1} className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30" aria-label="Chuyển phần xuống"><ChevronDown className="h-4 w-4" /></button>
+            <button type="button" onClick={onDelete} className="rounded p-1 text-muted-foreground transition hover:text-destructive" aria-label="Xoá phần"><Trash2 className="h-4 w-4" /></button>
+          </div>
+        )}
+      </div>
+
+      {/* Lưới khung — vùng thả */}
+      <div ref={setNodeRef} className={cn("rounded-lg transition", isOver && "ring-2 ring-primary/40")}>
+        <SortableContext items={section.items.map((f) => f.id)} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {section.items.map((frame, i) => (
+              <motion.div
+                key={frame.id}
+                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.24, ease: "easeOut" }}
+              >
+                <SortableScene
+                  frame={frame}
+                  index={frameStart + i}
+                  readOnly={readOnly}
+                  onUpdate={(p) => onUpdateFrame(frame.id, p)}
+                  onDelete={() => onDeleteFrame(frame.id)}
+                />
+              </motion.div>
+            ))}
+            {!readOnly ? (
+              <button
+                type="button"
+                onClick={onAddFrame}
+                className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-sm font-medium text-muted-foreground transition hover:border-primary hover:bg-accent/40 hover:text-primary"
+              >
+                <Plus className="h-6 w-6" /> Thêm khung cảnh
+              </button>
+            ) : (
+              section.items.length === 0 && (
+                <p className="col-span-full py-6 text-center text-xs text-muted-foreground">Phần này chưa có khung.</p>
+              )
+            )}
+          </div>
+        </SortableContext>
+      </div>
     </div>
   );
 }
