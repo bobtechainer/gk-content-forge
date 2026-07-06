@@ -13,6 +13,7 @@ import { Route as StudentRouteImport } from './routes/student'
 import { Route as SchoolRouteImport } from './routes/school'
 import { Route as ReviewerRouteImport } from './routes/reviewer'
 import { Route as OrgRouteImport } from './routes/org'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CreatorRouteImport } from './routes/creator'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -49,12 +50,15 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminLibraryRouteImport } from './routes/admin.library'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminChannelRouteImport } from './routes/admin.channel'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as StudentLearnIdRouteImport } from './routes/student.learn.$id'
 import { Route as ReviewerReviewIdRouteImport } from './routes/reviewer.review.$id'
 import { Route as OrgStudioNewRouteImport } from './routes/org.studio.new'
 import { Route as OrgChannelEditRouteImport } from './routes/org.channel.edit'
 import { Route as CreatorStudioNewRouteImport } from './routes/creator.studio.new'
 import { Route as CreatorChannelEditRouteImport } from './routes/creator.channel.edit'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as OrgBuilderUiSystemIdRouteImport } from './routes/org.builder.ui-system.$id'
 import { Route as OrgBuilderStoryboardIdRouteImport } from './routes/org.builder.storyboard.$id'
 import { Route as OrgBuilderQuizIdRouteImport } from './routes/org.builder.quiz.$id'
@@ -86,6 +90,11 @@ const ReviewerRoute = ReviewerRouteImport.update({
 const OrgRoute = OrgRouteImport.update({
   id: '/org',
   path: '/org',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -268,6 +277,18 @@ const AdminChannelRoute = AdminChannelRouteImport.update({
   path: '/channel',
   getParentRoute: () => AdminRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const StudentLearnIdRoute = StudentLearnIdRouteImport.update({
   id: '/learn/$id',
   path: '/learn/$id',
@@ -298,6 +319,12 @@ const CreatorChannelEditRoute = CreatorChannelEditRouteImport.update({
   path: '/edit',
   getParentRoute: () => CreatorChannelRoute,
 } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const OrgBuilderUiSystemIdRoute = OrgBuilderUiSystemIdRouteImport.update({
   id: '/builder/ui-system/$id',
   path: '/builder/ui-system/$id',
@@ -367,10 +394,13 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/org': typeof OrgRouteWithChildren
   '/reviewer': typeof ReviewerRouteWithChildren
   '/school': typeof SchoolRouteWithChildren
   '/student': typeof StudentRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/channel': typeof AdminChannelRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/library': typeof AdminLibraryRoute
@@ -403,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/student/explore': typeof StudentExploreRoute
   '/student/home': typeof StudentHomeRoute
   '/student/progress': typeof StudentProgressRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/creator/channel/edit': typeof CreatorChannelEditRoute
   '/creator/studio/new': typeof CreatorStudioNewRoute
   '/org/channel/edit': typeof OrgChannelEditRoute
@@ -427,10 +458,13 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/org': typeof OrgRouteWithChildren
   '/reviewer': typeof ReviewerRouteWithChildren
   '/school': typeof SchoolRouteWithChildren
   '/student': typeof StudentRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/channel': typeof AdminChannelRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/library': typeof AdminLibraryRoute
@@ -463,6 +497,7 @@ export interface FileRoutesByTo {
   '/student/explore': typeof StudentExploreRoute
   '/student/home': typeof StudentHomeRoute
   '/student/progress': typeof StudentProgressRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/creator/channel/edit': typeof CreatorChannelEditRoute
   '/creator/studio/new': typeof CreatorStudioNewRoute
   '/org/channel/edit': typeof OrgChannelEditRoute
@@ -488,10 +523,13 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/creator': typeof CreatorRouteWithChildren
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/org': typeof OrgRouteWithChildren
   '/reviewer': typeof ReviewerRouteWithChildren
   '/school': typeof SchoolRouteWithChildren
   '/student': typeof StudentRouteWithChildren
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/channel': typeof AdminChannelRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/library': typeof AdminLibraryRoute
@@ -524,6 +562,7 @@ export interface FileRoutesById {
   '/student/explore': typeof StudentExploreRoute
   '/student/home': typeof StudentHomeRoute
   '/student/progress': typeof StudentProgressRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/creator/channel/edit': typeof CreatorChannelEditRoute
   '/creator/studio/new': typeof CreatorStudioNewRoute
   '/org/channel/edit': typeof OrgChannelEditRoute
@@ -550,10 +589,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/creator'
     | '/login'
+    | '/mcp'
     | '/org'
     | '/reviewer'
     | '/school'
     | '/student'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/channel'
     | '/admin/dashboard'
     | '/admin/library'
@@ -586,6 +628,7 @@ export interface FileRouteTypes {
     | '/student/explore'
     | '/student/home'
     | '/student/progress'
+    | '/.mcp/invoke-tool/$tool'
     | '/creator/channel/edit'
     | '/creator/studio/new'
     | '/org/channel/edit'
@@ -610,10 +653,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/creator'
     | '/login'
+    | '/mcp'
     | '/org'
     | '/reviewer'
     | '/school'
     | '/student'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/channel'
     | '/admin/dashboard'
     | '/admin/library'
@@ -646,6 +692,7 @@ export interface FileRouteTypes {
     | '/student/explore'
     | '/student/home'
     | '/student/progress'
+    | '/.mcp/invoke-tool/$tool'
     | '/creator/channel/edit'
     | '/creator/studio/new'
     | '/org/channel/edit'
@@ -670,10 +717,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/creator'
     | '/login'
+    | '/mcp'
     | '/org'
     | '/reviewer'
     | '/school'
     | '/student'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/channel'
     | '/admin/dashboard'
     | '/admin/library'
@@ -706,6 +756,7 @@ export interface FileRouteTypes {
     | '/student/explore'
     | '/student/home'
     | '/student/progress'
+    | '/.mcp/invoke-tool/$tool'
     | '/creator/channel/edit'
     | '/creator/studio/new'
     | '/org/channel/edit'
@@ -731,10 +782,14 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   CreatorRoute: typeof CreatorRouteWithChildren
   LoginRoute: typeof LoginRoute
+  McpRoute: typeof McpRoute
   OrgRoute: typeof OrgRouteWithChildren
   ReviewerRoute: typeof ReviewerRouteWithChildren
   SchoolRoute: typeof SchoolRouteWithChildren
   StudentRoute: typeof StudentRouteWithChildren
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -765,6 +820,13 @@ declare module '@tanstack/react-router' {
       path: '/org'
       fullPath: '/org'
       preLoaderRoute: typeof OrgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1019,6 +1081,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminChannelRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/student/learn/$id': {
       id: '/student/learn/$id'
       path: '/learn/$id'
@@ -1060,6 +1136,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/creator/channel/edit'
       preLoaderRoute: typeof CreatorChannelEditRouteImport
       parentRoute: typeof CreatorChannelRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/org/builder/ui-system/$id': {
       id: '/org/builder/ui-system/$id'
@@ -1346,10 +1429,15 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   CreatorRoute: CreatorRouteWithChildren,
   LoginRoute: LoginRoute,
+  McpRoute: McpRoute,
   OrgRoute: OrgRouteWithChildren,
   ReviewerRoute: ReviewerRouteWithChildren,
   SchoolRoute: SchoolRouteWithChildren,
   StudentRoute: StudentRouteWithChildren,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
